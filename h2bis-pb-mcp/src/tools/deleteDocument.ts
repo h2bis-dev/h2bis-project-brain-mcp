@@ -1,4 +1,4 @@
-import { getDb } from '../db.js';
+import { apiService } from '../services/api.service.js';
 import { z } from 'zod';
 
 export const deleteDocumentSchema = z.object({
@@ -8,9 +8,8 @@ export const deleteDocumentSchema = z.object({
 
 export async function deleteDocument({ collectionName, filter }: z.infer<typeof deleteDocumentSchema>) {
     try {
-        const db = await getDb();
         const filterObj = JSON.parse(filter);
-        const result = await db.collection(collectionName).deleteOne(filterObj);
+        const result = await apiService.deleteDocument(collectionName, filterObj);
         return {
             content: [
                 {

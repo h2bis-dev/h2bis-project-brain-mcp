@@ -2,13 +2,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { tools } from "./tools/index.js";
 import { config } from "./config/config.js";
-import { initDb, closeDb } from "./db.js";
 
 async function main() {
   try {
-    // Initialize database connection
-    await initDb();
-
     // Create MCP server instance
     const server = new McpServer({
       name: config.serverName,
@@ -33,17 +29,16 @@ async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error(`✅ ${config.serverName} v${config.serverVersion} running`);
+    console.error(`🔗 API connection: ${config.apiBaseUrl}`);
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
       console.error('\n⏹️  Shutting down...');
-      await closeDb();
       process.exit(0);
     });
 
-    process.on('SIGTERM', async () => {
+    process.on('SIGTER', async () => {
       console.error('\n⏹️  Shutting down...');
-      await closeDb();
       process.exit(0);
     });
   } catch (error) {

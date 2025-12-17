@@ -1,13 +1,12 @@
-import { getDb } from '../db.js';
+import { apiService } from '../services/api.service.js';
 import { z } from 'zod';
 
 export const listCollectionsSchema = z.object({});
 
 export async function listCollections(_args: z.infer<typeof listCollectionsSchema>) {
     try {
-        const db = await getDb();
-        const collections = await db.listCollections().toArray();
-        const collectionNames = collections.map(col => col.name);
+        const result = await apiService.listCollections();
+        const collectionNames = result.collections;
 
         return {
             content: [

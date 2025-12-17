@@ -1,4 +1,4 @@
-import { getDb } from '../db.js';
+import { apiService } from '../services/api.service.js';
 import { z } from 'zod';
 
 export const insertDocumentSchema = z.object({
@@ -8,9 +8,8 @@ export const insertDocumentSchema = z.object({
 
 export async function insertDocument({ collectionName, json }: z.infer<typeof insertDocumentSchema>) {
     try {
-        const db = await getDb();
         const data = JSON.parse(json);
-        const result = await db.collection(collectionName).insertOne(data);
+        const result = await apiService.insertDocument(collectionName, data);
         return {
             content: [
                 {

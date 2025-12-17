@@ -1,4 +1,4 @@
-import { getDb } from '../db.js';
+import { apiService } from '../services/api.service.js';
 import { z } from 'zod';
 
 export const findDocumentSchema = z.object({
@@ -8,14 +8,13 @@ export const findDocumentSchema = z.object({
 
 export async function findDocument({ collectionName, filter }: z.infer<typeof findDocumentSchema>) {
     try {
-        const db = await getDb();
         const filterObj = JSON.parse(filter);
-        const document = await db.collection(collectionName).findOne(filterObj);
+        const result = await apiService.findDocument(collectionName, filterObj);
         return {
             content: [
                 {
                     type: "text",
-                    text: document ? JSON.stringify(document) : 'No document found',
+                    text: result.document ? JSON.stringify(result.document) : 'No document found',
                 },
             ],
         };

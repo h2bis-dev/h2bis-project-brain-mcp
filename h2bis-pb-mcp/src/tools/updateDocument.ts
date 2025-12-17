@@ -1,4 +1,4 @@
-import { getDb } from '../db.js';
+import { apiService } from '../services/api.service.js';
 import { z } from 'zod';
 
 export const updateDocumentSchema = z.object({
@@ -9,10 +9,9 @@ export const updateDocumentSchema = z.object({
 
 export async function updateDocument({ collectionName, filter, update }: z.infer<typeof updateDocumentSchema>) {
   try {
-    const db = await getDb();
     const filterObj = JSON.parse(filter);
     const updateObj = JSON.parse(update);
-    const result = await db.collection(collectionName).updateOne(filterObj, updateObj);
+    const result = await apiService.updateDocument(collectionName, filterObj, updateObj);
     return {
       content: [
         {
