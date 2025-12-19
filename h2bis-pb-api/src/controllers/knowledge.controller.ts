@@ -1,45 +1,44 @@
 import { Request, Response } from 'express';
 import { getDb } from '../db.js';
 import { z } from 'zod';
-
-// Validation schemas
-const insertDocumentSchema = z.object({
-    collectionName: z.string().min(1),
-    document: z.record(z.any()),
-});
-
-const findDocumentSchema = z.object({
-    collectionName: z.string().min(1),
-    filter: z.record(z.any()).optional().default({}),
-});
-
-const updateDocumentSchema = z.object({
-    collectionName: z.string().min(1),
-    filter: z.record(z.any()),
-    update: z.record(z.any()),
-});
-
-const deleteDocumentSchema = z.object({
-    collectionName: z.string().min(1),
-    filter: z.record(z.any()),
-});
+import { EntitySchema } from '../db_schema/entity_schema.js';
+import {
+    InsertDocumentRequestSchema,
+    FindDocumentRequestSchema,
+    UpdateDocumentRequestSchema,
+    DeleteDocumentRequestSchema
+} from '../validation/request.schemas.js';
 
 /**
  * Insert a document into a collection
+ * Validates both request structure AND entity schema
  */
 export async function insertDocument(req: Request, res: Response) {
     try {
-        const { collectionName, document } = insertDocumentSchema.parse(req.body);
+        // 1. Validate request structure
+        const { collectionName, document } = InsertDocumentRequestSchema.parse(req.body);
 
+        // 2. Validate entity schema (feature or use_case)
+        const validatedEntity = EntitySchema.parse(document);
+
+        // 3. Insert validated entity into database
         const db = await getDb();
-        const result = await db.collection(collectionName).insertOne(document);
+        const result = await db.collection(collectionName).insertOne(validatedEntity);
 
         res.status(201).json({
             insertedId: result.insertedId.toString(),
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            res.status(400).json({ error: 'Validation error', details: error.errors });
+            res.status(400).json({
+                error: 'Validation error',
+                message: 'The document does not match the required entity schema',
+                details: error.errors.map(err => ({
+                    path: err.path.join('.'),
+                    message: err.message,
+                    received: err.code === 'invalid_type' ? (err as any).received : undefined
+                }))
+            });
         } else {
             res.status(500);
             throw error;
@@ -49,6 +48,7 @@ export async function insertDocument(req: Request, res: Response) {
 
 /**
  * Find a document in a collection
+ * Only validates request structure (no entity validation needed for queries)
  */
 export async function findDocument(req: Request, res: Response) {
     try {
@@ -60,7 +60,7 @@ export async function findDocument(req: Request, res: Response) {
         }
 
         const filter = filterStr ? JSON.parse(filterStr) : {};
-        const validated = findDocumentSchema.parse({ collectionName, filter });
+        const validated = FindDocumentRequestSchema.parse({ collectionName, filter });
 
         const db = await getDb();
         const document = await db.collection(validated.collectionName).findOne(validated.filter);
@@ -82,13 +82,20 @@ export async function findDocument(req: Request, res: Response) {
 
 /**
  * Update a document in a collection
+ * Requires FULL document replacement with entity validation
+ * No partial updates to ensure data integrity
  */
 export async function updateDocument(req: Request, res: Response) {
     try {
-        const { collectionName, filter, update } = updateDocumentSchema.parse(req.body);
+        // 1. Validate request structure
+        const { collectionName, filter, document } = UpdateDocumentRequestSchema.parse(req.body);
 
+        // 2. Validate entity schema (feature or use_case)
+        const validatedEntity = EntitySchema.parse(document);
+
+        // 3. Replace document with validated entity (not partial update)
         const db = await getDb();
-        const result = await db.collection(collectionName).updateMany(filter, update);
+        const result = await db.collection(collectionName).replaceOne(filter, validatedEntity);
 
         res.json({
             matchedCount: result.matchedCount,
@@ -96,7 +103,15 @@ export async function updateDocument(req: Request, res: Response) {
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            res.status(400).json({ error: 'Validation error', details: error.errors });
+            res.status(400).json({
+                error: 'Validation error',
+                message: 'The document does not match the required entity schema',
+                details: error.errors.map(err => ({
+                    path: err.path.join('.'),
+                    message: err.message,
+                    received: err.code === 'invalid_type' ? (err as any).received : undefined
+                }))
+            });
         } else {
             res.status(500);
             throw error;
@@ -106,10 +121,11 @@ export async function updateDocument(req: Request, res: Response) {
 
 /**
  * Delete a document from a collection
+ * Only validates request structure (no entity validation needed for deletions)
  */
 export async function deleteDocument(req: Request, res: Response) {
     try {
-        const { collectionName, filter } = deleteDocumentSchema.parse(req.body);
+        const { collectionName, filter } = DeleteDocumentRequestSchema.parse(req.body);
 
         const db = await getDb();
         const result = await db.collection(collectionName).deleteMany(filter);
