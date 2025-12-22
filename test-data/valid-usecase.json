@@ -1,0 +1,35 @@
+{
+    "collectionName": "knowledge",
+    "document": {
+        "type": "use_case",
+        "key": "uc-login-001",
+        "name": "User Login Flow",
+        "description": "Standard user login process with credential validation",
+        "status": {
+            "lifecycle": "in_development",
+            "reviewedByHuman": true,
+            "generatedByAI": false
+        },
+        "relationships": [
+            {
+                "type": "implements",
+                "targetType": "feature",
+                "targetKey": "feat-auth-001"
+            }
+        ],
+        "scope": {
+            "frontend": true,
+            "backend": true,
+            "services": false
+        },
+        "primaryActor": "End User",
+        "mainFlow": [
+            "User navigates to login page",
+            "User enters email and password",
+            "User clicks login button",
+            "System validates credentials",
+            "System generates JWT token",
+            "System redirects to dashboard"
+        ]
+    }
+}

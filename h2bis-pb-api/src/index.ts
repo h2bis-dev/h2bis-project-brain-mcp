@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config } from './config/config.js';
 import { connectDb, disconnectDb } from './db.js';
 import knowledgeRoutes from './routes/knowledge.js';
+import capabilityRoutes from './routes/capability.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/capabilities', capabilityRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,0 +1,27 @@
+{
+    "collectionName": "knowledge",
+    "document": {
+        "type": "feature",
+        "key": "feat-auth-001",
+        "name": "User Authentication",
+        "description": "Implement secure user authentication system with JWT tokens",
+        "status": {
+            "lifecycle": "planned",
+            "reviewedByHuman": false,
+            "generatedByAI": true
+        },
+        "relationships": [],
+        "scope": {
+            "frontend": true,
+            "backend": true,
+            "services": false
+        },
+        "businessValue": "Enable secure access control and user management",
+        "acceptanceCriteria": [
+            "User can register with email and password",
+            "User can login and receive JWT token",
+            "Protected routes require valid token",
+            "Token expires after 24 hours"
+        ]
+    }
+}

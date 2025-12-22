@@ -1,0 +1,31 @@
+{
+    "collectionName": "knowledge",
+    "filter": {
+        "key": "feat-auth-001"
+    },
+    "document": {
+        "type": "feature",
+        "key": "feat-auth-001",
+        "name": "User Authentication (Updated)",
+        "description": "Implement secure user authentication system with JWT tokens and OAuth2 support",
+        "status": {
+            "lifecycle": "in_development",
+            "reviewedByHuman": true,
+            "generatedByAI": false
+        },
+        "relationships": [],
+        "scope": {
+            "frontend": true,
+            "backend": true,
+            "services": true
+        },
+        "businessValue": "Enable secure access control, user management, and third-party integrations",
+        "acceptanceCriteria": [
+            "User can register with email and password",
+            "User can login and receive JWT token",
+            "Protected routes require valid token",
+            "Token expires after 24 hours",
+            "OAuth2 login with Google and GitHub"
+        ]
+    }
+}

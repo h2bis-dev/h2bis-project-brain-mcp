@@ -1,0 +1,20 @@
+{
+    "collectionName": "knowledge",
+    "document": {
+        "type": "feature",
+        "key": "feat-invalid",
+        "name": "Invalid Feature",
+        "description": "This feature is missing required fields",
+        "status": {
+            "lifecycle": "invalid_status",
+            "reviewedByHuman": "not a boolean",
+            "generatedByAI": true
+        },
+        "scope": {
+            "frontend": true,
+            "backend": true
+        },
+        "businessValue": "Test validation",
+        "extraField": "This should be rejected by strict mode"
+    }
+}

@@ -109,6 +109,112 @@ class ApiService {
 
         return await response.json() as { collections: string[] };
     }
+
+    /* ---------- Capability Graph Operations ---------- */
+
+    /**
+     * Create a capability node
+     */
+    async createCapability(node: Record<string, any>): Promise<{ nodeId: string }> {
+        const response = await fetch(`${this.baseUrl}/api/capabilities`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(node),
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { error?: string; message?: string };
+            throw new Error(error.message || error.error || 'Failed to create capability');
+        }
+
+        return await response.json() as { nodeId: string };
+    }
+
+    /**
+     * Get a capability node by ID
+     */
+    async getCapability(nodeId: string): Promise<{ node: any }> {
+        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { error?: string; message?: string };
+            throw new Error(error.message || error.error || 'Failed to get capability');
+        }
+
+        return await response.json() as { node: any };
+    }
+
+    /**
+     * Get dependencies for a capability node
+     */
+    async getCapabilityDependencies(nodeId: string, depth: number = 1): Promise<{ dependencies: any[] }> {
+        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}/dependencies?depth=${depth}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { error?: string; message?: string };
+            throw new Error(error.message || error.error || 'Failed to get dependencies');
+        }
+
+        return await response.json() as { dependencies: any[] };
+    }
+
+    /**
+     * Get dependents for a capability node
+     */
+    async getCapabilityDependents(nodeId: string, depth: number = 1): Promise<{ dependents: any[] }> {
+        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}/dependents?depth=${depth}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { error?: string; message?: string };
+            throw new Error(error.message || error.error || 'Failed to get dependents');
+        }
+
+        return await response.json() as { dependents: any[] };
+    }
+
+    /**
+     * Analyze impact of a capability node change
+     */
+    async analyzeCapabilityImpact(nodeId: string): Promise<{ impact: any }> {
+        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}/impact`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { error?: string; message?: string };
+            throw new Error(error.message || error.error || 'Failed to analyze impact');
+        }
+
+        return await response.json() as { impact: any };
+    }
+
+    /**
+     * Get implementation order for nodes
+     */
+    async getImplementationOrder(nodeIds: string[]): Promise<{ order: any[] }> {
+        const response = await fetch(`${this.baseUrl}/api/capabilities/order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nodeIds }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json() as { error?: string; message?: string };
+            throw new Error(error.message || error.error || 'Failed to get implementation order');
+        }
+
+        return await response.json() as { order: any[] };
+    }
 }
 
 export const apiService = new ApiService();
