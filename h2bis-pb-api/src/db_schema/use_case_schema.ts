@@ -66,6 +66,9 @@ export const createDefaultAudit = (user: string = "system") => ({
 /* ---------- Use Case Schema ---------- */
 
 export const UseCaseSchema = z.object({
+    // MongoDB auto-generated field (optional for validation)
+    _id: z.any().optional(),
+
     type: z.literal("use_case"),
     key: z.string(),
     name: z.string(),

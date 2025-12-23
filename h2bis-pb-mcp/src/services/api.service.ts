@@ -18,7 +18,11 @@ class ApiService {
     /**
      * Insert a document into a collection
      */
-    async insertDocument(collectionName: string, document: Record<string, any>): Promise<{ insertedId: string }> {
+    async insertDocument(collectionName: string, document: Record<string, any>): Promise<{
+        insertedId: string;
+        capabilityGenerated?: boolean;
+        capabilityId?: string;
+    }> {
         const response = await fetch(`${this.baseUrl}/api/knowledge`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -30,8 +34,13 @@ class ApiService {
             throw new Error(error.error?.message || 'Failed to insert document');
         }
 
-        return await response.json() as { insertedId: string };
+        return await response.json() as {
+            insertedId: string;
+            capabilityGenerated?: boolean;
+            capabilityId?: string;
+        };
     }
+
 
     /**
      * Find a document in a collection

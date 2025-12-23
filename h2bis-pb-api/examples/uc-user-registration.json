@@ -1,0 +1,149 @@
+{
+    "collectionName": "use_cases",
+    "document": {
+        "type": "use_case",
+        "key": "uc-user-registration",
+        "name": "User Registration",
+        "description": "Allow new users to create an account with username, password, and basic profile information",
+        "businessValue": "Enable user onboarding and account creation to grow the user base",
+        "primaryActor": "New User",
+        "status": {
+            "lifecycle": "planned",
+            "reviewedByHuman": true,
+            "generatedByAI": false
+        },
+        "acceptanceCriteria": [
+            "User can register with unique username and password",
+            "Password must meet security requirements (min 8 characters, alphanumeric)",
+            "Username must be unique across the system",
+            "User receives confirmation after successful registration",
+            "Invalid inputs show clear validation error messages",
+            "User is automatically logged in after successful registration"
+        ],
+        "flows": [
+            {
+                "name": "Successful Registration",
+                "type": "main",
+                "steps": [
+                    "User navigates to /register page",
+                    "User enters username, password, confirm password, email, and full name",
+                    "User clicks 'Register' button",
+                    "System validates all inputs (username uniqueness, password strength, email format)",
+                    "System hashes password using bcrypt",
+                    "System creates new user record in database",
+                    "System creates session token",
+                    "System shows success message",
+                    "System redirects user to dashboard"
+                ]
+            },
+            {
+                "name": "Username Already Exists",
+                "type": "error",
+                "steps": [
+                    "User enters username that already exists",
+                    "User clicks 'Register' button",
+                    "System checks username availability",
+                    "System displays error: 'Username already taken. Please choose another.'",
+                    "User remains on registration page to retry"
+                ]
+            },
+            {
+                "name": "Password Mismatch",
+                "type": "error",
+                "steps": [
+                    "User enters password and confirm password that don't match",
+                    "User clicks 'Register' button",
+                    "System validates password confirmation",
+                    "System displays error: 'Passwords do not match'",
+                    "User can correct the password fields"
+                ]
+            },
+            {
+                "name": "Weak Password",
+                "type": "error",
+                "steps": [
+                    "User enters password that doesn't meet requirements",
+                    "User clicks 'Register' button",
+                    "System validates password strength",
+                    "System displays error: 'Password must be at least 8 characters with letters and numbers'",
+                    "User can enter a stronger password"
+                ]
+            }
+        ],
+        "technicalSurface": {
+            "frontend": {
+                "repos": [
+                    "web-app"
+                ],
+                "routes": [
+                    "/register",
+                    "/dashboard"
+                ],
+                "components": [
+                    "RegistrationForm",
+                    "PasswordStrengthIndicator",
+                    "FormValidation"
+                ]
+            },
+            "backend": {
+                "repos": [
+                    "auth-service"
+                ],
+                "endpoints": [
+                    "/api/auth/register",
+                    "/api/auth/check-username"
+                ],
+                "collections": [
+                    {
+                        "name": "users",
+                        "purpose": "Store user account information and credentials",
+                        "operations": [
+                            "CREATE",
+                            "READ"
+                        ]
+                    },
+                    {
+                        "name": "sessions",
+                        "purpose": "Track user sessions after registration",
+                        "operations": [
+                            "CREATE"
+                        ]
+                    }
+                ]
+            }
+        },
+        "relationships": [],
+        "aiMetadata": {
+            "estimatedComplexity": "medium",
+            "implementationRisk": [
+                "Password must be hashed with bcrypt (salt rounds: 10)",
+                "Username uniqueness check must be case-insensitive",
+                "Email validation must follow RFC 5322 standard",
+                "Prevent timing attacks on username availability check",
+                "Rate limiting needed to prevent spam registrations"
+            ],
+            "suggestedOrder": 1,
+            "testStrategy": [
+                "Unit test: password hashing and validation",
+                "Unit test: username uniqueness check",
+                "Integration test: full registration flow",
+                "Security test: SQL injection prevention",
+                "Security test: XSS prevention in user inputs",
+                "Load test: handle 100 concurrent registrations"
+            ],
+            "nonFunctionalRequirements": [
+                "Registration must complete within 3 seconds",
+                "Password hashing must use bcrypt with salt rounds >= 10",
+                "Comply with GDPR for user data storage",
+                "Support 1000 registrations per hour"
+            ]
+        },
+        "tags": [
+            "authentication",
+            "user-management",
+            "onboarding",
+            "security",
+            "mvp"
+        ]
+    }
+}
