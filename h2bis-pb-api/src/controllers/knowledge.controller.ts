@@ -42,9 +42,9 @@ export async function insertDocument(req: Request, res: Response) {
 
             // Legacy schema detected
             if (validatedEntity.type === 'use_case') {
-                console.log('✅ UseCase detected, starting transformation...');
+                console.log('✅ UseCase detected, starting LLM-based intent extraction...');
 
-                // Transform UseCase → CapabilityNode
+                // Transform UseCase → CapabilityNode using LLM intent extraction
                 const useCaseResult = UseCaseSchema.safeParse(validatedEntity);
                 console.log('   UseCase validation result:', useCaseResult.success ? 'SUCCESS' : 'FAILED');
 
@@ -52,9 +52,11 @@ export async function insertDocument(req: Request, res: Response) {
                     console.log('   UseCase key:', useCaseResult.data.key);
 
                     try {
-                        const capability = transformationService.transformUseCaseToCapability(useCaseResult.data);
+                        // NEW: Use LLM-based transformation
+                        const capability = await transformationService.transformUseCaseToCapabilityWithIntent(useCaseResult.data);
                         console.log('   Transformed capability ID:', capability.id);
                         console.log('   Capability kind:', capability.kind);
+                        console.log('   Intent confidence:', capability.intentAnalysis?.confidenceLevel);
 
                         capabilityId = await capabilityService.createNode(capability);
                         console.log(`✅ Auto-generated capability ${capabilityId} from use case ${validatedEntity.key}`);

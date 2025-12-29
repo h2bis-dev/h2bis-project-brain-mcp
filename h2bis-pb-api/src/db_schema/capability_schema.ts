@@ -109,6 +109,39 @@ export const CapabilityNodeSchema = z.object({
         blockers: z.array(z.string()).default([])
     }).optional(),
 
+    // NEW: Intent Analysis from LLM (for traceability and verification)
+    intentAnalysis: z.object({
+        userGoal: z.string(),
+        systemResponsibilities: z.array(z.string()),
+        businessContext: z.string(),
+        technicalComponents: z.object({
+            frontend: z.object({
+                routes: z.array(z.string()),
+                components: z.array(z.string())
+            }),
+            backend: z.object({
+                endpoints: z.array(z.string()),
+                services: z.array(z.string())
+            }),
+            data: z.array(z.object({
+                entity: z.string(),
+                operations: z.array(z.enum(["CREATE", "READ", "UPDATE", "DELETE"]))
+            }))
+        }),
+        assumptions: z.array(z.string()),
+        ambiguities: z.array(z.string()),
+        missingInformation: z.array(z.string()),
+        securityConsiderations: z.array(z.string()),
+        confidenceLevel: z.enum(["high", "medium", "low"]),
+        extractedAt: z.date(),
+        llmModel: z.string(),
+        promptVersion: z.string()
+    }).optional(),
+
+    // NEW: Source traceability
+    sourceUseCaseId: z.string().optional(),
+    transformedAt: z.date().optional(),
+
     // Schema version for migration support
     schemaVersion: z.number().default(1)
 }).strict();

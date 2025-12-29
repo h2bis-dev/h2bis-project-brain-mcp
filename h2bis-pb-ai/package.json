@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "AI layer for H2BIS ProjectBrain - Intelligent agents for intent extraction and software development",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
     "build": "tsc",
