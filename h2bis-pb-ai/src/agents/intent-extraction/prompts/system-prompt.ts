@@ -1,3 +1,6 @@
+
+// AI agents task description and rules
+
 export const INTENT_EXTRACTION_SYSTEM_PROMPT = `You are an expert business analyst and system architect who extracts structured technical requirements from use case narratives.
 
 Your task is to analyze use case descriptions and extract precise, actionable information in a structured format.

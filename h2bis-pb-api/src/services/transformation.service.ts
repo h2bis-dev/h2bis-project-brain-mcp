@@ -15,7 +15,6 @@ export class TransformationService {
     private intentAgent: IntentExtractionAgent;
 
     constructor() {
-        // Initialize intent extraction agent
         this.intentAgent = new IntentExtractionAgent();
     }
 
@@ -35,14 +34,14 @@ export class TransformationService {
     ): Promise<CapabilityNode> {
         const { generateId = true, includeArtifacts = true } = options;
 
+        // Step 1: Extract intent using LLM
         console.log(`🤖 Extracting intent for use case: ${useCase.key}`);
 
-        // Step 1: Extract intent using LLM
         const intentAnalysis = await this.intentAgent.extractIntent(useCase as any);
 
+        // Step 2: Generate capability from intent analysis
         console.log(`✅ Intent extraction complete - Confidence: ${intentAnalysis.confidenceLevel}`);
 
-        // Step 2: Generate capability from intent analysis
         const capability = this.transformIntentToCapability(intentAnalysis, useCase, {
             generateId,
             includeArtifacts
@@ -181,91 +180,6 @@ export class TransformationService {
     }
 
     /**
-     * Legacy method: Transform without LLM (for backwards compatibility)
-     * DEPRECATED: Use transformUseCaseToCapabilityWithIntent instead
-     */
-    transformUseCaseToCapability(
-        useCase: UseCase,
-        options: {
-            generateId?: boolean;
-            includeArtifacts?: boolean;
-        } = {}
-    ): CapabilityNode {
-        console.warn('⚠️  Using legacy naive mapping - consider using transformUseCaseToCapabilityWithIntent');
-
-        const { generateId = true, includeArtifacts = true } = options;
-        const capabilityId = generateId ? `cap-${useCase.key}` : useCase.key;
-
-        const capability: CapabilityNode = {
-            id: capabilityId,
-            kind: 'use_case',
-
-            // INTENT: Naive mapping (DEPRECATED)
-            intent: {
-                userGoal: useCase.name,
-                systemResponsibility: useCase.description,
-                businessValue: useCase.businessValue
-            },
-
-            behavior: {
-                acceptanceCriteria: useCase.acceptanceCriteria,
-                flows: useCase.flows.map(flow => ({
-                    name: flow.name,
-                    steps: flow.steps,
-                    type: flow.type
-                }))
-            },
-
-            realization: {
-                frontend: useCase.technicalSurface.frontend.repos.length > 0 ? {
-                    routes: useCase.technicalSurface.frontend.routes,
-                    components: useCase.technicalSurface.frontend.components
-                } : undefined,
-
-                backend: useCase.technicalSurface.backend.repos.length > 0 ? {
-                    endpoints: useCase.technicalSurface.backend.endpoints,
-                    services: useCase.technicalSurface.backend.repos
-                } : undefined,
-
-                data: useCase.technicalSurface.backend.collections.map(col => ({
-                    name: col.name,
-                    purpose: col.purpose,
-                    operations: col.operations
-                }))
-            },
-
-            dependencies: this.transformRelationshipsToDependencies(useCase.relationships),
-
-            aiHints: {
-                complexityScore: this.mapComplexityToScore(useCase.aiMetadata?.estimatedComplexity || 'medium'),
-                recommendedChunking: useCase.aiMetadata?.testStrategy || [],
-                failureModes: useCase.aiMetadata?.implementationRisk || [],
-                testFocusAreas: useCase.aiMetadata?.testStrategy || []
-            },
-
-            lifecycle: {
-                status: useCase.status.lifecycle,
-                maturity: this.mapLifecycleToMaturity(useCase.status.lifecycle)
-            },
-
-            artifacts: includeArtifacts ? this.generateArtifactsFromTechnicalSurface(useCase) : undefined,
-
-            implementation: {
-                status: this.mapLifecycleToImplementationStatus(useCase.status.lifecycle),
-                completionPercentage: this.estimateCompletionPercentage(useCase.status.lifecycle),
-                lastUpdated: useCase.audit?.updatedAt || new Date(),
-                blockers: []
-            },
-
-            tags: useCase.tags || [],
-
-            schemaVersion: 1
-        };
-
-        return capability;
-    }
-
-    /**
      * Transform a Feature into a CapabilityNode
      */
     transformFeatureToCapability(feature: Feature): CapabilityNode {
@@ -310,7 +224,7 @@ export class TransformationService {
         return capability;
     }
 
-    // Helper methods remain the same...
+    // Helper methods
 
     private estimateComplexity(analysis: IntentAnalysis): number {
         let score = 5; // Base complexity
@@ -427,39 +341,6 @@ export class TransformationService {
         return source.length > 0 ? { source, tests: [], documentation: [] } : undefined;
     }
 
-    /**
-     * Batch transform: Convert multiple use cases to capabilities
-     */
-    async batchTransformUseCases(useCases: UseCase[]): Promise<CapabilityNode[]> {
-        const capabilities: CapabilityNode[] = [];
-
-        for (const useCase of useCases) {
-            try {
-                const capability = await this.transformUseCaseToCapabilityWithIntent(useCase);
-                capabilities.push(capability);
-            } catch (error) {
-                console.error(`Failed to transform use case ${useCase.key}:`, error);
-            }
-        }
-
-        return capabilities;
-    }
-
-    /**
-     * Reverse transformation: CapabilityNode back to UseCase
-     * Useful for displaying in BA-friendly format
-     */
-    transformCapabilityToUseCase(capability: CapabilityNode): Partial<UseCase> {
-        return {
-            key: capability.id.replace('cap-', ''),
-            name: capability.intent.userGoal,
-            description: capability.intent.systemResponsibility,
-            businessValue: capability.intent.businessValue,
-            acceptanceCriteria: capability.behavior.acceptanceCriteria,
-            flows: capability.behavior.flows,
-            tags: capability.tags
-        };
-    }
 }
 
 export const transformationService = new TransformationService();

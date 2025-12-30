@@ -46,6 +46,14 @@ export class IntentExtractionAgent {
                 logger.info('Extracting intent', { useCaseKey: useCase.key, attempt });
 
                 // Call LLM
+
+                //  -------------- Two Separate "contents" --------------
+
+                //   Role	     |   Purpose	           |       Analogy
+                // ____________  |_______________________  |_________________________
+                //   "system"    |  Sets context & rules   |  "You are a doctor..."
+                //   "user"      |  Asks the question	   |  "I have a headache, what should I do?"
+        
                 const messages = [
                     { role: 'system' as const, content: INTENT_EXTRACTION_SYSTEM_PROMPT },
                     { role: 'user' as const, content: createUserPrompt(useCase) }
