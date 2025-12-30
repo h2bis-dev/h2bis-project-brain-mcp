@@ -188,15 +188,17 @@ export async function updateDocument(req: Request, res: Response) {
                 if (validatedEntity.type === 'use_case') {
                     const useCaseResult = UseCaseSchema.safeParse(validatedEntity);
                     if (useCaseResult.success) {
-                        const updatedCapability = transformationService.transformUseCaseToCapability(useCaseResult.data, {
-                            generateId: false // Keep existing ID
-                        });
-
                         try {
+                            // Use LLM-based transformation (async)
+                            const updatedCapability = await transformationService.transformUseCaseToCapabilityWithIntent(
+                                useCaseResult.data,
+                                { generateId: false } // Keep existing ID
+                            );
+
                             // Update capability with new data
                             await capabilityService.updateNode(capabilityId, updatedCapability);
                             capabilityUpdated = true;
-                            console.log(`✅ Auto-updated capability ${capabilityId} from use case update`);
+                            console.log(`✅ Auto-updated capability ${capabilityId} from use case update (LLM-based)`);
                         } catch (error) {
                             console.warn(`⚠️ Failed to auto-update capability:`, error);
                         }

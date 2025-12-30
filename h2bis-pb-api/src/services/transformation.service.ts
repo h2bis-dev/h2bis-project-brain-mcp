@@ -15,7 +15,6 @@ export class TransformationService {
     private intentAgent: IntentExtractionAgent;
 
     constructor() {
-        // Initialize intent extraction agent
         this.intentAgent = new IntentExtractionAgent();
     }
 
@@ -35,14 +34,14 @@ export class TransformationService {
     ): Promise<CapabilityNode> {
         const { generateId = true, includeArtifacts = true } = options;
 
+        // Step 1: Extract intent using LLM
         console.log(`🤖 Extracting intent for use case: ${useCase.key}`);
 
-        // Step 1: Extract intent using LLM
         const intentAnalysis = await this.intentAgent.extractIntent(useCase as any);
 
+        // Step 2: Generate capability from intent analysis
         console.log(`✅ Intent extraction complete - Confidence: ${intentAnalysis.confidenceLevel}`);
 
-        // Step 2: Generate capability from intent analysis
         const capability = this.transformIntentToCapability(intentAnalysis, useCase, {
             generateId,
             includeArtifacts
@@ -310,7 +309,7 @@ export class TransformationService {
         return capability;
     }
 
-    // Helper methods remain the same...
+    // Helper methods
 
     private estimateComplexity(analysis: IntentAnalysis): number {
         let score = 5; // Base complexity

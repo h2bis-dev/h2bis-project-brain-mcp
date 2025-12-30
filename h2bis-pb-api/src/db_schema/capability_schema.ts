@@ -138,6 +138,20 @@ export const CapabilityNodeSchema = z.object({
         promptVersion: z.string()
     }).optional(),
 
+    // NEW: Review workflow for human oversight
+    review: z.object({
+        status: z.enum(["pending", "approved", "rejected", "revision_requested"]),
+        requiredReason: z.string().optional(),  // Why review is needed
+        reviewedBy: z.string().optional(),
+        reviewedAt: z.date().optional(),
+        feedback: z.string().optional(),
+        corrections: z.object({
+            userGoal: z.string().optional(),
+            systemResponsibilities: z.array(z.string()).optional(),
+            businessContext: z.string().optional()
+        }).optional()
+    }).optional(),
+
     // NEW: Source traceability
     sourceUseCaseId: z.string().optional(),
     transformedAt: z.date().optional(),
