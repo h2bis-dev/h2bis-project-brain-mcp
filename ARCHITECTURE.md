@@ -2,7 +2,7 @@
 
 > **A centralized, AI-powered, multi-project knowledge base system**  
 > Supporting modern software teams  
-> Last updated: 12/2/25
+> Last updated: 2026-01-05
 
 ---
 
@@ -35,95 +35,157 @@ ProjectBrain is built on a **polyrepo-based architecture** where each service li
 
 ## 2. Core Modules
 
-ProjectBrain consists of four independent services, each in its own repository:
+ProjectBrain currently consists of three implemented modules, with a fourth (web frontend) planned:
 
 ```
 h2bis-pb/                    # Workspace folder (not a repo)
-├── h2bis-pb-web/            # Next.js frontend
-├── h2bis-pb-api/            # Express backend API
-├── h2bis-pb-ai/             # AI utilities library
-└── h2bis-pb-mcp/            # MCP server with tools
+├── h2bis-pb-api/            # Express backend API (✅ IMPLEMENTED)
+├── h2bis-pb-ai/             # AI utilities library (✅ IMPLEMENTED)
+├── h2bis-pb-mcp/            # MCP server with tools (✅ IMPLEMENTED)
+└── h2bis-pb-web/            # Next.js frontend (📋 PLANNED)
 ```
 
 ### 2.1 h2bis-pb-web (Frontend)
 
-**Purpose**: Modern web application for visualizing project knowledge
+> [!NOTE]
+> **Status**: 📋 **PLANNED - Not Yet Implemented**
+> 
+> This module is part of the planned architecture but has not been implemented yet. Current interactions with the system occur through:
+> - MCP tools (via Claude Desktop or other MCP clients)
+> - Direct API calls
+> - Future: BA-focused chat interface for reviewing capabilities and resolving dependency conflicts
 
-**Technology Stack**:
+**Planned Purpose**: Modern web application for visualizing project knowledge
+
+**Planned Technology Stack**:
 - Next.js 15 (React framework with App Router)
 - TypeScript (type-safe development)
 - ShadCN UI (modern component library)
 - React Query (server state management)
 - TailwindCSS (utility-first styling)
 
-**Responsibilities**:
+**Planned Responsibilities**:
 - Render intuitive knowledge browsing interfaces
 - Provide real-time search and filtering
 - Display interactive knowledge visualizations
 - Enable knowledge creation and editing
+- BA workflow for dependency conflict resolution
 - Communicate with h2bis-pb-api for data operations
 
 ---
 
 ### 2.2 h2bis-pb-api (Backend API)
 
-**Purpose**: Express.js backend providing RESTful API for knowledge management
+**Purpose**: Express.js backend providing RESTful API for knowledge management with AI-powered capability graph
 
 **Technology Stack**:
 - Node.js + Express.js (web server framework)
 - TypeScript (type-safe development)
-- MongoDB (NoSQL database)
-- Mongoose (ODM for MongoDB)
+- MongoDB (NoSQL database via native driver)
+- Zod (runtime schema validation)
 - AI integrations (via h2bis-pb-ai)
-- MCP integration (for AI assistant access)
+
+**Data Schemas** (5 schemas in `src/db_schema/`):
+
+1. **CapabilityNode** (`capability_schema.ts`) - Modern, AI-optimized unified schema
+   - **Intent**: Semantic purpose (userGoal, systemResponsibility, businessValue)
+   - **Behavior**: Acceptance criteria and user flows
+   - **Realization**: Technical implementation mapping (frontend, backend, data)
+   - **Dependencies**: Directed graph relationships with cycle detection
+   - **AI Hints**: Complexity scores, failure modes, test focus areas
+   - **Intent Analysis**: LLM-extracted semantic analysis (stored for traceability)
+   - **Review Workflow**: Human oversight (pending/approved/rejected/revision_requested)
+   - **Artifacts**: Links to source code, tests, documentation
+   - **Implementation Tracking**: Status, completion %, blockers
+
+2. **UseCase** (`use_case_schema.ts`) - Legacy schema for backward compatibility
+3. **Feature** (`features_schema.ts`) - Legacy schema for backward compatibility
+4. **Entity** (`entity_schema.ts`) - Generic knowledge entity base
+5. **BaseEntity** (`base_schema.ts`) - Common fields across all entities
+
+**Services** (3 core services in `src/services/`):
+
+1. **CapabilityService** (`capability.service.ts`)
+   - Dependency validation and referential integrity
+   - Circular dependency detection
+   - Impact analysis (identify affected nodes)
+   - Topological sorting for implementation order
+   - Dependency graph traversal (forward/reverse)
+
+2. **TransformationService** (`transformation.service.ts`)
+   - LLM-powered UseCase → CapabilityNode transformation
+   - Intent extraction integration
+   - Deterministic mapping from intent analysis to capability
+   - Automatic capability generation on insert/update
+
+3. **ValidationService** (`validation.service.ts`)
+   - 7-layer validation framework:
+     - Pre-validation (input quality)
+     - Extraction validation (intent analysis quality)
+     - Post-generation validation (capability completeness)
+     - Risk-gated human review workflow
+   - Confidence scoring
+   - Quality assessment (clarity, completeness, ambiguity)
+
+**Controllers** (2 controllers in `src/controllers/`):
+- `knowledge.controller.ts` - Legacy CRUD with auto-capability generation
+- `capability.controller.ts` - Capability graph operations
 
 **Responsibilities**:
 - Expose RESTful API endpoints for CRUD operations
-- Manage knowledge document lifecycle
-- Perform data validation and business logic
-- Integrate with AI utilities for enhanced features
-- Handle authentication and authorization
-- Interface with MCP server for AI interactions
-- Sync with H2PAL for project metadata
+- Manage dual schema system (legacy + modern)
+- LLM-driven capability transformation
+- Dependency graph management with validation
+- 7-layer quality validation
+- Risk-based human review workflows
 
 ---
 
 ### 2.3 h2bis-pb-ai (AI Utilities Library)
 
-**Purpose**: Shared library providing AI processing capabilities
+**Purpose**: Shared library providing AI processing capabilities for intent extraction and LLM operations
 
-**Core Components**:
+**Core Components** (in `src/`):
 
-#### NLP Helpers
-- Text analysis and processing
-- Entity extraction
-- Keyword identification
-- Language understanding
+#### Intent Extraction Agent (`agents/intent-extraction/`)
+The primary AI agent that extracts semantic intent from use case documents:
 
-#### Embedding Processors
-- Generate vector embeddings from text
-- Enable semantic search capabilities
-- Support similarity comparisons
-- Integrate with AI model providers
+**Features**:
+- **System Prompt**: Structured prompt engineering for consistent intent extraction
+- **User Prompt Templates**: Dynamic prompt generation based on use case data
+- **Retry Logic**: Exponential backoff with configurable max retries (default: 3)
+- **Validation**: Post-extraction validation with quality assessment
+- **Caching**: Redis-compatible cache integration for performance
+- **Error Handling**: Graceful degradation with meaningful error messages
 
-#### Document Chunking Utilities
-- Split large documents intelligently
-- Maintain context across chunks
-- Optimize for embedding generation
-- Handle various document formats
+**Extraction Output** (`IntentAnalysis`):
+- User goal and system responsibilities
+- Business context understanding
+- Technical component identification (frontend, backend, data)
+- User flows and acceptance criteria
+- Assumptions, ambiguities, and missing information
+- Security considerations
+- Confidence level assessment
 
-#### Prompt Templates
-- Reusable AI prompt structures
-- Consistent AI interaction patterns
-- Context injection mechanisms
-- Template versioning and management
+#### LLM Service (`services/llm/`)
+Abstraction layer for LLM provider integration:
+- **OpenAI Integration**: Primary provider using GPT models
+- **Chat JSON**: Structured JSON output with type safety
+- **Error Handling**: Retry logic and rate limiting
+- **Token Management**: Usage tracking and optimization
+
+#### Cache Service (`services/cache/`)
+Performance optimization through caching:
+- **TTL-based Caching**: Configurable expiration
+- **Intent Cache**: Store extracted intents by use case key
+- **Invalidation**: Manual and automatic cache clearing
 
 **Responsibilities**:
+- Extract semantic intent from use case descriptions
+- Provide consistent LLM interactions with retry logic
+- Enable caching for improved performance
+- Support validation and quality assessment
 - Abstract AI provider implementations
-- Provide reusable NLP functionality
-- Enable semantic search features
-- Support AI-enhanced knowledge analysis
-- Facilitate consistent AI interactions across services
 
 ---
 
@@ -134,115 +196,242 @@ h2bis-pb/                    # Workspace folder (not a repo)
 **Technology Stack**:
 - Node.js + TypeScript
 - @modelcontextprotocol/sdk (MCP framework)
-- Custom tool implementations
+- Axios (HTTP client for API calls)
 
-**MCP Tools Exposed**:
+**MCP Tools Exposed** (8 tools in `src/tools/`):
 
-#### knowledge.read
-Read and retrieve knowledge documents with rich metadata and context
+#### CRUD Operations (5 tools)
 
-#### knowledge.write
-Create and update knowledge documents with AI-assisted formatting and organization
+**insertDocument** - Insert documents with auto-capability generation
+- Validates entity schema (UseCase, Feature, Entity)
+- Auto-generates CapabilityNode for UseCases/Features via LLM
+- Returns document ID
 
-#### knowledge.search
-Perform advanced searches across the knowledge base with semantic understanding
+**findDocument** - Query documents with MongoDB syntax
+- Flexible query filters
+- Projection support
+- Returns matching documents
 
-#### project.summary
-Generate AI-powered summaries of project knowledge and status
+**updateDocument** - Update documents with capability sync
+- Validates updated entity
+- Auto-updates corresponding capability if exists
+- Supports full document replacement
 
-#### knowledge.graph.build
-Construct knowledge graphs showing relationships between concepts, documents, and projects
+**deleteDocument** - Delete with cascade to capabilities
+- Removes document from collection
+- Cascades deletion to capability graph
+- Returns deletion status
 
-#### ai.analyze
-Perform AI-driven analysis on knowledge content for insights and recommendations
+**listCollections** - Discover available collections
+- Lists all MongoDB collections
+- Useful for exploration
+
+#### Capability Graph Operations (3 tools)
+
+**getCapabilityDependencies** - Dependency tree traversal
+- Input: `nodeId`, `depth` (1-10)
+- Returns: All nodes this capability depends on
+- Supports configurable traversal depth
+
+**analyzeCapabilityImpact** - Impact analysis
+- Input: `nodeId`
+- Returns: Risk assessment with:
+  - Direct and indirect dependents
+  - Total affected nodes count
+  - Risk level (low/medium/high)
+  - Actionable recommendations
+
+**getImplementationOrder** - Topological sort
+- Input: Array of `nodeIds`
+- Returns: Optimal implementation sequence
+- Dependencies-first ordering using Kahn's algorithm
 
 **Responsibilities**:
 - Expose knowledge operations to AI assistants (like Claude)
 - Enable natural language interaction with knowledge base
 - Provide structured tool interfaces for AI consumption
 - Handle tool validation and error management
-- Integrate with backend API for data access
+- Delegate to h2bis-pb-api via HTTP for data access
 
 ---
 
 ## 3. Technology Stack Summary
 
 ### Frontend Layer
-| Technology | Purpose |
-|------------|---------|
-| Next.js 15 | React framework with SSR/SSG |
-| TypeScript | Type safety and developer experience |
-| ShadCN UI | Modern, accessible UI components |
-| React Query | Server state and cache management |
-| TailwindCSS | Utility-first styling framework |
+> [!NOTE]
+> Frontend is **planned but not yet implemented**. This section describes the planned technology stack.
+
+| Technology | Purpose | Status |
+|------------|---------|--------|
+| Next.js 15 | React framework with SSR/SSG | 📋 Planned |
+| TypeScript | Type safety and developer experience | 📋 Planned |
+| ShadCN UI | Modern, accessible UI components | 📋 Planned |
+| React Query | Server state and cache management | 📋 Planned |
+| TailwindCSS | Utility-first styling framework | 📋 Planned |
 
 ### Backend Layer
-| Technology | Purpose |
-|------------|---------|
-| Node.js | JavaScript runtime |
-| Express.js | Web application framework |
-| TypeScript | Type safety |
-| MongoDB | NoSQL database for flexible schemas |
-| Mongoose | MongoDB object modeling |
+| Technology | Purpose | Status |
+|------------|---------|--------|
+| Node.js | JavaScript runtime | ✅ Implemented |
+| Express.js | Web application framework | ✅ Implemented |
+| TypeScript | Type safety | ✅ Implemented |
+| MongoDB | NoSQL database for flexible schemas | ✅ Implemented |
+| Native MongoDB Driver | Database connectivity and operations | ✅ Implemented |
+| Zod | Runtime schema validation | ✅ Implemented |
 
 ### AI Layer
-| Component | Purpose |
-|-----------|---------|
-| NLP Helpers | Text analysis and processing |
-| Embedding Processors | Vector generation for semantic search |
-| Document Chunking | Intelligent document splitting |
-| Prompt Templates | Reusable AI interaction patterns |
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| Intent Extraction Agent | LLM-driven semantic analysis | ✅ Implemented |
+| LLM Service (OpenAI) | GPT integration for text generation | ✅ Implemented |
+| Cache Service | Performance optimization | ✅ Implemented |
+| Prompt Templates | Structured prompt engineering | ✅ Implemented |
 
 ### MCP Layer
-| Technology | Purpose |
-|------------|---------|
-| MCP SDK | Model Context Protocol implementation |
-| Custom Tools | Knowledge-specific operations |
-| TypeScript | Type-safe tool definitions |
+| Technology | Purpose | Status |
+|------------|---------|--------|
+| MCP SDK | Model Context Protocol implementation | ✅ Implemented |
+| 8 Custom Tools | CRUD + Capability graph operations | ✅ Implemented |
+| TypeScript | Type-safe tool definitions | ✅ Implemented |
+| Axios | HTTP client for API communication | ✅ Implemented |
 
 ### Infrastructure
-| Technology | Purpose |
-|------------|---------|
-| Docker | Application containerization |
-| Kubernetes | Container orchestration |
-| Helm | Kubernetes package management |
-| VKS | Vultr Kubernetes Service (cloud hosting) |
-| GitHub | CI/CD pipelines per service |
+| Technology | Purpose | Status |
+|------------|---------|--------|
+| Local MongoDB | Development database | ✅ Implemented |
+| npm Scripts | Development workflow | ✅ Implemented |
+| Docker | Application containerization | 📋 Planned |
+| Kubernetes | Container orchestration | 📋 Planned |
+| Helm | Kubernetes package management | 📋 Planned |
+| VKS | Vultr Kubernetes Service (cloud hosting) | 📋 Planned |
+| GitHub | CI/CD pipelines per service | 📋 Planned |
 
 ---
 
 ## 4. Data Architecture
 
-### Knowledge Document Model
+### Dual Schema System
 
-Knowledge is stored as flexible documents in MongoDB, supporting:
+ProjectBrain uses a **transition architecture** supporting both legacy and modern schemas:
 
-**Structured Knowledge**:
-- Use cases and user stories
-- Technical specifications
-- API documentation
-- Architecture decisions
+```
+Legacy Schema                   Modern Schema
+(Backward Compatible)           (AI-Optimized)
+─────────────────               ──────────────
+UseCase                    ──▶  CapabilityNode
+Feature                    ──▶  CapabilityNode
+Entity                     ──▶  (Generic storage)
+```
 
-**Unstructured Knowledge**:
-- Meeting notes
-- Design discussions
-- Research findings
-- Best practices
+#### 4.1 Legacy Schemas
 
-**Metadata**:
-- Project associations
-- Tags and categories
-- Creation and modification timestamps
-- Author information
-- H2PAL task linkages (optional)
+**UseCase** (`use_case_schema.ts`)
+- **Purpose**: User-focused requirements with business value
+- **Key Fields**:
+  - `key`, `name`, `description`
+  - `primaryActor`, `businessValue`
+  - `acceptanceCriteria`, `flows` (main/alternative/error)
+  - `technicalSurface` (frontend/backend components)
+  - `relationships` (depends_on, extends, conflicts_with, etc.)
+  - `aiMetadata` (complexity, implementation risk)
+  - `status.lifecycle` (idea → planned → in_development → completed)
 
-### Vector Embeddings
+**Feature** (`features_schema.ts`)
+- **Purpose**: Business capabilities with acceptance criteria
+- **Key Fields**: `key`, `name`, `description`, `businessValue`, `acceptanceCriteria`
 
-All knowledge documents are processed to generate vector embeddings:
-- Enable semantic search capabilities
-- Find related content automatically
-- Support AI-powered recommendations
-- Facilitate knowledge graph construction
+**Entity** (`entity_schema.ts`)
+- **Purpose**: Generic knowledge entities
+- **Key Fields**: Basic metadata and content
+
+#### 4.2 Modern Schema: CapabilityNode
+
+The **CapabilityNode** is an AI-optimized, unified schema consolidating all knowledge types into a semantic graph structure.
+
+**Core Sections**:
+
+**Intent** - Semantic purpose
+- `userGoal`: What user wants to accomplish
+- `systemResponsibility`: What system must do
+- `businessValue`: Why this matters
+
+**Behavior** - Expected functionality
+- `acceptanceCriteria`: Success conditions (array of strings)
+- `flows`: User/system flows with steps and types (main/alternative/error)
+
+**Realization** - Technical implementation
+- `frontend`: Routes and components
+- `backend`: API endpoints and services
+- `data`: Entities with CRUD operations
+
+**Dependencies** - Graph relationships
+- `on`: Target node ID (e.g., `cap-FT001_EMAIL_SERVICE`)
+- `type`: `hard` (blocking) or `soft` (preferred)
+- `reason`: Why dependency exists
+- **Validation**: Referential integrity + cycle detection
+
+**AI Hints** - Implementation guidance
+- `complexityScore`: 1-10 difficulty rating
+- `failureModes`: Potential failure scenarios
+- `testFocusAreas`: Critical test areas
+- `recommendedChunking`: Suggested breakdown
+
+**AI Enhancement Features**:
+
+**intentAnalysis** - LLM extraction results (stored for traceability)
+- Extracted user goal and system responsibilities
+- Technical components identified by LLM
+- Assumptions, ambiguities, missing information
+- Security considerations
+- Confidence level (high/medium/low)
+- LLM model and prompt version used
+
+**review** - Human oversight workflow
+- `status`: pending | approved | rejected | revision_requested
+- `requiredReason`: Why review is needed
+- `reviewedBy`, `reviewedAt`, `feedback`
+- `corrections`: Human-provided fixes to intent
+
+**artifacts** - Code linkage
+- `source`: Paths to implementation files
+- `tests`: Test files with coverage data
+- `documentation`: API docs, tutorials, architecture
+
+**implementation** - Progress tracking
+- `status`: not_started → in_progress → code_complete → deployed
+- `completionPercentage`: 0-100%
+- `blockers`: Current impediments
+
+**Quality Metadata**:
+- `confidenceBreakdown`: clarity, completeness, ambiguityLevel
+- `intentIntegrity`: modification tracking and approval
+- `responsibilityAnnotations`: Scope and traceability
+
+#### 4.3 Transformation Flow
+
+```
+1. BA inserts UseCase via MCP tool
+   │
+   ├─▶ Stored in `use_cases` collection
+   │
+   └─▶ Auto-transformation triggered
+       │
+       ├─▶ IntentExtractionAgent.extractIntent(useCase)
+       │   └─▶ LLM analyzes → IntentAnalysis
+       │
+       ├─▶ TransformationService.transformIntentToCapability()
+       │   └─▶ Maps IntentAnalysis → CapabilityNode
+       │
+       ├─▶ ValidationService.validate(capability)
+       │   └─▶ 7-layer validation + risk assessment
+       │
+       └─▶ CapabilityService.createNode(capability)
+           ├─▶ Validates dependencies exist
+           ├─▶ Detects circular dependencies
+           └─▶ Stores in `capabilities` collection
+```
+
+**Failure Handling**: If dependencies don't exist, transformation fails with error listing missing nodes. Future enhancement: dependency queue for deferred creation.
 
 ---
 
@@ -250,7 +439,14 @@ All knowledge documents are processed to generate vector embeddings:
 
 ### 5.1 H2PAL Integration
 
-**H2PAL** (H2BIS Project Automation Layer) integration enables:
+> [!NOTE]
+> **Status**: 📋 **PLANNED - Not Yet Implemented**
+> 
+> H2PAL integration is part of the roadmap but not currently implemented. The system currently operates independently.
+
+**Planned H2PAL Integration**:
+
+**H2PAL** (H2BIS Project Automation Layer) integration will enable:
 
 #### Project Metadata Sync
 - Automatically sync project information from H2PAL
@@ -281,43 +477,53 @@ All knowledge documents are processed to generate vector embeddings:
 
 ### 5.2 MCP Integration
 
-**Model Context Protocol** enables AI assistants to:
+**Model Context Protocol** enables AI assistants to interact with ProjectBrain through 8 standardized tools:
 
-- Access knowledge base through standardized tools
-- Perform CRUD operations on knowledge documents
-- Execute semantic searches
-- Generate project summaries
-- Build knowledge graphs
-- Perform AI-driven analysis
+- **CRUD operations**: Insert, find, update, delete documents and list collections
+- **Capability graph operations**: Dependency analysis, impact assessment, implementation ordering
 
 **Workflow**:
 ```
-AI Assistant (Claude) 
-    ↓ MCP Protocol
+AI Assistant (Claude Desktop) 
+    ↓ MCP Protocol (stdio transport)
 h2bis-pb-mcp (MCP Server)
-    ↓ API Calls
+    ↓ HTTP REST API calls
 h2bis-pb-api (Backend)
+    ↓ Dual schema processing
+    ├─→ Legacy CRUD (use_cases, features, entities collections)
+    └─→ LLM transformation → Capability graph (capabilities collection)
     ↓ Database Operations
 MongoDB (Knowledge Store)
 ```
+
+**Auto-Transformation Flow**:
+When inserting a UseCase or Feature via MCP:
+1. Document stored in legacy collection
+2. IntentExtractionAgent called (LLM)
+3. CapabilityNode generated automatically
+4. Dependency validation performed
+5. Both documents stored (if validation passes)
 
 ---
 
 ### 5.3 AI Model Providers
 
-ProjectBrain integrates with multiple AI providers:
+ProjectBrain currently integrates with OpenAI for all LLM operations:
 
-#### OpenAI
-- GPT models for text generation
-- Embedding models for vector generation
-- Primary AI provider for analysis and summarization
+#### OpenAI (✅ Implemented)
+- **GPT Models**: Used for intent extraction from use cases
+- **Structured Output**: JSON mode for consistent IntentAnalysis format
+- **Error Handling**: Retry logic with exponential backoff
+- **Configuration**: Model and API key managed via environment variables
 
-#### Google Gemini
+**Planned Future Integrations**:
+
+#### Google Gemini (📋 Planned)
 - Alternative LLM for text operations
 - Multi-modal capabilities
 - Fallback and comparison provider
 
-#### Local Inference (Optional Future)
+#### Local Inference (📋 Planned)
 - On-premise model hosting
 - Privacy-sensitive use cases
 - Cost optimization for high-volume operations
@@ -326,113 +532,235 @@ ProjectBrain integrates with multiple AI providers:
 
 ## 6. MCP Tools (Detailed)
 
-### 6.1 knowledge.read
+### 6.1 CRUD Operations
 
-**Purpose**: Retrieve knowledge documents with full context
+#### insertDocument
+**Purpose**: Insert a document into MongoDB with automatic capability generation
 
-**Capabilities**:
-- Fetch by ID or criteria
-- Include related documents
-- Retrieve with metadata
-- Support filtering and projection
+**Parameters**:
+- `collection`: Target collection name (use_cases, features, entities, etc.)
+- `document`: Document object matching the collection schema
 
-**Use Cases**:
-- AI assistant needs project context
-- Reference documentation lookup
-- Knowledge exploration
+**Behavior**:
+1. Validates document against appropriate schema (UseCaseSchema, FeatureSchema, EntitySchema)
+2. If UseCase or Feature: Triggers LLM-based transformation to CapabilityNode
+3. Stores original document in specified collection
+4. Stores generated CapabilityNode in capabilities collection (if applicable)
+5. Returns MongoDB insertId
 
----
-
-### 6.2 knowledge.write
-
-**Purpose**: Create and update knowledge documents
-
-**Capabilities**:
-- Create new knowledge entries
-- Update existing documents
-- AI-assisted formatting
-- Automatic categorization
-
-**Use Cases**:
-- Capture meeting notes
-- Document decisions
-- Store research findings
+**Error Handling**:
+- Schema validation failures → 400 error with validation details
+- Missing dependencies → Capability creation fails with list of missing nodes
+- LLM failures → Retries up to 3 times, then returns error
 
 ---
 
-### 6.3 knowledge.search
+#### findDocument
+**Purpose**: Query documents using MongoDB query syntax
 
-**Purpose**: Advanced search across knowledge base
+**Parameters**:
+- `collection`: Collection to search
+- `query`: MongoDB query object (supports all MongoDB operators)
+- `projection`: (Optional) Fields to return
 
-**Capabilities**:
-- Full-text search
-- Semantic/vector search
-- Filter by metadata
-- Rank by relevance
+**Returns**: Array of matching documents
 
 **Use Cases**:
-- Find relevant documentation
-- Discover related concepts
-- Answer specific questions
+- Find use case by key: `{ key: "UC001_USER_REGISTRATION" }`
+- Find all capabilities of a kind: `{ kind: "feature" }`
+- Complex queries with relationships
 
 ---
 
-### 6.4 project.summary
+#### updateDocument
+**Purpose**: Update existing document with capability synchronization
 
-**Purpose**: Generate AI-powered project summaries
+**Parameters**:
+- `collection`: Collection name
+- `query`: MongoDB query to identify document
+- `update`: Full replacement document (must pass schema validation)
 
-**Capabilities**:
-- Aggregate project knowledge
-- Identify key themes
-- Summarize status and progress
-- Highlight important decisions
+**Behavior**:
+1. Validates new document against schema
+2. Updates document in collection
+3. If UseCase/Feature: Re-generates CapabilityNode
+4. Updates capability in capabilities collection
 
-**Use Cases**:
-- Onboard new team members
-- Prepare status reports
-- Quick project overview
-
----
-
-### 6.5 knowledge.graph.build
-
-**Purpose**: Construct knowledge graphs
-
-**Capabilities**:
-- Extract entities and relationships
-- Build concept maps
-- Identify knowledge clusters
-- Visualize connections
-
-**Use Cases**:
-- Understand project structure
-- Find knowledge gaps
-- Explore relationships
+**Note**: Requires full document replacement, not partial updates (for data integrity)
 
 ---
 
-### 6.6 ai.analyze
+#### deleteDocument
+**Purpose**: Delete document with cascade to capability graph
 
-**Purpose**: AI-driven knowledge analysis
+**Parameters**:
+- `collection`: Collection name
+- `query`: MongoDB query to identify document(s)
 
-**Capabilities**:
-- Sentiment analysis
-- Trend identification
-- Gap detection
-- Quality assessment
+**Behavior**:
+1. Deletes document from specified collection
+2. If UseCase/Feature: Deletes corresponding CapabilityNode
+3. Removes references from other nodes' dependencies
+
+**Returns**: Deletion count
+
+---
+
+#### listCollections
+**Purpose**: Discover available MongoDB collections
+
+**Parameters**: None
+
+**Returns**: Array of collection names (e.g., `["use_cases", "features", "entities", "capabilities"]`)
+
+**Use Case**: Helps AI assistants discover available data structures
+
+---
+
+### 6.2 Capability Graph Operations
+
+#### getCapabilityDependencies
+**Purpose**: Traverse the dependency tree for a capability node
+
+**Parameters**:
+- `nodeId`: Capability ID (e.g., `cap-UC001_USER_REGISTRATION`)
+- `depth`: Traversal depth (1-10, default: 1)
+
+**Returns**: Array of CapabilityNode objects representing all dependencies up to specified depth
+
+**Algorithm**: Depth-first traversal with cycle detection
+
+**Example**:
+```json
+{
+  "nodeId": "cap-UC001_USER_REGISTRATION",
+  "depth": 2
+}
+```
+Returns: `cap-FT001_EMAIL_SERVICE`, `cap-FT002_AUTH_SERVICE`, and their dependencies
+
+---
+
+#### analyzeCapabilityImpact
+**Purpose**: Assess the impact of modifying a capability
+
+**Parameters**:
+- `nodeId`: Capability ID to analyze
+
+**Returns**: ImpactAnalysis object with:
+- `directDependents`: Nodes that directly depend on this node
+- `indirectDependents`: Nodes affected transitively (with depth info)
+- `totalAffected`: Count of all affected nodes
+- `riskLevel`: "low" (≤3), "medium" (4-10), or "high" (>10)
+- `recommendations`: Actionable guidance (e.g., "Review and test 15 dependent nodes")
 
 **Use Cases**:
-- Improve documentation quality
-- Identify missing information
-- Assess knowledge coverage
+- Pre-change risk assessment
+- Identify ripple effects
+- Plan testing scope
+
+**Example Output**:
+```json
+{
+  "nodeId": "cap-FT001_EMAIL_SERVICE",
+  "totalAffected": 12,
+  "riskLevel": "high",
+  "recommendations": [
+    "Review and test 12 dependent node(s)",
+    "High transitive dependency - changes may have wide-reaching effects"
+  ]
+}
+```
+
+---
+
+#### getImplementationOrder
+**Purpose**: Calculate optimal implementation sequence using topological sort
+
+**Parameters**:
+- `nodeIds`: Array of capability IDs to order
+
+**Returns**: Ordered array of CapabilityNode objects (dependencies first)
+
+**Algorithm**: Kahn's algorithm for topological sorting
+
+**Use Cases**:
+- Plan development sprints
+- Resolve dependency deadlocks
+- Visualize implementation roadmap
+
+**Example**:
+```json
+{
+  "nodeIds": [
+    "cap-UC001_USER_REGISTRATION",
+    "cap-FT001_EMAIL_SERVICE",
+    "cap-FT002_AUTH_SERVICE"
+  ]
+}
+```
+Returns: `[cap-FT001_EMAIL_SERVICE, cap-FT002_AUTH_SERVICE, cap-UC001_USER_REGISTRATION]`
 
 ---
 
 ## 7. Deployment Architecture
 
-### Polyrepo Deployment Model
+> [!NOTE]
+> **Current Status**: Local Development Only
+> 
+> The system is currently designed for local development. Production deployment with Docker/Kubernetes is planned but not yet implemented.
 
-Each service is independently deployed:
+### Current Development Setup
+
+```
+┌────────────────────────────────────────┐
+│       Local Development Machine         │
+│                                        │
+│  ┌──────────┐  ┌──────────┐          │
+│  │ pb-api   │  │ pb-mcp   │          │
+│  │(Express) │  │(MCP Srv) │          │
+│  │ :4000    │  │ stdio    │          │
+│  └────┬─────┘  └────┬─────┘          │
+│       │             │                 │
+│       └─────────────┘                 │
+│               │                       │
+│      ┌────────▼────────┐              │
+│      │  MongoDB:27017  │              │
+│      │  (Local)        │              │
+│      └─────────────────┘              │
+│                                        │
+│  Accessed via:                         │
+│  - Claude Desktop (MCP client)         │
+│  - Direct API calls (curl, Postman)    │
+└────────────────────────────────────────┘
+```
+
+### Running the System
+
+```bash
+# 1. Start MongoDB (must be running on localhost:27017)
+mongod
+
+# 2. Start API Server
+cd h2bis-pb-api
+npm install
+npm start    # Runs on http://localhost:4000
+
+# 3. Start MCP Server (for Claude Desktop)
+cd h2bis-pb-mcp
+npm install
+npm run build
+npm start    # Connects via stdio to Claude Desktop
+
+# 4. AI Library (dependency, auto-installed by API)
+cd h2bis-pb-ai
+npm install
+npm run build
+```
+
+### Planned Production Deployment
+
+Future deployment will use containerization and orchestration:
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -510,72 +838,115 @@ Each repository has its own GitHub Actions workflow:
 
 ## 8. System Workflows
 
-### 8.1 Knowledge Creation Workflow
+### 8.1 UseCase to Capability Transformation Workflow
+
+> [!IMPORTANT]
+> This is the **core workflow** of ProjectBrain, automatically triggered when a UseCase or Feature is inserted.
 
 ```
-User creates knowledge via Web UI
-    ↓
-h2bis-pb-web sends to API
-    ↓
-h2bis-pb-api validates and processes
-    ↓
-h2bis-pb-ai generates embeddings
-    ↓
-h2bis-pb-api stores in MongoDB
-    ↓
-Response returned to user
+1. BA/User inserts UseCase via MCP tool (insertDocument)
+   ↓
+2. knowledge.controller receives request
+   ↓  Validates UseCase against UseCaseSchema (Zod)
+   ↓
+3. UseCase stored in `use_cases` collection
+   ↓
+4. Auto-transformation triggered
+   ↓──▶ IntentExtractionAgent.extractIntent(useCase)
+   │     │
+   │     ├─▶ LLM called with system + user prompts
+   │     ├─▶ Retry up to 3x on failure (exponential backoff)
+   │     ├─▶ Cache check/store (if enabled)
+   │     └─▶ Returns: IntentAnalysis
+   │
+   ↓──▶ TransformationService.transformIntentToCapability()
+   │     │
+   │     └─▶ Maps IntentAnalysis → CapabilityNode structure
+   │
+   ↓──▶ ValidationService.validate(capability)
+   │     │
+   │     ├─▶ Pre-validation (input quality)
+   │     ├─▶ Extraction validation (intent analysis quality)
+   │     ├─▶ Post-generation validation (completeness)
+   │     ├─▶ Confidence scoring
+   │     └─▶ Risk assessment (determines if human review needed)
+   │
+   ↓──▶ CapabilityService.createNode(capability)
+   │     │
+   │     ├─▶ Validates dependencies exist (referential integrity)
+   │     │   └─▶ ❌ FAILS here if cap-FT001_EMAIL_SERVICE missing
+   │     │
+   │     ├─▶ Detects circular dependencies
+   │     │
+   │     └─▶ Stores in `capabilities` collection
+   │
+   ↓
+5. Response: { useCaseId, capabilityId }
 ```
 
-### 8.2 AI-Assisted Search Workflow
+**Error Handling**:
+- **Missing dependencies**: Returns 400 error with list of missing capability IDs
+- **Circular dependency**: Returns 400 error showing the cycle
+- **LLM failure**: Retries 3x, then returns 500 error
+- **Validation failure**: Returns validation details and recommendations
+
+---
+
+### 8.2 Capability Graph Query Workflow
 
 ```
-User searches via Web UI or AI Assistant
-    ↓
-Query sent to h2bis-pb-api
-    ↓
-h2bis-pb-ai generates query embedding
-    ↓
-Vector search on MongoDB
-    ↓
-Results ranked by relevance
-    ↓
-h2bis-pb-ai summarizes results
-    ↓
-Enhanced results returned
+AI Assistant: "Show me what depends on the email service"
+   ↓
+MCP tool: getCapabilityDependencies
+   ↓
+h2bis-pb-mcp calls h2bis-pb-api/capabilities/dependencies
+   ↓
+CapabilityService.findDependents(nodeId, depth)
+   ↓  Depth-first traversal with cycle detection
+   ↓
+Returns: Array of CapabilityNode objects
+   ↓
+MCP formats and returns to AI assistant
 ```
 
-### 8.3 MCP Tool Execution Workflow
+---
+
+### 8.3 Impact Analysis Workflow
 
 ```
-AI Assistant invokes MCP tool
-    ↓
-h2bis-pb-mcp validates request
-    ↓
-Tool calls h2bis-pb-api
-    ↓
-h2bis-pb-api processes request
-    ↓
-h2bis-pb-ai enhances if needed
-    ↓
-Data from/to MongoDB
-    ↓
-Formatted response to AI Assistant
+AI Assistant: "What would break if I change the auth service?"
+   ↓
+MCP tool: analyzeCapabilityImpact
+   ↓
+h2bis-pb-api/capabilities/impact/:nodeId
+   ↓
+CapabilityService.analyzeImpact(nodeId)
+   ↓  ├─▶ Find direct dependents
+   ↓  ├─▶ Find indirect dependents (recursive)
+   ↓  ├─▶ Calculate risk level
+   ↓  └─▶ Generate recommendations
+   ↓
+Returns: ImpactAnalysis object
 ```
 
-### 8.4 H2PAL Sync Workflow
+---
+
+### 8.4 Implementation Planning Workflow
 
 ```
-Project event in H2PAL
-    ↓
-Webhook/notification to h2bis-pb-api
-    ↓
-h2bis-pb-api processes metadata
-    ↓
-Knowledge enriched with project context
-    ↓
-Updates stored in MongoDB
-    ↓
-Acknowledgment to H2PAL
+AI Assistant: "What order should I implement these 5 use cases?"
+   ↓
+MCP tool: getImplementationOrder
+   ↓
+h2bis-pb-api/capabilities/implementation-order
+   ↓
+CapabilityService.getImplementationOrder(nodeIds)
+   ↓  Kahn's algorithm (topological sort)
+   ↓  Ensures dependencies come before dependents
+   ↓
+Returns: Ordered array of CapabilityNodes
+   ↓
+AI Assistant: "Implement in this order: [...]"
 ```
 
 ---
@@ -655,7 +1026,12 @@ Acknowledgment to H2PAL
 
 ## 10. Security & Authentication
 
-### Authentication Strategy
+> [!NOTE]
+> **Status**: 📋 **PLANNED - Not Yet Implemented**
+> 
+> Security features are planned but not currently implemented. Current deployment is for local development only with no authentication.
+
+### Planned Authentication Strategy
 
 **Unified Ecosystem Authentication**:
 - JWT-based authentication shared with H2PAL
@@ -663,7 +1039,7 @@ Acknowledgment to H2PAL
 - Token refresh mechanisms
 - Secure token storage
 
-### Authorization Model
+### Planned Authorization Model
 
 **Role-Based Access Control (RBAC)**:
 - User roles: Admin, Editor, Viewer
@@ -671,7 +1047,7 @@ Acknowledgment to H2PAL
 - Team-based access control
 - Fine-grained resource permissions
 
-### API Security
+### Planned API Security
 
 - HTTPS/TLS for all communications
 - Request rate limiting
@@ -679,7 +1055,7 @@ Acknowledgment to H2PAL
 - CORS configuration
 - API key management for service-to-service
 
-### Data Security
+### Planned Data Security
 
 - Encryption at rest for sensitive data
 - Encrypted database connections
@@ -691,7 +1067,12 @@ Acknowledgment to H2PAL
 
 ## 11. Scalability & Performance
 
-### Horizontal Scaling
+> [!NOTE]
+> **Status**: 📋 **PLANNED - Not Yet Implemented**
+> 
+> Scalability features are planned for production deployment but not currently needed for local development.
+
+### Planned Horizontal Scaling
 
 **Stateless Services**:
 - Multiple replicas of web, API, and MCP servers
@@ -704,7 +1085,7 @@ Acknowledgment to H2PAL
 - Read replicas for query performance
 - Sharding for large datasets (future)
 
-### Caching Strategy
+### Planned Caching Strategy
 
 **Application Level**:
 - React Query caching in frontend
@@ -714,9 +1095,9 @@ Acknowledgment to H2PAL
 **Database Level**:
 - MongoDB query result caching
 - Index optimization
-- Embedding cache for repeated queries
+- Intent analysis cache (currently implemented in h2bis-pb-ai)
 
-### Performance Optimization
+### Planned Performance Optimization
 
 **Frontend**:
 - Server-side rendering with Next.js
@@ -734,7 +1115,12 @@ Acknowledgment to H2PAL
 
 ## 12. Monitoring & Observability
 
-### Metrics Collection
+> [!NOTE]
+> **Status**: 📋 **PLANNED - Not Yet Implemented**
+> 
+> Monitoring infrastructure is planned for production deployment.
+
+### Planned Metrics Collection
 
 - Application performance metrics
 - API response times
@@ -742,7 +1128,7 @@ Acknowledgment to H2PAL
 - Database query performance
 - Resource utilization (CPU, memory)
 
-### Logging Strategy
+### Planned Logging Strategy
 
 **Structured Logging**:
 - JSON formatted logs
@@ -750,14 +1136,14 @@ Acknowledgment to H2PAL
 - Request ID tracing
 - Centralized log aggregation
 
-### Alerting
+### Planned Alerting
 
 - Error rate thresholds
 - Performance degradation alerts
 - Security event notifications
 - Deployment status updates
 
-### Tracing
+### Planned Tracing
 
 - Distributed tracing across services
 - Request flow visualization
@@ -824,41 +1210,90 @@ npm run build
 
 ## 14. Future Enhancements
 
-### Phase 1: Advanced AI Features
-- Multi-modal knowledge (images, diagrams)
-- Real-time collaborative editing
-- Advanced knowledge graph visualizations
-- AI-suggested knowledge links
+### Phase 1: Critical Missing Features
 
-### Phase 2: Enhanced Integrations
-- IDE plugins for knowledge access
-- Slack/Teams integration
+1. **h2bis-pb-web - BA Web Interface**
+   - Next.js frontend for Business Analysts
+   - Chat-based UI for capability review and management
+   - Dependency conflict resolution workflow
+   - Visual capability graph explorer
+   - Review queue for LLM-generated capabilities
+
+2. **Dependency Queue System**
+   - Queue capabilities with missing dependencies
+   - Auto-create when dependencies are met
+   - BA interface to resolve conflicts
+   - Suggested creation order visualization
+
+3. **Vector Embeddings & Semantic Search**
+   - Generate embeddings for all capability nodes
+   - Semantic search across use cases and capabilities
+   - AI-powered knowledge recommendations
+   - Related capability discovery
+
+### Phase 2: Enhanced AI Features
+- Multi-modal knowledge (images, diagrams in use cases)
+- Real-time collaborative capability editing
+- Advanced knowledge graph visualizations (D3.js/Cytoscape)
+- AI-suggested knowledge links and relationships
+- Automated quality improvement suggestions
+
+### Phase 3: Enterprise Integration
+- **H2PAL Sync**: Project metadata and task linkage
+- **Authentication**: JWT-based auth with RBAC
+- IDE plugins for knowledge access (VSCode, IntelliJ)
+- Slack/Teams integration for notifications
 - GitHub commit knowledge extraction
-- JIRA/Linear integration beyond H2PAL
+- JIRA/Linear integration
 
-### Phase 3: Enterprise Features
-- Multi-tenancy support
-- Advanced analytics dashboard
-- Custom knowledge taxonomies
-- Compliance and audit trails
+### Phase 4: Production Infrastructure
+- Docker containerization for all services
+- Kubernetes deployment with Helm charts
+- CI/CD pipelines (GitHub Actions)
+- Monitoring and observability (Prometheus, Grafana)
+- Production database (MongoDB Atlas or self-hosted cluster)
+- Multi-environment setup (dev, staging, prod)
 
-### Phase 4: Platform Extensions
-- Plugin system for custom tools
-- Custom AI model integration
-- Knowledge import/export utilities
-- Template marketplace
+### Phase 5: Platform Extensions
+- Plugin system for custom validation rules
+- Custom AI model integration (beyond OpenAI)
+- Knowledge import/export utilities (CSV, JSON, YAML)
+- Template marketplace for common use case patterns
+- Custom schema extensions per project
 
 ---
 
 ## Conclusion
 
-H2BIS ProjectBrain represents a modern, AI-first approach to knowledge management for software teams. Its polyrepo architecture ensures scalability and flexibility, while deep integration with AI and the H2BIS ecosystem provides powerful capabilities for knowledge creation, organization, and discovery.
+H2BIS ProjectBrain represents a modern, AI-first approach to knowledge management with a sophisticated **capability graph system**. The system leverages LLM-driven intent extraction to automatically transform use cases into a semantic graph of capabilities with dependency tracking, impact analysis, and implementation planning.
 
-The system is designed to grow with teams, supporting everything from simple knowledge storage to advanced AI-assisted workflows, all while maintaining clean separation of concerns and independent service deployments.
+### Current State (January 2026)
+
+**Implemented**:
+- ✅ Dual schema system (legacy + modern CapabilityNode)
+- ✅ LLM-powered intent extraction and transformation
+- ✅ 7-layer validation framework with quality assessment
+- ✅ Dependency graph with cycle detection and referential integrity
+- ✅ Impact analysis and implementation ordering (topological sort)
+- ✅ 8 MCP tools for AI assistant integration
+- ✅ API-first architecture with Express + MongoDB
+
+**In Development**:
+- The system is designed to grow with BA workflows, supporting everything from simple use case storage to advanced AI-assisted capability management and dependency resolution
+
+**Next Steps**:
+- BA web interface for reviewing LLM-generated capabilities
+- Dependency queue system for handling missing dependencies
+- Vector embeddings for semantic search
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-12-17  
-**Status**: Conceptual Architecture  
+**Document Version**: 2.0  
+**Last Updated**: 2026-01-05  
+**Status**: Reflects Actual Implementation (Updated from Conceptual)  
 **Maintained By**: H2BIS Team
+
+**Change Log**:
+- 2026-01-05: Major update - documented actual implementation vs conceptual architecture
+- 2025-12-17: Initial conceptual architecture document
+

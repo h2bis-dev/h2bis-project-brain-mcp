@@ -74,6 +74,40 @@ export const CapabilityNodeSchema = z.object({
 
     tags: z.array(z.string()).default([]),
 
+    responsibilityAnnotations: z.array(z.object({
+        responsibility: z.string(),
+        origin: z.enum(["explicit", "derived", "recommended"]),
+        traceability: z.string().optional(), // quote / section / reason
+        reviewRequired: z.boolean().default(false),
+        scope: z.enum(["in_scope", "adjacent", "out_of_scope"]).default("in_scope")
+    })).min(1),
+
+    recommendations: z.array(z.object({
+        category: z.enum([
+            "security",
+            "performance",
+            "maintainability",
+            "scalability",
+            "testing"
+        ]),
+        suggestion: z.string(),
+        rationale: z.string(),
+        basedOn: z.string(), // what triggered it
+        requiresHumanApproval: z.literal(true)
+    })).optional(),
+
+    intentIntegrity: z.object({
+        modifiedFromSource: z.boolean().default(false),
+        modificationReason: z.string().optional(),
+        approvedByHuman: z.boolean().default(false)
+    }).optional(),
+
+    confidenceBreakdown: z.object({
+        clarity: z.enum(["high", "medium", "low"]),
+        completeness: z.enum(["high", "medium", "low"]),
+        ambiguityLevel: z.enum(["low", "medium", "high"])
+    }).optional(),
+
     // NEW: Artifact linkage for LLM development support
     artifacts: z.object({
         source: z.array(z.object({

@@ -171,7 +171,8 @@ export class TransformationService {
             sourceUseCaseId: (useCase as any)._id?.toString(),
             transformedAt: new Date(),
 
-            schemaVersion: 1
+            schemaVersion: 1,
+            responsibilityAnnotations: []
         };
 
         console.log(`📊 Generated capability ${capabilityId} from intent analysis`);
@@ -218,7 +219,8 @@ export class TransformationService {
 
             tags: (feature as any).tags || [],
 
-            schemaVersion: 1
+            schemaVersion: 1,
+            responsibilityAnnotations: []
         };
 
         return capability;

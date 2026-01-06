@@ -36,11 +36,12 @@ export async function insertDocument(req: Request, res: Response) {
 
         console.log('🔍 Checking for capability auto-generation...');
         console.log('   Entity has "type" field:', 'type' in validatedEntity);
-
+        
+        // check if document "type" is not null
         if ('type' in validatedEntity) {
-            console.log('   Entity type:', validatedEntity.type);
+            console.log('Entity type:', validatedEntity.type);
 
-            // Legacy schema detected
+            // if "use_case"
             if (validatedEntity.type === 'use_case') {
                 console.log('✅ UseCase detected, starting LLM-based intent extraction...');
 

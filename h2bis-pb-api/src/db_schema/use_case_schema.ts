@@ -112,6 +112,11 @@ export const UseCaseSchema = z.object({
         })
     ).default([]),
 
+    implementationRisk: z.array(z.object({
+        rule: z.string(),
+        normative: z.boolean().default(false)
+    })).default([]),
+
     tags: z.array(z.string()).default([]),
 
     // Optional with defaults for backward compatibility
