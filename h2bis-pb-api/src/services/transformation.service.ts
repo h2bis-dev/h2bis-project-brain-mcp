@@ -30,14 +30,23 @@ export class TransformationService {
         options: {
             generateId?: boolean;
             includeArtifacts?: boolean;
+            strictMode?: boolean;
+            validationFeedback?: string[];  // NEW: Feedback from previous validation failures
         } = {}
     ): Promise<CapabilityNode> {
-        const { generateId = true, includeArtifacts = true } = options;
+        const { generateId = true, includeArtifacts = true, strictMode = false, validationFeedback } = options;
 
-        // Step 1: Extract intent using LLM
-        console.log(`🤖 Extracting intent for use case: ${useCase.key}`);
+        // Step 1: Extract intent using LLM (with strict mode if normative)
+        const feedbackMsg = validationFeedback ? ` with ${validationFeedback.length} corrections` : '';
+        console.log(`🤖 Extracting intent for use case: ${useCase.key}${strictMode ? ' (STRICT MODE)' : ''}${feedbackMsg}`);
 
-        const intentAnalysis = await this.intentAgent.extractIntent(useCase as any);
+        const intentAnalysis = await this.intentAgent.extractIntent(
+            useCase as any,
+            {
+                strictMode,
+                validationFeedback  // Pass feedback for retry attempts
+            }
+        );
 
         // Step 2: Generate capability from intent analysis
         console.log(`✅ Intent extraction complete - Confidence: ${intentAnalysis.confidenceLevel}`);

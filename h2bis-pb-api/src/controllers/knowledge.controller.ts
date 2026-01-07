@@ -12,6 +12,9 @@ import {
 } from '../validation/request.schemas.js';
 import { transformationService } from '../services/transformation.service.js';
 import { capabilityService } from '../services/capability.service.js';
+import { validationService } from '../services/validation.service.js';
+import { transformationValidationService } from '../services/transformation-validation.service.js';
+import { surgicalFixService } from '../services/surgical-fix.service.js';
 
 /**
  * Insert a document into a collection
@@ -36,14 +39,14 @@ export async function insertDocument(req: Request, res: Response) {
 
         console.log('🔍 Checking for capability auto-generation...');
         console.log('   Entity has "type" field:', 'type' in validatedEntity);
-        
+
         // check if document "type" is not null
         if ('type' in validatedEntity) {
             console.log('Entity type:', validatedEntity.type);
 
             // if "use_case"
             if (validatedEntity.type === 'use_case') {
-                console.log('✅ UseCase detected, starting LLM-based intent extraction...');
+                console.log('✅ UseCase detected, validating for capability generation...');
 
                 // Transform UseCase → CapabilityNode using LLM intent extraction
                 const useCaseResult = UseCaseSchema.safeParse(validatedEntity);
@@ -51,16 +54,209 @@ export async function insertDocument(req: Request, res: Response) {
 
                 if (useCaseResult.success) {
                     console.log('   UseCase key:', useCaseResult.data.key);
+                    console.log('   Normative flag:', useCaseResult.data.normative);
 
                     try {
-                        // NEW: Use LLM-based transformation
-                        const capability = await transformationService.transformUseCaseToCapabilityWithIntent(useCaseResult.data);
-                        console.log('   Transformed capability ID:', capability.id);
-                        console.log('   Capability kind:', capability.kind);
-                        console.log('   Intent confidence:', capability.intentAnalysis?.confidenceLevel);
+                        // STEP 1: Check normativity BEFORE any LLM calls
+                        const normativityCheck = validationService.checkNormativity(useCaseResult.data);
 
-                        capabilityId = await capabilityService.createNode(capability);
-                        console.log(`✅ Auto-generated capability ${capabilityId} from use case ${validatedEntity.key}`);
+                        console.log('🔒 Normativity Check:', {
+                            isNormative: normativityCheck.isNormative,
+                            decision: normativityCheck.decision,
+                            insufficiencies: normativityCheck.insufficiencies.length
+                        });
+
+                        // STEP 2: Reject if normative but incomplete
+                        if (normativityCheck.decision === 'REJECT') {
+                            const report = validationService.buildInsufficientReport(normativityCheck);
+                            console.error('❌ REJECTED: Normative use case is incomplete');
+                            console.error('   Insufficiencies:', report.missingFields.map(f => `${f.field}: ${f.reason}`).join('; '));
+
+                            // Return 400 with detailed insufficiency report
+                            return res.status(400).json({
+                                insertedId: result.insertedId.toString(),
+                                capabilityGenerated: false,
+                                mode: 'REJECTED',
+                                insufficiencyReport: report
+                            });
+                        }
+
+                        // STEP 3: Proceed with generation (constrained if normative, standard otherwise)
+                        const mode = normativityCheck.isNormative ? 'CONSTRAINED' : 'STANDARD';
+                        console.log(`✅ Proceeding with ${mode} capability generation...`);
+
+                        // RETRY LOOP: Attempt generation up to 3 times with validation feedback
+                        const maxRetries = 3;
+                        let attempt = 0;
+                        let capability: any = null;
+                        let lastValidationResult: any = null;
+                        let validationFeedback: string[] = [];
+
+                        while (attempt < maxRetries) {
+                            attempt++;
+                            console.log(`🔄 Generation attempt ${attempt}/${maxRetries}${validationFeedback.length > 0 ? ' (with corrections)' : ''}...`);
+
+                            try {
+                                // NEW: Use LLM-based transformation with strict mode flag and feedback
+                                capability = await transformationService.transformUseCaseToCapabilityWithIntent(
+                                    useCaseResult.data,
+                                    {
+                                        strictMode: normativityCheck.isNormative,
+                                        validationFeedback: validationFeedback.length > 0 ? validationFeedback : undefined
+                                    }
+                                );
+
+                                console.log('   Transformed capability ID:', capability.id);
+                                console.log('   Capability kind:', capability.kind);
+                                console.log('   Intent confidence:', capability.intentAnalysis?.confidenceLevel);
+
+                                // STEP 4: Validate transformation using LLM
+                                // NOTE: Validation runs by DEFAULT unless explicitly disabled via skipValidation flag
+                                const shouldSkipValidation = useCaseResult.data.aiMetadata?.skipValidation === true;
+
+                                if (!shouldSkipValidation) {
+                                    console.log('🔍 Running post-generation validation by LLM... usecase vs capability...');
+
+                                    const validationResult = await transformationValidationService.validateTransformation(
+                                        useCaseResult.data,
+                                        capability
+                                    );
+
+                                    console.log('✅ Validation complete:', {
+                                        valid: validationResult.valid,
+                                        confidenceScore: validationResult.confidenceScore,
+                                        recommendation: validationResult.recommendation,
+                                        issueCount: validationResult.issues.length,
+                                        attempt
+                                    });
+
+                                    lastValidationResult = validationResult;
+
+                                    // Handle validation results based on confidence score
+                                    // APPROVE: ≥95% - Accept and save
+                                    // REVIEW: 70-94% - Apply surgical fixes
+                                    // REJECT: <70% - Full regeneration
+
+                                    if (validationResult.recommendation === 'APPROVE') {
+                                        // Confidence ≥95%, accept it
+                                        console.log(`✅ Validation APPROVED with ${validationResult.confidenceScore}% confidence`);
+                                        if (validationResult.issues.length > 0) {
+                                            console.warn(`   Minor issues (${validationResult.issues.length}):`,
+                                                validationResult.issues.map((i: any) => `${i.severity}: ${i.description}`).join(', ')
+                                            );
+                                        }
+                                        break; // Exit retry loop, capability is good enough
+                                    }
+
+                                    if (validationResult.recommendation === 'REVIEW') {
+                                        // Confidence 70-94%, apply SURGICAL fixes instead of full regeneration
+                                        console.log(`⚠️  Validation needs REVIEW (${validationResult.confidenceScore}% confidence)`);
+                                        console.log(`   Applying surgical fixes to ${validationResult.issues.length} issue(s)...`);
+
+                                        if (attempt < maxRetries) {
+                                            try {
+                                                const fixResult = await surgicalFixService.applySurgicalFixes(
+                                                    useCaseResult.data,
+                                                    capability,
+                                                    validationResult.issues,
+                                                    validationResult.confidenceScore
+                                                );
+
+                                                console.log(`   🔧 Surgical fixes applied: ${fixResult.fixesApplied} field(s)`);
+
+                                                // Update capability with fixed version
+                                                capability = fixResult.fixedCapability;
+
+                                                // Continue to re-validate the fixed capability
+                                                // The loop will run again: generate→validate→fix (up to 3 times total)
+                                                console.log(`   🔄 Re-validating fixed capability...`);
+                                                continue;
+
+                                            } catch (surgicalError) {
+                                                console.error('   ❌ Surgical fix failed, falling back to full regeneration:', surgicalError);
+                                                // Fall through to REJECT logic below
+                                            }
+                                        } else {
+                                            console.warn(`   ⚠️  No retries left, accepting with warnings`);
+                                            break; // Accept with warnings on final attempt
+                                        }
+                                    }
+
+                                    if (validationResult.recommendation === 'REJECT') {
+                                        // Confidence <70%, full regeneration needed
+                                        console.error(`❌ VALIDATION REJECTED (Attempt ${attempt}/${maxRetries})`);
+                                        console.error('   Confidence too low:', validationResult.confidenceScore + '%');
+                                        console.error('   Issues:', validationResult.issues.map((i: any) =>
+                                            `[${i.severity}] ${i.category} in ${i.field}: ${i.description}`
+                                        ).join('\n   '));
+
+                                        // If we have retries left, prepare feedback and try again
+                                        if (attempt < maxRetries) {
+                                            console.log(`🔄 Preparing feedback for retry attempt ${attempt + 1}...`);
+
+                                            // Build feedback from validation issues
+                                            validationFeedback = validationResult.issues.map((issue: any) =>
+                                                `[${issue.severity}] ${issue.field}: ${issue.description}${issue.expected ? ` | Expected: ${issue.expected}` : ''}`
+                                            );
+
+                                            console.log(`   Feedback items: ${validationFeedback.length}`);
+                                            continue; // Retry generation
+                                        } else {
+                                            // Final attempt failed
+                                            console.error('❌ All retry attempts exhausted. Rejecting generation.');
+
+                                            return res.status(400).json({
+                                                insertedId: result.insertedId.toString(),
+                                                capabilityGenerated: false,
+                                                mode: 'REJECTED',
+                                                validationFailed: true,
+                                                attempts: attempt,
+                                                validationReport: {
+                                                    message: `Capability generation failed validation after ${attempt} attempts`,
+                                                    confidenceScore: validationResult.confidenceScore,
+                                                    issues: validationResult.issues,
+                                                    justification: validationResult.justification,
+                                                    recommendation: 'Review use case completeness or set aiMetadata.skipValidation=true to bypass validation'
+                                                }
+                                            });
+                                        }
+                                    }
+
+                                    // Validation passed or REVIEW (not REJECT)
+                                    if (validationResult.issues.length > 0) {
+                                        console.warn(`⚠️  Validation passed with ${validationResult.issues.length} issue(s) on attempt ${attempt}:`,
+                                            validationResult.issues.map((i: any) => `${i.severity}: ${i.description}`).join(', ')
+                                        );
+                                    }
+                                } else {
+                                    console.log('⚠️  SKIPPING LLM validation (aiMetadata.skipValidation=true)');
+                                }
+
+                                // Successfully generated and validated, break out of retry loop
+                                console.log(`✅ Capability generation succeeded on attempt ${attempt}`);
+                                break;
+
+                            } catch (genError) {
+                                console.error(`❌ Generation failed on attempt ${attempt}/${maxRetries}:`, genError);
+
+                                if (attempt >= maxRetries) {
+                                    throw genError; // Re-throw on final attempt
+                                }
+
+                                // Otherwise, continue to next retry
+                                console.log(`🔄 Retrying generation...`);
+                            }
+                        }
+
+                        // STEP 5: Save capability (if we got here, generation succeeded)
+                        if (capability) {
+                            capabilityId = await capabilityService.createNode(capability);
+                            console.log(`✅ Auto-generated capability ${capabilityId} in ${mode} mode from use case ${validatedEntity.key}`);
+
+                            if (attempt > 1) {
+                                console.log(`   ℹ️  Required ${attempt} attempt(s) with self-correction`);
+                            }
+                        }
                     } catch (error) {
                         console.error(`❌ Failed to auto-generate capability:`, error);
                         console.error('   Error details:', error instanceof Error ? error.message : String(error));

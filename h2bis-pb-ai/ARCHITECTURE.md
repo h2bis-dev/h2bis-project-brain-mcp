@@ -258,21 +258,6 @@ interface IntentAnalysis {
 
 ## Configuration
 
-### Environment Variables
-
-```bash
-# Required
-OPENAI_API_KEY=sk-xxx
-
-# Optional (with defaults)
-LLM_PROVIDER=openai
-INTENT_EXTRACTION_MODEL=gpt-4-turbo
-CACHE_ENABLED=true
-CACHE_TTL=86400
-LOG_LEVEL=info
-MAX_COST_PER_REQUEST=0.10
-```
-
 ### Prompt Versioning
 
 **File:** `src/config/prompts.config.ts`

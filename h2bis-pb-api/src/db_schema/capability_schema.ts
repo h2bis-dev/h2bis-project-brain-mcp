@@ -66,7 +66,6 @@ export const CapabilityNodeSchema = z.object({
         failureModes: z.array(z.string()).default([]),
         testFocusAreas: z.array(z.string()).default([])
     }),
-
     lifecycle: z.object({
         status: z.string(),
         maturity: z.enum(["draft", "stable", "deprecated"])
@@ -80,7 +79,7 @@ export const CapabilityNodeSchema = z.object({
         traceability: z.string().optional(), // quote / section / reason
         reviewRequired: z.boolean().default(false),
         scope: z.enum(["in_scope", "adjacent", "out_of_scope"]).default("in_scope")
-    })).min(1),
+    })).min(0),
 
     recommendations: z.array(z.object({
         category: z.enum([
@@ -106,26 +105,6 @@ export const CapabilityNodeSchema = z.object({
         clarity: z.enum(["high", "medium", "low"]),
         completeness: z.enum(["high", "medium", "low"]),
         ambiguityLevel: z.enum(["low", "medium", "high"])
-    }).optional(),
-
-    // NEW: Artifact linkage for LLM development support
-    artifacts: z.object({
-        source: z.array(z.object({
-            path: z.string(),
-            type: z.enum(["class", "function", "module", "component"]),
-            description: z.string()
-        })).default([]),
-
-        tests: z.array(z.object({
-            path: z.string(),
-            coverage: z.number().optional(),
-            lastRun: z.date().optional()
-        })).default([]),
-
-        documentation: z.array(z.object({
-            path: z.string(),
-            type: z.enum(["api", "tutorial", "architecture"])
-        })).default([])
     }).optional(),
 
     // NEW: Implementation progress tracking

@@ -1,7 +1,7 @@
 import { LLMService } from '../../services/llm/llm.service.js';
 import { CacheService } from '../../services/cache/cache.service.js';
 import { IntentAnalysis, UseCase, ValidationResult } from './types/intent-analysis.types.js';
-import { INTENT_EXTRACTION_SYSTEM_PROMPT } from './prompts/system-prompt.js';
+import { INTENT_EXTRACTION_SYSTEM_PROMPT, INTENT_EXTRACTION_STRICT_SYSTEM_PROMPT } from './prompts/system-prompt.js';
 import { createUserPrompt } from './prompts/user-prompt.template.js';
 import { validateIntentExtraction } from '../../utils/validators.js';
 import { logger } from '../../utils/logger.js';
@@ -17,9 +17,12 @@ export class IntentExtractionAgent {
         this.cacheService = new CacheService();
     }
 
-    async extractIntent(useCase: UseCase): Promise<IntentAnalysis> {
-        // Check cache first
-        if (config.cache.enabled) {
+    async extractIntent(useCase: UseCase, options?: { strictMode?: boolean; validationFeedback?: string[] }): Promise<IntentAnalysis> {
+        const strictMode = options?.strictMode || false;
+        const validationFeedback = options?.validationFeedback;
+
+        // Check cache first (but not if we have feedback from retries)
+        if (config.cache.enabled && !validationFeedback) {
             const cached = await this.getCachedIntent(useCase.key);
             if (cached) {
                 logger.info('Intent extraction cache hit', { useCaseKey: useCase.key });
@@ -27,8 +30,8 @@ export class IntentExtractionAgent {
             }
         }
 
-        // Extract with retry
-        const analysis = await this.extractWithRetry(useCase, 3);
+        // Extract with retry (pass strict mode and validation feedback)
+        const analysis = await this.extractWithRetry(useCase, 3, strictMode, validationFeedback);
 
         // Cache result
         if (config.cache.enabled) {
@@ -38,12 +41,18 @@ export class IntentExtractionAgent {
         return analysis;
     }
 
-    private async extractWithRetry(useCase: UseCase, maxRetries: number): Promise<IntentAnalysis> {
+
+    private async extractWithRetry(
+        useCase: UseCase,
+        maxRetries: number,
+        strictMode: boolean,
+        validationFeedback?: string[]
+    ): Promise<IntentAnalysis> {
         let lastError: Error | null = null;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                logger.info('Extracting intent', { useCaseKey: useCase.key, attempt });
+                logger.info('Extracting intent', { useCaseKey: useCase.key, attempt, strictMode, hasFeedback: !!validationFeedback });
 
                 // Call LLM
 
@@ -53,10 +62,26 @@ export class IntentExtractionAgent {
                 // ____________  |_______________________  |_________________________
                 //   "system"    |  Sets context & rules   |  "You are a doctor..."
                 //   "user"      |  Asks the question	   |  "I have a headache, what should I do?"
-        
+
+                // Use strict prompt if in normative mode
+                const systemPrompt = strictMode
+                    ? INTENT_EXTRACTION_STRICT_SYSTEM_PROMPT
+                    : INTENT_EXTRACTION_SYSTEM_PROMPT;
+
+                // Build user prompt with validation feedback if available
+                let userPromptContent = createUserPrompt(useCase);
+
+                if (validationFeedback && validationFeedback.length > 0) {
+                    userPromptContent += `\n\n## PREVIOUS VALIDATION ERRORS - MUST FIX\n\n` +
+                        `The previous transformation attempt was rejected due to the following issues. ` +
+                        `You MUST address these specific problems in this attempt:\n\n` +
+                        validationFeedback.map((f, i) => `${i + 1}. ${f}`).join('\n') +
+                        `\n\n**CRITICAL**: Pay special attention to these errors and ensure they do not occur again.`;
+                }
+
                 const messages = [
-                    { role: 'system' as const, content: INTENT_EXTRACTION_SYSTEM_PROMPT },
-                    { role: 'user' as const, content: createUserPrompt(useCase) }
+                    { role: 'system' as const, content: systemPrompt },
+                    { role: 'user' as const, content: userPromptContent }
                 ];
 
                 const rawAnalysis = await this.llmService.chatJSON<Omit<IntentAnalysis, 'extractedAt' | 'llmModel' | 'promptVersion'>>(messages);

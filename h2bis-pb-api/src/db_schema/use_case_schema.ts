@@ -36,7 +36,11 @@ const AIMetadataSchema = z.object({
     implementationRisk: z.array(z.string()).default([]),
     suggestedOrder: z.number().optional(),
     testStrategy: z.array(z.string()).default([]),
-    nonFunctionalRequirements: z.array(z.string()).default([])
+    nonFunctionalRequirements: z.array(z.string()).default([]),
+    normativeMode: z.boolean().optional(),
+    insufficiencyReasons: z.array(z.string()).optional(),
+    // Skip LLM validation (use with caution - validation runs by default)
+    skipValidation: z.boolean().optional()
 });
 
 /* ---------- Helper Functions for Defaults ---------- */
@@ -118,6 +122,9 @@ export const UseCaseSchema = z.object({
     })).default([]),
 
     tags: z.array(z.string()).default([]),
+
+    // Normative flag: if true, system will reject generation if metadata is incomplete
+    normative: z.boolean().default(false),
 
     // Optional with defaults for backward compatibility
     aiMetadata: AIMetadataSchema.optional().default(createDefaultAIMetadata),

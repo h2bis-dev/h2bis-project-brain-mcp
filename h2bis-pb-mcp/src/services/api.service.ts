@@ -30,7 +30,23 @@ class ApiService {
         });
 
         if (!response.ok) {
-            const error = await response.json() as { error?: { message?: string } };
+            const error = await response.json() as {
+                error?: { message?: string };
+                validationFailed?: boolean;
+                validationReport?: any;
+                insertedId?: string;
+            };
+
+            // Handle validation rejection separately from insert failure
+            if (error.validationFailed && error.insertedId) {
+                throw new Error(
+                    `Use case inserted successfully (ID: ${error.insertedId}) but capability generation was REJECTED by validation.\n` +
+                    `Confidence: ${error.validationReport?.confidenceScore || 'unknown'}%\n` +
+                    `Issues: ${error.validationReport?.issues?.length || 0}\n` +
+                    `Recommendation: ${error.validationReport?.recommendation || 'Review validation report'}`
+                );
+            }
+
             throw new Error(error.error?.message || 'Failed to insert document');
         }
 

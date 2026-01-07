@@ -1,6 +1,7 @@
 import { UseCase } from '../db_schema/use_case_schema.js';
 import { CapabilityNode } from '../db_schema/capability_schema.js';
 import { IntentAnalysis } from 'h2bis-pb-ai';
+import { NormativityCheck, Insufficiency, InsufficientReport } from '../types/normative-validation.types.js';
 
 /**
  * Validation Service
@@ -84,15 +85,15 @@ export class ValidationService {
         }
 
         if (!useCase.acceptanceCriteria || useCase.acceptanceCriteria.length === 0) {
-            criticalIssues.push('At least one acceptance criterion is required');
+            warnings.push('No acceptance criteria provided - LLM will infer from description');
         }
 
         if (!useCase.flows || useCase.flows.length === 0) {
-            criticalIssues.push('At least one flow is required');
+            warnings.push('No flows provided - LLM will infer basic flow structure');
         } else {
             const hasMainFlow = useCase.flows.some(f => f.type === 'main');
             if (!hasMainFlow) {
-                criticalIssues.push('At least one flow with type="main" is required');
+                warnings.push('No main flow specified - one will be inferred');
             }
         }
 
@@ -138,6 +139,127 @@ export class ValidationService {
             criticalIssues,
             warnings,
             recommendation
+        };
+    }
+
+    /* ========================================================================
+       NORMATIVE VALIDATION (NO-INFERENCE MODE)
+       ======================================================================== */
+
+    /**
+     * Check if use case is normative and complete
+     * Returns decision: PROCEED or REJECT
+     * 
+     * This runs BEFORE LLM call to prevent expensive API calls on incomplete data
+     */
+    checkNormativity(useCase: UseCase): NormativityCheck {
+        // If not normative, allow standard generation with inference
+        if (!useCase.normative) {
+            return {
+                isNormative: false,
+                isComplete: true,
+                insufficiencies: [],
+                decision: 'PROCEED'
+            };
+        }
+
+        const insufficiencies: Insufficiency[] = [];
+
+        // CRITICAL: All these must be present and non-empty for normative mode
+        const criticalStringFields = [
+            { field: 'name', value: useCase.name },
+            { field: 'description', value: useCase.description },
+            { field: 'businessValue', value: useCase.businessValue },
+            { field: 'primaryActor', value: useCase.primaryActor }
+        ];
+
+        for (const check of criticalStringFields) {
+            if (!check.value || check.value.trim() === '') {
+                insufficiencies.push({
+                    field: check.field,
+                    reason: `Normative use case requires '${check.field}' to be complete and non-empty`,
+                    severity: 'CRITICAL'
+                });
+            }
+        }
+
+        // CRITICAL: Acceptance criteria must exist
+        if (!useCase.acceptanceCriteria || useCase.acceptanceCriteria.length === 0) {
+            insufficiencies.push({
+                field: 'acceptanceCriteria',
+                reason: 'Normative use case requires at least one acceptance criterion',
+                severity: 'CRITICAL'
+            });
+        }
+
+        // CRITICAL: Flows must exist
+        if (!useCase.flows || useCase.flows.length === 0) {
+            insufficiencies.push({
+                field: 'flows',
+                reason: 'Normative use case requires at least one flow',
+                severity: 'CRITICAL'
+            });
+        } else {
+            // CRITICAL: At least one main flow
+            const hasMainFlow = useCase.flows.some(f => f.type === 'main');
+            if (!hasMainFlow) {
+                insufficiencies.push({
+                    field: 'flows',
+                    reason: 'Normative use case requires at least one flow with type="main"',
+                    severity: 'CRITICAL'
+                });
+            }
+
+            // CRITICAL: Main flow must have steps
+            const mainFlow = useCase.flows.find(f => f.type === 'main');
+            if (mainFlow && (!mainFlow.steps || mainFlow.steps.length === 0)) {
+                insufficiencies.push({
+                    field: 'flows[0].steps',
+                    reason: 'Normative use case requires main flow to have concrete steps',
+                    severity: 'CRITICAL'
+                });
+            }
+        }
+
+        // CRITICAL: Technical surface must be specified
+        const hasFrontend = useCase.technicalSurface?.frontend?.routes?.length > 0 ||
+            useCase.technicalSurface?.frontend?.components?.length > 0;
+        const hasBackend = useCase.technicalSurface?.backend?.endpoints?.length > 0;
+
+        if (!hasFrontend && !hasBackend) {
+            insufficiencies.push({
+                field: 'technicalSurface',
+                reason: 'Normative use case requires explicit technical surface (frontend routes/components OR backend endpoints)',
+                severity: 'CRITICAL'
+            });
+        }
+
+        const decision = insufficiencies.length === 0 ? 'PROCEED' : 'REJECT';
+
+        return {
+            isNormative: true,
+            isComplete: decision === 'PROCEED',
+            insufficiencies,
+            decision
+        };
+    }
+
+    /**
+     * Build detailed insufficiency report for rejected normative use cases
+     */
+    buildInsufficientReport(check: NormativityCheck): InsufficientReport {
+        const criticalIssues = check.insufficiencies.filter(i => i.severity === 'CRITICAL');
+
+        return {
+            message: `Cannot generate capability: ${criticalIssues.length} critical insufficiency(ies) detected in normative use case`,
+            missingFields: check.insufficiencies,
+            recommendations: [
+                'Provide complete metadata for all normative fields',
+                'Ensure technical surface is explicitly defined (frontend routes/components OR backend endpoints)',
+                'Add at least one main flow with concrete steps',
+                'Verify all acceptance criteria are specified',
+                'Set normative=false if approximate generation with AI inference is acceptable'
+            ]
         };
     }
 
