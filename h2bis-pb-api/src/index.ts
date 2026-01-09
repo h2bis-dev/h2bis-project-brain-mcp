@@ -5,6 +5,7 @@ import { connectDb, disconnectDb } from './db.js';
 import knowledgeRoutes from './routes/knowledge.js';
 import capabilityRoutes from './routes/capability.js';
 import { errorHandler } from './middleware/error.middleware.js';
+import authRoutes from './modules/auth/auth.routes.js';
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/capabilities', capabilityRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

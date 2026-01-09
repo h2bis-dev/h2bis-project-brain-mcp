@@ -169,6 +169,24 @@ export const CapabilityNodeSchema = z.object({
     sourceUseCaseId: z.string().optional(),
     transformedAt: z.date().optional(),
 
+    // NEW: Artifacts linking (source files, tests, documentation)
+    artifacts: z.object({
+        source: z.array(z.object({
+            path: z.string(),
+            type: z.enum(['class', 'function', 'module', 'component']),
+            description: z.string()
+        })).default([]),
+        tests: z.array(z.object({
+            path: z.string(),
+            coverage: z.number().min(0).max(100).optional(),
+            lastRun: z.date().optional()
+        })).default([]),
+        documentation: z.array(z.object({
+            path: z.string(),
+            type: z.enum(['api', 'tutorial', 'architecture'])
+        })).default([])
+    }).optional(),
+
     // Schema version for migration support
     schemaVersion: z.number().default(1)
 }).strict();
