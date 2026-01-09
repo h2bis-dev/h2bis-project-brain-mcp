@@ -11,7 +11,10 @@ export default withAuth(
                 const { pathname } = req.nextUrl;
 
                 // Public routes
-                if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
+                if (pathname.startsWith('/login') ||
+                    pathname.startsWith('/register') ||
+                    pathname.startsWith('/forgot-password') ||
+                    pathname === '/') {
                     return true;
                 }
 
@@ -24,6 +27,7 @@ export default withAuth(
 
 export const config = {
     matcher: [
+        '/',
         '/dashboard/:path*',
         '/use-cases/:path*',
         '/capabilities/:path*',
@@ -31,5 +35,6 @@ export const config = {
         '/analytics/:path*',
         '/login',
         '/register',
+        '/forgot-password',
     ],
 };
