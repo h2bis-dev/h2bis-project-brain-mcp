@@ -4,13 +4,21 @@
         {
             "name": "Debug API (Backend)",
             "type": "node",
-            "request": "attach",
-            "port": 9229,
-            "restart": true,
+            "request": "launch",
             "cwd": "${workspaceFolder}/h2bis-pb-api",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "env": {
+                "NODE_ENV": "development"
+            },
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/h2bis-pb-api/dist/**/*.js"
@@ -38,7 +46,6 @@
             "env": {
                 "NODE_ENV": "development"
             },
-            "port": 9229,
             "serverReadyAction": {
                 "pattern": "- Local:.+(https?://.+)",
                 "uriFormat": "%s",

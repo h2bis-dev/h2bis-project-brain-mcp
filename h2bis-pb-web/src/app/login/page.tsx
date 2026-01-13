@@ -24,25 +24,23 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-            const response = await fetch(`${API_URL}/api/auth/login`,{
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username: username, password: password, redirect: false,}),
+            // Use NextAuth signIn - this creates a session
+            const result = await signIn('credentials', {
+                username,
+                password,
+                redirect: false,
             });
-            const responseData = await response.json();
 
-            if (!responseData.ok) {
+            if (result?.error) {
+                console.error('❌ Login failed:', result.error);
                 setError('Invalid username or password');
             } else {
-                console.log('✅ login successful!');
-                router.push('/login?registered=true');
+                console.log('✅ Login successful!');
+                router.push('/dashboard');
+                router.refresh();
             }
-
         } catch (err) {
+            console.error('❌ Login error:', err);
             setError('An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
