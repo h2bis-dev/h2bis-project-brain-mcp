@@ -24,18 +24,24 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const result = await signIn('credentials', {
-                username,
-                password,
-                redirect: false,
-            });
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-            if (result?.error) {
+            const response = await fetch(`${API_URL}/api/auth/login`,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: username, password: password, redirect: false,}),
+            });
+            const responseData = await response.json();
+
+            if (!responseData.ok) {
                 setError('Invalid username or password');
             } else {
-                router.push('/dashboard');
-                router.refresh();
+                console.log('✅ login successful!');
+                router.push('/login?registered=true');
             }
+
         } catch (err) {
             setError('An error occurred. Please try again.');
         } finally {

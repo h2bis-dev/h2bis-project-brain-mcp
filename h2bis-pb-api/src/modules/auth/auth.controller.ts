@@ -2,12 +2,21 @@ import { Request, Response } from "express";
 import { registerUser, authenticateUser } from "./auth.service.js";
 
 export async function register(req: Request, res: Response) {
+    console.log('🟢 Registration request received:', {
+        body: req.body,
+        hasUsername: !!req.body.username,
+        hasPassword: !!req.body.password,
+        hasName: !!req.body.name
+    });
+
     const { username, password, name } = req.body;
 
     try {
         const user = await registerUser(username, password, name);
+        console.log('✅ User registered successfully:', user.username);
         res.status(201).json({ id: user._id.toString(), username: user.username });
     } catch (error) {
+        console.error('❌ Registration error:', error);
         const message = error instanceof Error ? error.message : "Failed to register user";
         res.status(400).json({ error: message });
     }

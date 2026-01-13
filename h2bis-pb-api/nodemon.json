@@ -6,7 +6,7 @@
     "ignore": [
         "src/**/*.test.ts"
     ],
-    "exec": "ts-node --esm src/index.ts",
+    "exec": "npm run build && node --inspect dist/index.js",
     "env": {
         "NODE_ENV": "development"
     }
