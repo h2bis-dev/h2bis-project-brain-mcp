@@ -1,8 +1,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { API_BASE_URL } from '@/lib/config';
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -18,9 +17,9 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 try {
-                    // Call your API to authenticate
-                    const response = await axios.post(`${API_URL}/api/auth/login`, {
-                        username: credentials.username,
+                    // Call your API to authenticate with email
+                    const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+                        email: credentials.username, // username field contains email
                         password: credentials.password,
                     });
 
@@ -32,8 +31,8 @@ export const authOptions: NextAuthOptions = {
 
                     return {
                         id: user.id,
-                        email: user.username,
-                        name: user.username,
+                        email: user.email,
+                        name: user.email,
                         role: user.role || 'user',
                     };
                 } catch (error) {

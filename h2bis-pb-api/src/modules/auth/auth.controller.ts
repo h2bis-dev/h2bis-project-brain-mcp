@@ -4,17 +4,20 @@ import { registerUser, authenticateUser } from "./auth.service.js";
 export async function register(req: Request, res: Response) {
     console.log('🟢 Registration request received:', {
         body: req.body,
-        hasUsername: !!req.body.username,
+        hasEmail: !!req.body.email,
         hasPassword: !!req.body.password,
         hasName: !!req.body.name
     });
 
-    const { username, password, name } = req.body;
+    const { email, password, name } = req.body;
 
     try {
-        const user = await registerUser(username, password, name);
-        console.log('✅ User registered successfully:', user.username);
-        res.status(201).json({ id: user._id.toString(), username: user.username });
+        const user = await registerUser(email, password, name);
+        console.log('✅ User registered successfully:', user.email);
+        res.status(201).json({
+            id: user._id.toString(),
+            email: user.email
+        });
     } catch (error) {
         console.error('❌ Registration error:', error);
         const message = error instanceof Error ? error.message : "Failed to register user";
@@ -23,10 +26,10 @@ export async function register(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     try {
-        const user = await authenticateUser(username, password);
+        const user = await authenticateUser(email, password);
         res.status(200).json(user);
     } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to login";

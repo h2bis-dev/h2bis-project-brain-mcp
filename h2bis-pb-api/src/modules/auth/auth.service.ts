@@ -1,30 +1,36 @@
-import { toNamespacedPath } from "path/posix";
+import mongoose from "mongoose";
 import { User } from "../../models/user_model.js";
 import { hashPassword, verifyPassword } from "./password.service.js";
 
 export async function registerUser(
-    username: string, password: string, name: string
+    email: string, password: string, name: string
 ) {
-    const existing = await User.findOne({ username });
+    // Check if user already exists with this email
+    const existing = await User.findOne({ email });
     if (existing) {
-        throw new Error("User already exists");
+        throw new Error("User with this email already exists");
     }
 
+    // Hash password
+    const passwordHash = await hashPassword(password);
+
+    // Create user
     const user = await User.create({
-        username,
-        passwordHash: await hashPassword(password),
+        email,
+        passwordHash,
         isActive: true,
-        name: name,
+        name,
     });
 
     return user;
 }
 
 export async function authenticateUser(
-    username: string,
+    email: string,
     password: string
 ) {
-    const user = await User.findOne({ username });
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
         throw new Error("Invalid credentials");
@@ -42,7 +48,7 @@ export async function authenticateUser(
 
     return {
         id: user._id.toString(),
-        username: user.username,
+        email: user.email,
         role: user.role || ["user"],
         isActive: user.isActive
     };

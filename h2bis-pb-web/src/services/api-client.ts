@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL } from "@/lib/constants";
+import { API_BASE_URL } from "@/lib/config";
 
 /**
  * Axios instance configured for h2bis-pb-api

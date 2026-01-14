@@ -1,39 +1,35 @@
-import axios from 'axios';
+import { apiClient } from './api/client';
+import { API_ENDPOINTS } from '@/lib/config';
+import type {
+    RegisterRequest,
+    LoginRequest,
+    AuthResponse,
+    RegisterResponse
+} from '@/types/auth.types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-export interface RegisterData {
-    username: string;
-    password: string;
-    name: string;
-}
-
-export interface LoginData {
-    username: string;
-    password: string;
-}
-
-export interface AuthResponse {
-    id: string;
-    username: string;
-    role?: string[];
-    isActive?: boolean;
-}
-
+/**
+ * Auth Service
+ * Handles all authentication-related API calls
+ */
 export const authService = {
     /**
      * Register a new user
      */
-    async register(data: RegisterData): Promise<AuthResponse> {
-        const response = await axios.post(`${API_URL}/api/auth/register`, data);
-        return response.data;
+    register: async (data: RegisterRequest): Promise<RegisterResponse> => {
+        return apiClient.post<RegisterResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
     },
 
     /**
      * Login user
      */
-    async login(data: LoginData): Promise<AuthResponse> {
-        const response = await axios.post(`${API_URL}/api/auth/login`, data);
-        return response.data;
+    login: async (data: LoginRequest): Promise<AuthResponse> => {
+        return apiClient.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
+    },
+
+    /**
+     * Logout user
+     */
+    logout: async (): Promise<void> => {
+        return apiClient.post<void>(API_ENDPOINTS.AUTH.LOGOUT);
     },
 };

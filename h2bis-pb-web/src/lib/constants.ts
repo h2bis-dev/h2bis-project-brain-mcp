@@ -1,12 +1,25 @@
 /**
  * Application constants
+ * 
+ * This file now re-exports from centralized config.
+ * For backwards compatibility, common constants are re-exported here.
+ * New code should import from @/lib/config directly.
  */
 
-export const APP_NAME = "H2BIS ProjectBrain";
+import {
+    APP_NAME,
+    API_BASE_URL,
+} from './config';
 
-export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+// Re-export from centralized config
+export {
+    APP_NAME,
+    API_BASE_URL,
+    API_CONFIG,
+    API_ENDPOINTS,
+} from './config';
 
+// Application-specific constants
 export const ROUTES = {
     HOME: "/",
     DASHBOARD: "/dashboard",

@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 
 export default function LoginPage() {
     const router = useRouter();
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -26,21 +26,21 @@ export default function LoginPage() {
         try {
             // Use NextAuth signIn - this creates a session
             const result = await signIn('credentials', {
-                username,
+                username: email, // NextAuth expects 'username' field but we pass email
                 password,
                 redirect: false,
             });
 
             if (result?.error) {
-                console.error('❌ Login failed:', result.error);
-                setError('Invalid username or password');
+                console.error('Login failed:', result.error);
+                setError('Invalid email or password');
             } else {
-                console.log('✅ Login successful!');
+                console.log('Login successful!');
                 router.push('/dashboard');
                 router.refresh();
             }
         } catch (err) {
-            console.error('❌ Login error:', err);
+            console.error('Login error:', err);
             setError('An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
@@ -77,13 +77,13 @@ export default function LoginPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="username">Username or Email</Label>
+                            <Label htmlFor="email">Email</Label>
                             <Input
-                                id="username"
-                                type="text"
-                                placeholder="Enter your username or email"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                id="email"
+                                type="email"
+                                placeholder="Enter your email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                                 disabled={isLoading}
                                 className="h-11"

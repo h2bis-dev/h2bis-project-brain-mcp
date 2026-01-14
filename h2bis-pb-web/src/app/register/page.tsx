@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { authService } from '@/services/auth.service';
+import { ApiError } from '@/services/api/client';
+import type { RegisterRequest } from '@/types/auth.types';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -28,6 +31,7 @@ export default function RegisterPage() {
         setError('');
         setIsLoading(true);
 
+        // Validate password match
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords don't match");
             setIsLoading(false);
@@ -35,52 +39,25 @@ export default function RegisterPage() {
         }
 
         try {
-            // Call API directly
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-            console.log('🔵 Registration attempt:', {
-                API_URL,
-                username: formData.email,
+            const userData: RegisterRequest = {
+                email: formData.email,
+                password: formData.password,
                 name: formData.name,
-                hasPassword: !!formData.password
-            });
+            };
 
-            const response = await fetch(`${API_URL}/api/auth/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: formData.email,
-                    password: formData.password,
-                    name: formData.name,
-                }),
-            });
-
-            console.log('🔵 Response status:', response.status, response.statusText);
-
-            const data = await response.json();
-            console.log('🔵 Response data:', data);
-
-            if (!response.ok) {
-                console.error('❌ Registration failed:', data.error);
-                setError(data.error || 'Registration failed');
-            } else {
-                console.log('✅ Registration successful!');
-                router.push('/login?registered=true');
-            }
+            await authService.register(userData);
+            router.push('/login?registered=true');
         } catch (err) {
-            console.error('❌ Registration error (catch block):', err);
-            console.error('Error details:', {
-                message: err instanceof Error ? err.message : 'Unknown error',
-                type: typeof err,
-                err
-            });
-            setError('An error occurred. Please try again.');
+            if (err instanceof ApiError) {
+                setError(err.message);
+            } else {
+                setError('An error occurred. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
     };
-    
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
             <Card className="w-full max-w-md">
