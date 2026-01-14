@@ -1,60 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useLogin, useGoogleLogin } from '@/hooks/useAuth';
 
 export default function LoginPage() {
-    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const loginMutation = useLogin();
+    const googleLoginMutation = useGoogleLogin();
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-        setIsLoading(true);
-
-        try {
-            // Use NextAuth signIn - this creates a session
-            const result = await signIn('credentials', {
-                username: email, // NextAuth expects 'username' field but we pass email
-                password,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                console.error('Login failed:', result.error);
-                setError('Invalid email or password');
-            } else {
-                console.log('Login successful!');
-                router.push('/dashboard');
-                router.refresh();
-            }
-        } catch (err) {
-            console.error('Login error:', err);
-            setError('An error occurred. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
+        loginMutation.mutate({ email, password });
     };
 
-    const handleGoogleSignIn = async () => {
-        setIsGoogleLoading(true);
-        try {
-            await signIn('google', { callbackUrl: '/dashboard' });
-        } catch (err) {
-            setError('Google sign-in failed. Please try again.');
-            setIsGoogleLoading(false);
-        }
+    const handleGoogleSignIn = () => {
+        googleLoginMutation.mutate();
     };
 
     return (
@@ -69,9 +37,16 @@ export default function LoginPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {error && (
+                    {/* Show error messages */}
+                    {loginMutation.isError && (
                         <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm text-center border border-destructive/20">
-                            {error}
+                            {loginMutation.error.message}
+                        </div>
+                    )}
+
+                    {googleLoginMutation.isError && (
+                        <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm text-center border border-destructive/20">
+                            Google sign-in failed. Please try again.
                         </div>
                     )}
 
@@ -85,7 +60,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                disabled={isLoading}
+                                disabled={loginMutation.isPending}
                                 className="h-11"
                             />
                         </div>
@@ -108,7 +83,7 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                disabled={isLoading}
+                                disabled={loginMutation.isPending}
                                 className="h-11"
                             />
                         </div>
@@ -116,9 +91,9 @@ export default function LoginPage() {
                         <Button
                             type="submit"
                             className="w-full h-11 text-base font-medium"
-                            disabled={isLoading}
+                            disabled={loginMutation.isPending}
                         >
-                            {isLoading ? (
+                            {loginMutation.isPending ? (
                                 <>
                                     <svg
                                         className="animate-spin -ml-1 mr-2 h-4 w-4"
@@ -164,9 +139,9 @@ export default function LoginPage() {
                         variant="outline"
                         className="w-full h-11 text-base font-medium"
                         onClick={handleGoogleSignIn}
-                        disabled={isGoogleLoading || isLoading}
+                        disabled={googleLoginMutation.isPending || loginMutation.isPending}
                     >
-                        {isGoogleLoading ? (
+                        {googleLoginMutation.isPending ? (
                             <>
                                 <svg
                                     className="animate-spin -ml-1 mr-2 h-4 w-4"

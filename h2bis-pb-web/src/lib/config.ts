@@ -1,8 +1,6 @@
 /**
- * Centralized Application Configuration
- * 
+ * Application Configurations
  * This is the SINGLE SOURCE OF TRUTH for all app configuration.
- * Import from here throughout the application.
  */
 
 // ========================================

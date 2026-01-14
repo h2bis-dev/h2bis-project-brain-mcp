@@ -1,23 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { authService } from '@/services/auth.service';
-import { ApiError } from '@/services/api/client';
+import { useRegister } from '@/hooks/useAuth';
 import type { RegisterRequest } from '@/types/auth.types';
 
 export default function RegisterPage() {
-    const router = useRouter();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
         confirmPassword: '',
     });
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+
+    const registerMutation = useRegister();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData(prev => ({
@@ -26,37 +23,28 @@ export default function RegisterPage() {
         }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-        setIsLoading(true);
 
-        // Validate password match
+        // Client-side validation
         if (formData.password !== formData.confirmPassword) {
-            setError("Passwords don't match");
-            setIsLoading(false);
+            // Reset any previous errors and return
+            registerMutation.reset();
             return;
         }
 
-        try {
-            const userData: RegisterRequest = {
-                email: formData.email,
-                password: formData.password,
-                name: formData.name,
-            };
+        const userData: RegisterRequest = {
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+        };
 
-            await authService.register(userData);
-            router.push('/login?registered=true');
-        } catch (err) {
-            if (err instanceof ApiError) {
-                setError(err.message);
-            } else {
-                setError('An error occurred. Please try again.');
-            }
-        } finally {
-            setIsLoading(false);
-        }
+        registerMutation.mutate(userData);
     };
+
+    // Check for password mismatch
+    const passwordMismatch = !!(formData.password && formData.confirmPassword &&
+        formData.password !== formData.confirmPassword);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
@@ -81,7 +69,7 @@ export default function RegisterPage() {
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
-                                disabled={isLoading}
+                                disabled={registerMutation.isPending}
                             />
                         </div>
 
@@ -97,7 +85,7 @@ export default function RegisterPage() {
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
-                                disabled={isLoading}
+                                disabled={registerMutation.isPending}
                             />
                         </div>
 
@@ -113,7 +101,7 @@ export default function RegisterPage() {
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
-                                disabled={isLoading}
+                                disabled={registerMutation.isPending}
                                 minLength={6}
                             />
                         </div>
@@ -130,23 +118,31 @@ export default function RegisterPage() {
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
-                                disabled={isLoading}
+                                disabled={registerMutation.isPending}
                                 minLength={6}
                             />
                         </div>
 
-                        {error && (
+                        {/* Show password mismatch error */}
+                        {passwordMismatch && (
                             <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                                {error}
+                                Passwords don't match
+                            </div>
+                        )}
+
+                        {/* Show API error */}
+                        {registerMutation.isError && (
+                            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                                {registerMutation.error.message}
                             </div>
                         )}
 
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={registerMutation.isPending || passwordMismatch}
                             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            {isLoading ? 'Creating account...' : 'Create Account'}
+                            {registerMutation.isPending ? 'Creating account...' : 'Create Account'}
                         </button>
 
                         <div className="text-center text-sm text-gray-600">
