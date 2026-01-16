@@ -1,11 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { config } from './config/config.js';
-import { connectDb, disconnectDb } from './db.js';
-import knowledgeRoutes from './routes/knowledge.js';
-import capabilityRoutes from './routes/capability.js';
-import { errorHandler } from './middleware/error.middleware.js';
-import authRoutes from './modules/auth/auth.routes.js';
+import { config } from './infrastructure/config/config.js';
+import { connectDb, disconnectDb } from './infrastructure/database/connection.js';
+import apiRoutes from './api/routes/index.js';
+import { errorHandler } from './api/middleware/error.middleware.js';
 
 const app = express();
 
@@ -14,10 +12,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/knowledge', knowledgeRoutes);
-app.use('/api/capabilities', capabilityRoutes);
-app.use('/api/auth', authRoutes);
+// API Routes (all under /api prefix)
+app.use('/api', apiRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -59,3 +55,4 @@ process.on('SIGTERM', async () => {
 });
 
 startServer();
+
