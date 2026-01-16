@@ -21,18 +21,18 @@ class TransformationValidationService {
      * 
      * Passes actual Zod schemas to LLM for structural validation context
      * 
-     * @param Handler - Original use case
+     * @param useCase - Original use case
      * @param capability - Generated capability
      * @returns Validation result with confidence score and issues
      */
     async validateTransformation(
-        Handler: any,
+        useCase: any,
         capability: any
     ): Promise<TransformationValidationResult> {
         return this.agent.validateTransformation({
-            Handler,
+            useCase,
             capability,
-            HandlerSchema: HandlerSchema.shape,
+            useCaseSchema: HandlerSchema.shape,
             capabilitySchema: CapabilityNodeSchema.shape
         });
     }

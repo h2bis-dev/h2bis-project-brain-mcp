@@ -248,7 +248,7 @@ export class ValidationService {
      * Build detailed insufficiency report for rejected normative use cases
      */
     buildInsufficientReport(check: NormativityCheck): InsufficientReport {
-        const criticalIssues = check.insufficiencies.filter(i => i.severity === 'CRITICAL');
+        const criticalIssues = check.insufficiencies.filter((i: Insufficiency) => i.severity === 'CRITICAL');
 
         return {
             message: `Cannot generate capability: ${criticalIssues.length} critical insufficiency(ies) detected in normative use case`,

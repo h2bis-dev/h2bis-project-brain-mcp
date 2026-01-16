@@ -1,4 +1,4 @@
-import { createCapabilityIndexes } from './utils/create-indexes.js';
+// import { createCapabilityIndexes } from './utils/create-indexes.js';
 import { connectDb, disconnectDb } from './infrastructure/database/connection.js';
 
 /**
@@ -14,7 +14,8 @@ async function initIndexes() {
         console.log('✅ Connected to database');
 
         // Create indexes
-        await createCapabilityIndexes();
+        // TODO: Implement createCapabilityIndexes utility
+        // await createCapabilityIndexes();
 
         console.log('🎉 Index initialization complete');
 

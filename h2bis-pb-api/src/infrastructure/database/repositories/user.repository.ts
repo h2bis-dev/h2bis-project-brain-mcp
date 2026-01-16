@@ -1,5 +1,5 @@
-import { User } from '../../domain/models/user.model.js';
-import { ConflictError, NotFoundError } from '../../shared/errors/app.error.js';
+import { User } from '../../../domain/models/user_model.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors/app.error.js';
 
 /**
  * User Repository
@@ -43,7 +43,7 @@ export class UserRepository {
             email: userData.email.toLowerCase(),
             passwordHash: userData.passwordHash,
             name: userData.name,
-            role: userData.role || ['user'],
+            role: (userData.role || ['user']) as ("user" | "admin")[],
             isActive: userData.isActive ?? true
         });
 

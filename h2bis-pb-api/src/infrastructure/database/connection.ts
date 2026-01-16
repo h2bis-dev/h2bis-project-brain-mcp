@@ -1,6 +1,6 @@
 import { MongoClient, Db } from 'mongodb';
 import mongoose from 'mongoose';
-import { config } from '../config/config';
+import { config } from '../config/config.js';
 
 let dbInstance: Db | null = null;
 let clientInstance: MongoClient | null = null;

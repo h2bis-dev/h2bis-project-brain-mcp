@@ -16,20 +16,20 @@ class SurgicalFixService {
     /**
      * Apply surgical fixes to specific problematic fields
      * 
-     * @param Handler - Original use case
+     * @param useCase - Original use case
      * @param capability - Current capability with issues
      * @param issues - Validation issues identifying what's wrong
      * @param confidenceScore - Current confidence score
      * @returns Fixed capability and metadata
      */
     async applySurgicalFixes(
-        Handler: any,
+        useCase: any,
         capability: any,
         issues: any[],
         confidenceScore: number
     ): Promise<SurgicalFixResult> {
         return this.agent.applySurgicalFixes({
-            Handler,
+            useCase,
             capability,
             issues,
             confidenceScore

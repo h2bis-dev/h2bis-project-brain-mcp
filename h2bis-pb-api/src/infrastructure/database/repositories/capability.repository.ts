@@ -27,7 +27,7 @@ export class CapabilityRepository {
      */
     async findById(id: string): Promise<CapabilityNode | null> {
         const db = await getDb();
-        const capability = await db.collection(this.collectionName).findOne({ _id: id });
+        const capability = await db.collection(this.collectionName).findOne({ _id: id as any });
         return capability as CapabilityNode | null;
     }
 
@@ -38,7 +38,7 @@ export class CapabilityRepository {
         const db = await getDb();
 
         const result = await db.collection(this.collectionName).replaceOne(
-            { _id: id },
+            { _id: id as any },
             { _id: id, ...capability } as any
         );
 
@@ -52,7 +52,7 @@ export class CapabilityRepository {
      */
     async delete(id: string): Promise<boolean> {
         const db = await getDb();
-        const result = await db.collection(this.collectionName).deleteOne({ _id: id });
+        const result = await db.collection(this.collectionName).deleteOne({ _id: id as any });
         return result.deletedCount > 0;
     }
 
@@ -62,9 +62,9 @@ export class CapabilityRepository {
     async findByIds(ids: string[]): Promise<CapabilityNode[]> {
         const db = await getDb();
         const capabilities = await db.collection(this.collectionName)
-            .find({ _id: { $in: ids } })
+            .find({ _id: { $in: ids as any } })
             .toArray();
-        return capabilities as CapabilityNode[];
+        return capabilities as unknown as CapabilityNode[];
     }
 }
 
