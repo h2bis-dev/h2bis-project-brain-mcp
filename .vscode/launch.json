@@ -51,6 +51,30 @@
                 "uriFormat": "%s",
                 "action": "debugWithChrome"
             }
+        },
+        {
+            "name": "Debug MCP (Backend)",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/h2bis-pb-mcp",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "serverReadyAction": {
+                "pattern": "- Local:.+(https?://.+)",
+                "uriFormat": "%s",
+                "action": "debugWithChrome"
+            }
         }
     ],
     "compounds": [
@@ -58,7 +82,8 @@
             "name": "Debug Full Stack",
             "configurations": [
                 "Debug API (Backend)",
-                "Debug Web (Frontend)"
+                "Debug Web (Frontend)",
+                "Debug MCP (Backend)"
             ],
             "presentation": {
                 "hidden": false,

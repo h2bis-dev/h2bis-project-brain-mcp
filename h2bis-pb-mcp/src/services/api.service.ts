@@ -1,81 +1,43 @@
 import { config } from '../config/config.js';
-
-interface ApiResponse<T> {
-    data?: T;
-    error?: string;
-}
+import { HttpClient } from '../infrastructure/http-client.js';
 
 /**
- * API Service for making HTTP requests to h2bis-pb-api
+ * API Service for h2bis-pb-api
+ * Handles business logic and endpoint mapping
+ * Uses HttpClient for all transport concerns
  */
 class ApiService {
-    private baseUrl: string;
+    private httpClient: HttpClient;
 
     constructor() {
-        this.baseUrl = config.apiBaseUrl;
+        this.httpClient = new HttpClient({
+            baseUrl: config.apiBaseUrl,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
+
+    /* ---------- Knowledge Base Operations ---------- */
 
     /**
      * Insert a document into a collection
      */
-    async insertDocument(collectionName: string, document: Record<string, any>): Promise<{
-        insertedId: string;
-        capabilityGenerated?: boolean;
-        capabilityId?: string;
-    }> {
-        const response = await fetch(`${this.baseUrl}/api/knowledge`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collectionName, document }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as {
-                error?: { message?: string };
-                validationFailed?: boolean;
-                validationReport?: any;
-                insertedId?: string;
-            };
-
-            // Handle validation rejection separately from insert failure
-            if (error.validationFailed && error.insertedId) {
-                throw new Error(
-                    `Use case inserted successfully (ID: ${error.insertedId}) but capability generation was REJECTED by validation.\n` +
-                    `Confidence: ${error.validationReport?.confidenceScore || 'unknown'}%\n` +
-                    `Issues: ${error.validationReport?.issues?.length || 0}\n` +
-                    `Recommendation: ${error.validationReport?.recommendation || 'Review validation report'}`
-                );
-            }
-
-            throw new Error(error.error?.message || 'Failed to insert document');
-        }
-
-        return await response.json() as {
-            insertedId: string;
-            capabilityGenerated?: boolean;
-            capabilityId?: string;
-        };
+    async insertDocument(
+        collectionName: string,
+        document: Record<string, any>
+    ): Promise<{ insertedId: string; capabilityGenerated?: boolean; capabilityId?: string }> {
+        return this.httpClient.post('/api/knowledge', { collectionName, document });
     }
-
 
     /**
      * Find a document in a collection
      */
-    async findDocument(collectionName: string, filter: Record<string, any> = {}): Promise<{ document: any }> {
+    async findDocument(
+        collectionName: string,
+        filter: Record<string, any> = {}
+    ): Promise<{ document: any }> {
         const filterStr = JSON.stringify(filter);
-        const url = `${this.baseUrl}/api/knowledge?collection=${encodeURIComponent(collectionName)}&filter=${encodeURIComponent(filterStr)}`;
-
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: { message?: string } };
-            throw new Error(error.error?.message || 'Failed to find document');
-        }
-
-        return await response.json() as { document: any };
+        const endpoint = `/api/knowledge?collection=${encodeURIComponent(collectionName)}&filter=${encodeURIComponent(filterStr)}`;
+        return this.httpClient.get(endpoint);
     }
 
     /**
@@ -86,159 +48,50 @@ class ApiService {
         filter: Record<string, any>,
         update: Record<string, any>
     ): Promise<{ matchedCount: number; modifiedCount: number }> {
-        const response = await fetch(`${this.baseUrl}/api/knowledge`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collectionName, filter, update }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: { message?: string } };
-            throw new Error(error.error?.message || 'Failed to update document');
-        }
-
-        return await response.json() as { matchedCount: number; modifiedCount: number };
+        return this.httpClient.put('/api/knowledge', { collectionName, filter, update });
     }
 
     /**
      * Delete a document from a collection
      */
-    async deleteDocument(collectionName: string, filter: Record<string, any>): Promise<{ deletedCount: number }> {
-        const response = await fetch(`${this.baseUrl}/api/knowledge`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ collectionName, filter }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: { message?: string } };
-            throw new Error(error.error?.message || 'Failed to delete document');
-        }
-
-        return await response.json() as { deletedCount: number };
+    async deleteDocument(
+        collectionName: string,
+        filter: Record<string, any>
+    ): Promise<{ deletedCount: number }> {
+        return this.httpClient.delete('/api/knowledge', { collectionName, filter });
     }
 
     /**
      * List all collections in the database
      */
     async listCollections(): Promise<{ collections: string[] }> {
-        const response = await fetch(`${this.baseUrl}/api/knowledge/collections`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: { message?: string } };
-            throw new Error(error.error?.message || 'Failed to list collections');
-        }
-
-        return await response.json() as { collections: string[] };
+        return this.httpClient.get('/api/knowledge/collections');
     }
 
     /* ---------- Capability Graph Operations ---------- */
 
     /**
-     * Create a capability node
-     */
-    async createCapability(node: Record<string, any>): Promise<{ nodeId: string }> {
-        const response = await fetch(`${this.baseUrl}/api/capabilities`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(node),
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: string; message?: string };
-            throw new Error(error.message || error.error || 'Failed to create capability');
-        }
-
-        return await response.json() as { nodeId: string };
-    }
-
-    /**
-     * Get a capability node by ID
-     */
-    async getCapability(nodeId: string): Promise<{ node: any }> {
-        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: string; message?: string };
-            throw new Error(error.message || error.error || 'Failed to get capability');
-        }
-
-        return await response.json() as { node: any };
-    }
-
-    /**
      * Get dependencies for a capability node
      */
-    async getCapabilityDependencies(nodeId: string, depth: number = 1): Promise<{ dependencies: any[] }> {
-        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}/dependencies?depth=${depth}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: string; message?: string };
-            throw new Error(error.message || error.error || 'Failed to get dependencies');
-        }
-
-        return await response.json() as { dependencies: any[] };
-    }
-
-    /**
-     * Get dependents for a capability node
-     */
-    async getCapabilityDependents(nodeId: string, depth: number = 1): Promise<{ dependents: any[] }> {
-        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}/dependents?depth=${depth}`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: string; message?: string };
-            throw new Error(error.message || error.error || 'Failed to get dependents');
-        }
-
-        return await response.json() as { dependents: any[] };
+    async getCapabilityDependencies(
+        nodeId: string,
+        depth: number = 1
+    ): Promise<{ dependencies: any[] }> {
+        return this.httpClient.get(`/api/capabilities/${nodeId}/dependencies?depth=${depth}`);
     }
 
     /**
      * Analyze impact of a capability node change
      */
     async analyzeCapabilityImpact(nodeId: string): Promise<{ impact: any }> {
-        const response = await fetch(`${this.baseUrl}/api/capabilities/${nodeId}/impact`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: string; message?: string };
-            throw new Error(error.message || error.error || 'Failed to analyze impact');
-        }
-
-        return await response.json() as { impact: any };
+        return this.httpClient.get(`/api/capabilities/${nodeId}/impact`);
     }
 
     /**
      * Get implementation order for nodes
      */
     async getImplementationOrder(nodeIds: string[]): Promise<{ order: any[] }> {
-        const response = await fetch(`${this.baseUrl}/api/capabilities/order`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nodeIds }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json() as { error?: string; message?: string };
-            throw new Error(error.message || error.error || 'Failed to get implementation order');
-        }
-
-        return await response.json() as { order: any[] };
+        return this.httpClient.post('/api/capabilities/order', { nodeIds });
     }
 }
 
