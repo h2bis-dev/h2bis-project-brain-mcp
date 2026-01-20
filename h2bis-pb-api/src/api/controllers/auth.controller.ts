@@ -33,3 +33,22 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     // Send response
     res.status(200).json(result);
 });
+
+/**
+ * Get current user profile (protected route)
+ * GET /api/auth/me
+ */
+export const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
+    // User info is attached by authenticate middleware
+    const user = (req as any).user;
+
+    res.status(200).json({
+        success: true,
+        message: 'JWT verification successful',
+        user: {
+            userId: user.userId,
+            email: user.email,
+            roles: user.roles
+        }
+    });
+});

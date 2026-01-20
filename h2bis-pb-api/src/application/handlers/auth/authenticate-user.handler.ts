@@ -1,5 +1,6 @@
 import { userRepository } from '../../../infrastructure/database/repositories/user.repository.js';
 import { verifyPassword } from '../../../domain/services/password.service.js';
+import { generateAccessToken, generateRefreshToken } from '../../../domain/services/jwt.service.js';
 import { UnauthorizedError } from '../../../shared/errors/app.error.js';
 import type { LoginRequestDto, LoginResponseDto } from '../../../api/dtos/auth.dto.js';
 
@@ -28,12 +29,22 @@ export class AuthenticateUserHandler {
             throw new UnauthorizedError('Account is inactive');
         }
 
-        // Return session data
+        // Generate JWT tokens
+        const accessToken = generateAccessToken(
+            user._id.toString(),
+            user.email,
+            user.role || ['user']
+        );
+        const refreshToken = generateRefreshToken(user._id.toString());
+
+        // Return session data with tokens
         return {
             id: user._id.toString(),
             email: user.email,
             role: user.role || ['user'],
-            isActive: user.isActive
+            isActive: user.isActive,
+            accessToken,
+            refreshToken
         };
     }
 }

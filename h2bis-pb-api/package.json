@@ -16,6 +16,7 @@
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
     "h2bis-pb-ai": "file:../h2bis-pb-ai",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.0.0",
     "mongoose": "^9.1.2",
     "zod": "^3.22.0"
@@ -24,6 +25,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20.19.28",
     "nodemon": "^3.1.11",

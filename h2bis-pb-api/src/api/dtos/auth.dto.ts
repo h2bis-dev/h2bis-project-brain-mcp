@@ -29,4 +29,6 @@ export interface LoginResponseDto {
     email: string;
     role: string[];
     isActive: boolean;
+    accessToken: string;
+    refreshToken: string;
 }
