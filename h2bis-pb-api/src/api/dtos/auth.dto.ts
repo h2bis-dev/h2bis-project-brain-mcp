@@ -5,7 +5,8 @@ import { z } from 'zod';
 export const RegisterRequestDto = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
-    name: z.string().min(1, 'Name is required')
+    name: z.string().min(1, 'Name is required'),
+    role: z.array(z.enum(['user', 'admin'])).min(1, 'Role is required')
 });
 
 export type RegisterRequestDto = z.infer<typeof RegisterRequestDto>;
@@ -22,6 +23,7 @@ export type LoginRequestDto = z.infer<typeof LoginRequestDto>;
 export interface RegisterResponseDto {
     id: string;
     email: string;
+    role: string[];
 }
 
 export interface LoginResponseDto {

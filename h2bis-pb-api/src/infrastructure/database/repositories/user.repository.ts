@@ -29,7 +29,7 @@ export class UserRepository {
         email: string;
         passwordHash: string;
         name: string;
-        role?: string[];
+        role: string[];
         isActive?: boolean;
     }) {
         // Check if user already exists
@@ -43,7 +43,7 @@ export class UserRepository {
             email: userData.email.toLowerCase(),
             passwordHash: userData.passwordHash,
             name: userData.name,
-            role: (userData.role || ['user']) as ("user" | "admin")[],
+            role: userData.role as ("user" | "admin")[],
             isActive: userData.isActive ?? true
         });
 

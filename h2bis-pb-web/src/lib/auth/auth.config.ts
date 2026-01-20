@@ -29,11 +29,14 @@ export const authOptions: NextAuthOptions = {
                         throw new Error('User not found');
                     }
 
+                    // Return user with tokens from API
                     return {
                         id: user.id,
                         email: user.email,
                         name: user.email,
-                        role: user.role || 'user',
+                        role: user.role, // Array from API
+                        accessToken: user.accessToken, // JWT from API
+                        refreshToken: user.refreshToken, // Refresh token from API
                     };
                 } catch (error) {
                     console.error('Authentication error:', error);
@@ -44,23 +47,34 @@ export const authOptions: NextAuthOptions = {
     ],
     session: {
         strategy: 'jwt',
+        maxAge: 60 * 60, // 1 hour (matches API access token expiry)
     },
     pages: {
         signIn: '/login',
     },
     callbacks: {
         async jwt({ token, user }) {
+            // On sign in, store the user info and tokens
             if (user) {
                 token.id = user.id;
-                token.role = user.role;
+                token.email = user.email;
+                token.role = user.role; // Store role array
+                token.accessToken = user.accessToken; // Store API access token
+                token.refreshToken = user.refreshToken; // Store API refresh token
             }
             return token;
         },
         async session({ session, token }) {
+            // Pass token data to the session for client access
             if (session.user) {
                 session.user.id = token.id as string;
-                session.user.role = token.role as string;
+                session.user.email = token.email as string;
+                session.user.role = token.role as string[];
             }
+            // Add tokens to session for API calls
+            session.accessToken = token.accessToken as string;
+            session.refreshToken = token.refreshToken as string;
+
             return session;
         },
     },

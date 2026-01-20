@@ -15,13 +15,16 @@ export class RegisterUserHandler {
         const user = await userRepository.create({
             email: dto.email,
             passwordHash: passwordHash,
-            name: dto.name
+            name: dto.name,
+            role: dto.role,
+            isActive: true
         });
 
         // Return response DTO
         return {
             id: user._id.toString(),
-            email: user.email
+            email: user.email,
+            role: user.role
         };
     }
 }
