@@ -29,12 +29,13 @@ export const authOptions: NextAuthOptions = {
                         throw new Error('User not found');
                     }
 
-                    // Return user with tokens from API
+                    // Return user with tokens and permissions from API
                     return {
                         id: user.id,
                         email: user.email,
                         name: user.email,
-                        role: user.role, // Array from API
+                        role: user.role, // Roles from API
+                        permissions: user.permissions, // Permissions from API (Authorization Contract)
                         accessToken: user.accessToken, // JWT from API
                         refreshToken: user.refreshToken, // Refresh token from API
                     };
@@ -54,11 +55,12 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async jwt({ token, user }) {
-            // On sign in, store the user info and tokens
+            // On sign in, store the user info, tokens, and permissions
             if (user) {
                 token.id = user.id;
                 token.email = user.email;
                 token.role = user.role; // Store role array
+                token.permissions = user.permissions; // Store permissions (Authorization Contract)
                 token.accessToken = user.accessToken; // Store API access token
                 token.refreshToken = user.refreshToken; // Store API refresh token
             }
@@ -70,6 +72,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.email = token.email as string;
                 session.user.role = token.role as string[];
+                session.user.permissions = token.permissions as string[]; // Permissions for UI access control
             }
             // Add tokens to session for API calls
             session.accessToken = token.accessToken as string;

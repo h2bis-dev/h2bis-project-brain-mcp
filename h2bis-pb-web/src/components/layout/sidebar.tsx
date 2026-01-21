@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import {
     LayoutDashboard,
     FileText,
     Network,
     Brain,
     BookText,
+    Code,
 } from "lucide-react";
 
 const navigation = [
@@ -75,6 +77,22 @@ export function Sidebar() {
                         </Link>
                     );
                 })}
+
+                {/* Admin-only Develop tab */}
+                <PermissionGuard permission="access:develop">
+                    <Link
+                        href="/develop"
+                        className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            pathname === "/develop"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        )}
+                    >
+                        <Code className="h-5 w-5" />
+                        Develop
+                    </Link>
+                </PermissionGuard>
             </nav>
         </aside>
     );

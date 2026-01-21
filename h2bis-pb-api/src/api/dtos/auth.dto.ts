@@ -30,6 +30,7 @@ export interface LoginResponseDto {
     id: string;
     email: string;
     role: string[];
+    permissions: string[];
     isActive: boolean;
     accessToken: string;
     refreshToken: string;

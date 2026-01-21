@@ -1,6 +1,7 @@
 import { userRepository } from '../../../infrastructure/database/repositories/user.repository.js';
 import { verifyPassword } from '../../../domain/services/password.service.js';
 import { generateAccessToken, generateRefreshToken } from '../../../domain/services/jwt.service.js';
+import { getUserPermissions } from '../../../domain/services/authorization.service.js';
 import { UnauthorizedError } from '../../../shared/errors/app.error.js';
 import type { LoginRequestDto, LoginResponseDto } from '../../../api/dtos/auth.dto.js';
 
@@ -29,6 +30,9 @@ export class AuthenticateUserHandler {
             throw new UnauthorizedError('Account is inactive');
         }
 
+        // Compute permissions based on user's roles
+        const permissions = getUserPermissions(user.role || ['user']);
+
         // Generate JWT tokens
         const accessToken = generateAccessToken(
             user._id.toString(),
@@ -37,11 +41,12 @@ export class AuthenticateUserHandler {
         );
         const refreshToken = generateRefreshToken(user._id.toString());
 
-        // Return session data with tokens
+        // Return session data with tokens and permissions
         return {
             id: user._id.toString(),
             email: user.email,
             role: user.role || ['user'],
+            permissions,
             isActive: user.isActive,
             accessToken,
             refreshToken

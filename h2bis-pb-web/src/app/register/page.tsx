@@ -12,11 +12,12 @@ export default function RegisterPage() {
         email: '',
         password: '',
         confirmPassword: '',
+        role: 'user' as 'user' | 'admin', // Default to user role
     });
 
     const registerMutation = useRegister();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData(prev => ({
             ...prev,
             [e.target.name]: e.target.value,
@@ -37,6 +38,7 @@ export default function RegisterPage() {
             email: formData.email,
             password: formData.password,
             name: formData.name,
+            role: [formData.role], // API expects array of roles
         };
 
         registerMutation.mutate(userData);
@@ -87,6 +89,27 @@ export default function RegisterPage() {
                                 required
                                 disabled={registerMutation.isPending}
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="role" className="text-sm font-medium">
+                                Role
+                            </label>
+                            <select
+                                id="role"
+                                name="role"
+                                value={formData.role}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                required
+                                disabled={registerMutation.isPending}
+                            >
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <p className="text-xs text-gray-500">
+                                Select the role for this account
+                            </p>
                         </div>
 
                         <div className="space-y-2">

@@ -18,11 +18,14 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
         // Extract token
         const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
-        // Verify token
         const decoded = verifyAccessToken(token);
 
-        // Attach user info to request
-        (req as any).user = decoded;
+        // Attach user info to request (for permission checks)
+        (req as any).user = {
+            userId: decoded.userId,
+            email: decoded.email,
+            roles: decoded.roles, 
+        };
 
         next();
     } catch (error) {

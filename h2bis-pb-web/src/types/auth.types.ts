@@ -3,6 +3,7 @@ export interface RegisterRequest {
     email: string;
     password: string;
     name: string;
+    role: string[]; // Array of roles (e.g., ['user'] or ['admin'])
 }
 
 export interface LoginRequest {
