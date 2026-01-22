@@ -4,6 +4,7 @@ import { CreateUseCaseRequestDto } from '../dtos/use-case.dto.js';
 import { getUseCasesHandler } from '../../application/handlers/use-case/get-use-cases.handler.js';
 import { getUseCaseByIdHandler } from '../../application/handlers/use-case/get-use-case-by-id.handler.js';
 import { createUseCaseHandler } from '../../application/handlers/use-case/create-use-case.handler.js';
+import { deleteUseCaseHandler } from '../../application/handlers/use-case/delete-use-case.handler.js';
 
 /**
  * Get all use cases
@@ -47,4 +48,18 @@ export const createUseCase = asyncHandler(async (req: Request, res: Response) =>
 
     // Send response
     res.status(201).json(result);
+});
+
+/**
+ * Delete a use case (admin only)
+ * DELETE /api/use-cases/:id
+ */
+export const deleteUseCase = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    // Execute handler
+    const result = await deleteUseCaseHandler.execute(id);
+
+    // Send response
+    res.status(200).json(result);
 });

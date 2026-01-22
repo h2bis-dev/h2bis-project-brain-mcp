@@ -47,3 +47,19 @@ export function useCreateUseCase() {
         },
     });
 }
+
+/**
+ * Hook to delete a use case (admin/moderator only)
+ * Automatically invalidates cache on success
+ */
+export function useDeleteUseCase() {
+    const queryClient = useQueryClient();
+
+    return useMutation<{ success: boolean; message: string }, Error, string>({
+        mutationFn: (id) => useCaseService.delete(id),
+        onSuccess: () => {
+            // Invalidate use cases list to refetch
+            queryClient.invalidateQueries({ queryKey: ['use-cases'] });
+        },
+    });
+}

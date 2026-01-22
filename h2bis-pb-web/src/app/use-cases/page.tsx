@@ -1,14 +1,52 @@
 'use client';
 
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import Link from "next/link";
-import { Plus, FileText, Loader2, AlertCircle } from "lucide-react";
-import { useUseCases } from "@/hooks/useUseCases";
+import { Plus, FileText, Loader2, AlertCircle, Trash2 } from "lucide-react";
+import { useUseCases, useDeleteUseCase } from "@/hooks/useUseCases";
 
 export default function UseCasesPage() {
+    const { data: session } = useSession();
     const { data: useCases, isLoading, error } = useUseCases();
+    const deleteMutation = useDeleteUseCase();
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [useCaseToDelete, setUseCaseToDelete] = useState<{ id: string; name: string } | null>(null);
+
+    // Check if user has delete permission (admin or moderator)
+    const canDelete = session?.user?.permissions?.includes('delete:use-case') || false;
+
+    const handleDeleteClick = (e: React.MouseEvent, id: string, name: string) => {
+        e.preventDefault(); // Prevent navigation
+        e.stopPropagation();
+        setUseCaseToDelete({ id, name });
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (useCaseToDelete) {
+            deleteMutation.mutate(useCaseToDelete.id, {
+                onSuccess: () => {
+                    setDeleteDialogOpen(false);
+                    setUseCaseToDelete(null);
+                },
+            });
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -65,63 +103,104 @@ export default function UseCasesPage() {
                     {!isLoading && !error && useCases && useCases.length > 0 && (
                         <div className="space-y-3">
                             {useCases.map((useCase) => (
-                                <Link
+                                <div
                                     key={useCase.key}
-                                    href={`/use-cases/${useCase.key}`}
-                                    className="block"
+                                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent hover:border-accent-foreground/20 transition-colors"
                                 >
-                                    <div className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent hover:border-accent-foreground/20 transition-colors">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="font-semibold text-lg">
-                                                    {useCase.name}
-                                                </h3>
-                                                <Badge
-                                                    variant={
-                                                        useCase.status.lifecycle === 'completed'
-                                                            ? 'default'
-                                                            : useCase.status.lifecycle === 'in_development'
-                                                                ? 'secondary'
-                                                                : 'outline'
-                                                    }
-                                                >
-                                                    {useCase.status.lifecycle}
+                                    <Link
+                                        href={`/use-cases/${useCase.key}`}
+                                        className="flex-1"
+                                    >
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="font-semibold text-lg">
+                                                {useCase.name}
+                                            </h3>
+                                            <Badge
+                                                variant={
+                                                    useCase.status.lifecycle === 'completed'
+                                                        ? 'default'
+                                                        : useCase.status.lifecycle === 'in_development'
+                                                            ? 'secondary'
+                                                            : 'outline'
+                                                }
+                                            >
+                                                {useCase.status.lifecycle}
+                                            </Badge>
+                                            {useCase.status.generatedByAI && (
+                                                <Badge variant="outline" className="text-xs">
+                                                    AI Generated
                                                 </Badge>
-                                                {useCase.status.generatedByAI && (
-                                                    <Badge variant="outline" className="text-xs">
-                                                        AI Generated
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-muted-foreground mb-2">
-                                                {useCase.description}
-                                            </p>
-                                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                                <span>Key: {useCase.key}</span>
-                                                <span>Actor: {useCase.primaryActor}</span>
-                                                {useCase.aiMetadata?.estimatedComplexity && (
-                                                    <span className="capitalize">
-                                                        Complexity: {useCase.aiMetadata.estimatedComplexity}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {useCase.tags && useCase.tags.length > 0 && (
-                                                <div className="flex flex-wrap gap-1 mt-2">
-                                                    {useCase.tags.map((tag) => (
-                                                        <Badge key={tag} variant="secondary" className="text-xs">
-                                                            {tag}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
                                             )}
                                         </div>
-                                    </div>
-                                </Link>
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                            {useCase.description}
+                                        </p>
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                            <span>Key: {useCase.key}</span>
+                                            <span>Actor: {useCase.primaryActor}</span>
+                                            {useCase.aiMetadata?.estimatedComplexity && (
+                                                <span className="capitalize">
+                                                    Complexity: {useCase.aiMetadata.estimatedComplexity}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {useCase.tags && useCase.tags.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                {useCase.tags.map((tag) => (
+                                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                                        {tag}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Link>
+
+                                    {/* Delete Button (Admin/Moderator Only) */}
+                                    {canDelete && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="ml-4 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            onClick={(e) => handleDeleteClick(e, useCase.key, useCase.name)}
+                                            disabled={deleteMutation.isPending}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     )}
                 </CardContent>
             </Card>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the use case "{useCaseToDelete?.name}".
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleteMutation.isPending}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteConfirm}
+                            disabled={deleteMutation.isPending}
+                            className="bg-destructive hover:bg-destructive/90"
+                        >
+                            {deleteMutation.isPending && (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            )}
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -98,4 +98,12 @@ export const useCaseService = {
         const response = await apiClient.post(API_ENDPOINTS.USE_CASES.CREATE, data);
         return response.data;
     },
+
+    /**
+     * Delete a use case (admin/moderator only)
+     */
+    delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+        const response = await apiClient.delete(API_ENDPOINTS.USE_CASES.DELETE(id));
+        return response.data;
+    },
 };
