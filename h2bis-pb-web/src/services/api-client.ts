@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_BASE_URL } from "@/lib/config";
+import { getSession } from "next-auth/react";
 
 /**
  * Axios instance configured for h2bis-pb-api
@@ -14,15 +15,17 @@ export const apiClient = axios.create({
 
 /**
  * Request interceptor
- * Add authentication token if needed in the future
+ * Automatically adds JWT token from NextAuth session
  */
 apiClient.interceptors.request.use(
-    (config) => {
-        // Future: Add auth token
-        // const token = getToken();
-        // if (token) {
-        //   config.headers.Authorization = `Bearer ${token}`;
-        // }
+    async (config) => {
+        // Get the session to retrieve the access token
+        const session = await getSession();
+
+        if (session?.accessToken) {
+            config.headers.Authorization = `Bearer ${session.accessToken}`;
+        }
+
         return config;
     },
     (error) => {

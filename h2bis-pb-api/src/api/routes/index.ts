@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import knowledgeRoutes from './knowledge.routes.js';
 import capabilityRoutes from './capability.routes.js';
+import useCaseRoutes from './use-case.routes.js';
 
 const router = Router();
 
@@ -9,5 +10,6 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/knowledge', knowledgeRoutes);
 router.use('/capabilities', capabilityRoutes);
+router.use('/use-cases', useCaseRoutes);
 
 export default router;

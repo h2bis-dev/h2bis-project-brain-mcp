@@ -48,11 +48,11 @@ export const API_ENDPOINTS = {
         LOGOUT: '/api/auth/logout',
     },
     USE_CASES: {
-        LIST: '/api/knowledge',
-        GET: (id: string) => `/api/knowledge/${id}`,
-        CREATE: '/api/knowledge',
-        UPDATE: (id: string) => `/api/knowledge/${id}`,
-        DELETE: (id: string) => `/api/knowledge/${id}`,
+        LIST: '/api/use-cases',
+        GET: (id: string) => `/api/use-cases/${id}`,
+        CREATE: '/api/use-cases',
+        UPDATE: (id: string) => `/api/use-cases/${id}`,
+        DELETE: (id: string) => `/api/use-cases/${id}`,
     },
     CAPABILITIES: {
         LIST: '/api/capabilities',
