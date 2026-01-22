@@ -1,5 +1,88 @@
 import { z } from 'zod';
 
+// ==================== Request DTOs ====================
+
+/**
+ * Create Use Case Request DTO
+ * Validates incoming create use case requests
+ */
+export const CreateUseCaseRequestDto = z.object({
+    type: z.literal('use_case').default('use_case'),
+    key: z.string().min(1, 'Key is required').regex(/^[a-z0-9-]+$/, 'Key must be lowercase alphanumeric with hyphens'),
+    name: z.string().min(1, 'Name is required'),
+    description: z.string().min(1, 'Description is required'),
+
+    status: z.object({
+        lifecycle: z.enum([
+            'idea',
+            'planned',
+            'in_development',
+            'ai_generated',
+            'human_reviewed',
+            'completed'
+        ]).default('idea'),
+        reviewedByHuman: z.boolean().default(false),
+        generatedByAI: z.boolean().default(false)
+    }).default({
+        lifecycle: 'idea',
+        reviewedByHuman: false,
+        generatedByAI: false
+    }),
+
+    businessValue: z.string().min(1, 'Business value is required'),
+    primaryActor: z.string().min(1, 'Primary actor is required'),
+
+    acceptanceCriteria: z.array(z.string()).default([]),
+
+    flows: z.array(z.object({
+        name: z.string(),
+        steps: z.array(z.string()),
+        type: z.enum(['main', 'alternative', 'error']).default('main')
+    })).default([]),
+
+    technicalSurface: z.object({
+        backend: z.object({
+            repos: z.array(z.string()),
+            endpoints: z.array(z.string()).default([]),
+            collections: z.array(z.object({
+                name: z.string(),
+                purpose: z.string(),
+                operations: z.array(z.enum(['CREATE', 'READ', 'UPDATE', 'DELETE']))
+            })).default([])
+        }),
+        frontend: z.object({
+            repos: z.array(z.string()),
+            routes: z.array(z.string()).default([]),
+            components: z.array(z.string()).default([])
+        })
+    }),
+
+    relationships: z.array(z.object({
+        type: z.enum(['depends_on', 'extends', 'implements', 'conflicts_with', 'related_to']),
+        targetType: z.string(),
+        targetKey: z.string(),
+        reason: z.string().optional()
+    })).default([]),
+
+    implementationRisk: z.array(z.object({
+        rule: z.string(),
+        normative: z.boolean().default(false)
+    })).default([]),
+
+    tags: z.array(z.string()).default([]),
+    normative: z.boolean().default(false),
+
+    aiMetadata: z.object({
+        estimatedComplexity: z.enum(['low', 'medium', 'high']).default('medium'),
+        implementationRisk: z.array(z.string()).default([]),
+        suggestedOrder: z.number().optional(),
+        testStrategy: z.array(z.string()).default([]),
+        nonFunctionalRequirements: z.array(z.string()).default([])
+    }).optional()
+});
+
+export type CreateUseCaseRequestDto = z.infer<typeof CreateUseCaseRequestDto>;
+
 // ==================== Response DTOs ====================
 
 /**
@@ -89,4 +172,13 @@ export interface UseCaseDetailResponseDto {
         createdBy: string;
         updatedBy: string;
     };
+}
+
+/**
+ * Create Use Case Response DTO
+ */
+export interface CreateUseCaseResponseDto {
+    id: string;
+    key: string;
+    message: string;
 }

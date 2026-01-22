@@ -20,10 +20,12 @@ export default function UseCasesPage() {
                         Manage and analyze project use cases
                     </p>
                 </div>
-                <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Use Case
-                </Button>
+                <Link href="/use-cases/new">
+                    <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Use Case
+                    </Button>
+                </Link>
             </div>
 
             {/* Content */}
