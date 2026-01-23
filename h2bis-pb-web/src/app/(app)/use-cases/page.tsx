@@ -64,7 +64,6 @@ export default function UseCasesPage() {
                     </p>
                 </div>
                 <Link href={ROUTES.USE_CASE_NEW}>
-                <Link href={ROUTES.USE_CASE_NEW}>
                     <Button>
                         <Plus className="h-4 w-4 mr-2" />
                         Create Use Case
