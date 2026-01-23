@@ -3,11 +3,11 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Navbar } from "@/components/layout/navbar";
 
 export const metadata: Metadata = {
-    title: "Dashboard - H2BIS ProjectBrain",
-    description: "Project knowledge management dashboard",
+    title: "H2BIS ProjectBrain",
+    description: "AI-powered project knowledge management system",
 };
 
-export default function DashboardLayout({
+export default function AppLayout({
     children,
 }: {
     children: React.ReactNode;
