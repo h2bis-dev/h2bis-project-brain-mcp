@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,16 @@ import {
     Brain,
     BookText,
     Code,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
     {
@@ -44,56 +54,120 @@ const navigation = [
 
 export function Sidebar() {
     const pathname = usePathname();
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
-        <aside className="hidden md:flex w-64 flex-col border-r bg-card px-4 py-6">
-            {/* Logo */}
-            <div className="mb-8">
-                <Link href={ROUTES.HOME} className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                        <Brain className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <span className="font-bold text-lg">ProjectBrain</span>
-                </Link>
-            </div>
-
-            {/* Navigation */}
-            <nav className="space-y-1">
-                {navigation.map((item) => {
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                                isActive
-                                    ? "bg-primary text-primary-foreground"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )}
-                        >
-                            <item.icon className="h-5 w-5" />
-                            {item.name}
-                        </Link>
-                    );
-                })}
-
-                {/* Admin-only Develop tab */}
-                <PermissionGuard permission="access:develop">
-                    <Link
-                        href="/develop"
-                        className={cn(
-                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                            pathname === "/develop"
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                        )}
-                    >
-                        <Code className="h-5 w-5" />
-                        Develop
+        <TooltipProvider delayDuration={0}>
+            <aside
+                className={cn(
+                    "hidden md:flex flex-col border-r bg-card py-6 transition-all duration-300 ease-in-out relative",
+                    isCollapsed ? "w-16 px-2" : "w-64 px-4"
+                )}
+            >
+                {/* Logo */}
+                <div className={cn("mb-8 transition-all duration-300", isCollapsed ? "mx-auto" : "")}>
+                    <Link href={ROUTES.HOME} className={cn("flex items-center gap-2", isCollapsed && "justify-center")}>
+                        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                            <Brain className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                        {!isCollapsed && <span className="font-bold text-lg whitespace-nowrap">ProjectBrain</span>}
                     </Link>
-                </PermissionGuard>
-            </nav>
-        </aside>
+                </div>
+
+                {/* Navigation */}
+                <nav className="space-y-1 flex-1">
+                    {navigation.map((item) => {
+                        const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                        const linkContent = (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className={cn(
+                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                    isActive
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                    isCollapsed && "justify-center"
+                                )}
+                            >
+                                <item.icon className="h-5 w-5 flex-shrink-0" />
+                                {!isCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
+                            </Link>
+                        );
+
+                        return isCollapsed ? (
+                            <Tooltip key={item.name}>
+                                <TooltipTrigger asChild>
+                                    {linkContent}
+                                </TooltipTrigger>
+                                <TooltipContent side="right">
+                                    <p>{item.name}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        ) : (
+                            linkContent
+                        );
+                    })}
+
+                    {/* Admin-only Develop tab */}
+                    <PermissionGuard permission="access:develop">
+                        {(() => {
+                            const isActive = pathname === "/develop";
+                            const linkContent = (
+                                <Link
+                                    href="/develop"
+                                    className={cn(
+                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                        isActive
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                        isCollapsed && "justify-center"
+                                    )}
+                                >
+                                    <Code className="h-5 w-5 flex-shrink-0" />
+                                    {!isCollapsed && <span className="whitespace-nowrap">Develop</span>}
+                                </Link>
+                            );
+
+                            return isCollapsed ? (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        {linkContent}
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        <p>Develop</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            ) : (
+                                linkContent
+                            );
+                        })()}
+                    </PermissionGuard>
+                </nav>
+
+                {/* Toggle Button */}
+                <div className={cn("mt-4 pt-4 border-t", isCollapsed && "flex justify-center")}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setIsCollapsed(!isCollapsed)}
+                                className="h-8 w-8"
+                            >
+                                {isCollapsed ? (
+                                    <ChevronRight className="h-4 w-4" />
+                                ) : (
+                                    <ChevronLeft className="h-4 w-4" />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            <p>{isCollapsed ? "Expand sidebar" : "Collapse sidebar"}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
+            </aside>
+        </TooltipProvider>
     );
 }

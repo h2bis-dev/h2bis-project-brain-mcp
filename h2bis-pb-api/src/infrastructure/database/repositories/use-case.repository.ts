@@ -21,11 +21,19 @@ export class UseCaseRepository {
     }
 
     /**
-     * Find a use case by ID
+     * Find a use case by ID (supports both key-based _id and MongoDB ObjectId)
      */
     async findById(id: string): Promise<Handler | null> {
         const db = await getDb();
-        const useCase = await db.collection(this.collectionName).findOne({ _id: id as any });
+
+        // Try to find by _id first (which is set to the key)
+        const useCase = await db.collection(this.collectionName).findOne({ _id: id } as any);
+
+        // If not found and id looks like a key, try findByKey as fallback
+        if (!useCase && id.includes('-')) {
+            return this.findByKey(id);
+        }
+
         return useCase as Handler | null;
     }
 
