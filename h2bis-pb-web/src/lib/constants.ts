@@ -26,7 +26,7 @@ export const ROUTES = {
     USE_CASES: "/use-cases",
     USE_CASE_DETAIL: (id: string) => `/use-cases/${id}`,
     USE_CASE_EDIT: (id: string) => `/use-cases/${id}/edit`,
-    USE_CASE_NEW: "/use-cases/new",
+    USE_CASE_NEW: "/use-cases/create-use-case",
     CAPABILITIES: "/capabilities",
     CAPABILITY_DETAIL: (id: string) => `/capabilities/${id}`,
     ANALYTICS: "/analytics",

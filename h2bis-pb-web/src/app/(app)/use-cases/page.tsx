@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { Plus, FileText, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { useUseCases, useDeleteUseCase } from "@/hooks/useUseCases";
+import { ROUTES } from "@/lib/constants";
 
 export default function UseCasesPage() {
     const { data: session } = useSession();
@@ -58,7 +59,7 @@ export default function UseCasesPage() {
                         Manage and analyze project use cases
                     </p>
                 </div>
-                <Link href="/use-cases/new">
+                <Link href={ROUTES.USE_CASE_NEW}>
                     <Button>
                         <Plus className="h-4 w-4 mr-2" />
                         Create Use Case
