@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, Sparkles, AlertCircle, Zap } from 'lucide-react';
 import { useCreateUseCase } from '@/hooks/useUseCases';
 import type { CreateUseCaseRequest } from '@/services/use-case.service';
 
@@ -36,6 +36,27 @@ export default function NewUseCasePage() {
     const [tagInput, setTagInput] = useState('');
     const [complexity, setComplexity] = useState<'low' | 'medium' | 'high'>('medium');
 
+    // AI Generation state
+    const [aiDescription, setAiDescription] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generationError, setGenerationError] = useState('');
+    const [fieldOrigins, setFieldOrigins] = useState<Record<string, 'user' | 'ai'>>({});
+
+    // Field Origin Indicator Component
+    const FieldOriginBadge = ({ field }: { field: string }) => {
+        const origin = fieldOrigins[field];
+        if (!origin) return null;
+
+        return (
+            <Badge
+                variant={origin === 'ai' ? 'default' : 'secondary'}
+                className={`text-xs ${origin === 'ai' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' : 'bg-green-500/10 text-green-600 border-green-500/20'}`}
+            >
+                {origin === 'ai' ? '✨ AI' : '👤 You'}
+            </Badge>
+        );
+    };
+
     const handleAddItem = (list: string[], setList: (val: string[]) => void) => {
         setList([...list, '']);
     };
@@ -59,6 +80,142 @@ export default function NewUseCasePage() {
 
     const handleRemoveTag = (tag: string) => {
         setTags(tags.filter(t => t !== tag));
+    };
+
+    // Mock AI Generation Function (will be replaced with real API call in Phase 2)
+    const mockAIGeneration = (desc: string, existingData: any): Partial<typeof existingData> => {
+        // Simulate AI processing
+        const generated: any = {};
+
+        // Only generate fields that are empty (preserve user data)
+        if (!existingData.key) generated.key = 'uc-' + desc.toLowerCase().replace(/\s+/g, '-').substring(0, 30);
+        if (!existingData.name) generated.name = desc.split('.')[0] || 'Generated Use Case';
+        if (!existingData.description) generated.description = desc;
+        if (!existingData.businessValue) generated.businessValue = 'Provides value by enabling ' + desc.toLowerCase();
+        if (!existingData.primaryActor) generated.primaryActor = 'End User';
+
+        // Technical surface - only if empty
+        if (!existingData.backendRepos || existingData.backendRepos.every(r => !r.trim())) {
+            generated.backendRepos = ['api', 'backend-service'];
+        }
+        if (!existingData.frontendRepos || existingData.frontendRepos.every(r => !r.trim())) {
+            generated.frontendRepos = ['web', 'mobile-app'];
+        }
+        if (!existingData.endpoints || existingData.endpoints.every(e => !e.trim())) {
+            generated.endpoints = ['/api/resource', '/api/resource/:id'];
+        }
+        if (!existingData.routes || existingData.routes.every(r => !r.trim())) {
+            generated.routes = ['/dashboard', '/resource'];
+        }
+        if (!existingData.components || existingData.components.every(c => !c.trim())) {
+            generated.components = ['ResourceList', 'ResourceDetail'];
+        }
+
+        // Acceptance criteria
+        if (!existingData.acceptanceCriteria || existingData.acceptanceCriteria.every(ac => !ac.trim())) {
+            generated.acceptanceCriteria = [
+                'User can successfully complete the action',
+                'System provides appropriate feedback',
+                'Data is persisted correctly'
+            ];
+        }
+
+        return generated;
+    };
+
+    const handleGenerateWithDescriptionOnly = async () => {
+        if (!aiDescription.trim()) {
+            setGenerationError('Please provide a description for AI generation');
+            return;
+        }
+
+        setIsGenerating(true);
+        setGenerationError('');
+
+        try {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Clear all fields first
+            const emptyData = {
+                key: '', name: '', description: '', businessValue: '', primaryActor: '',
+                backendRepos: [''], frontendRepos: [''], endpoints: [''],
+                routes: [''], components: [''], acceptanceCriteria: ['']
+            };
+
+            // Generate everything from scratch
+            const generated = mockAIGeneration(aiDescription, emptyData);
+
+            // Update all fields
+            if (generated.key) { setKey(generated.key); setFieldOrigins(prev => ({ ...prev, key: 'ai' })); }
+            if (generated.name) { setName(generated.name); setFieldOrigins(prev => ({ ...prev, name: 'ai' })); }
+            if (generated.description) { setDescription(generated.description); setFieldOrigins(prev => ({ ...prev, description: 'ai' })); }
+            if (generated.businessValue) { setBusinessValue(generated.businessValue); setFieldOrigins(prev => ({ ...prev, businessValue: 'ai' })); }
+            if (generated.primaryActor) { setPrimaryActor(generated.primaryActor); setFieldOrigins(prev => ({ ...prev, primaryActor: 'ai' })); }
+
+            if (generated.backendRepos) { setBackendRepos(generated.backendRepos); setFieldOrigins(prev => ({ ...prev, backendRepos: 'ai' })); }
+            if (generated.frontendRepos) { setFrontendRepos(generated.frontendRepos); setFieldOrigins(prev => ({ ...prev, frontendRepos: 'ai' })); }
+            if (generated.endpoints) { setEndpoints(generated.endpoints); setFieldOrigins(prev => ({ ...prev, endpoints: 'ai' })); }
+            if (generated.routes) { setRoutes(generated.routes); setFieldOrigins(prev => ({ ...prev, routes: 'ai' })); }
+            if (generated.components) { setComponents(generated.components); setFieldOrigins(prev => ({ ...prev, components: 'ai' })); }
+            if (generated.acceptanceCriteria) { setAcceptanceCriteria(generated.acceptanceCriteria); setFieldOrigins(prev => ({ ...prev, acceptanceCriteria: 'ai' })); }
+
+        } catch (error) {
+            setGenerationError('Failed to generate use case. Please try again.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleGenerateWithManualData = async () => {
+        if (!aiDescription.trim()) {
+            setGenerationError('Please provide a description for AI generation');
+            return;
+        }
+
+        setIsGenerating(true);
+        setGenerationError('');
+
+        try {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Collect existing data
+            const existingData = {
+                key, name, description, businessValue, primaryActor,
+                backendRepos, frontendRepos, endpoints, routes, components, acceptanceCriteria
+            };
+
+            // Generate only for empty fields
+            const generated = mockAIGeneration(aiDescription, existingData);
+
+            // Update ONLY empty fields (preserve user data)
+            if (generated.key && !key.trim()) { setKey(generated.key); setFieldOrigins(prev => ({ ...prev, key: 'ai' })); }
+            if (generated.name && !name.trim()) { setName(generated.name); setFieldOrigins(prev => ({ ...prev, name: 'ai' })); }
+            if (generated.description && !description.trim()) { setDescription(generated.description); setFieldOrigins(prev => ({ ...prev, description: 'ai' })); }
+            if (generated.businessValue && !businessValue.trim()) { setBusinessValue(generated.businessValue); setFieldOrigins(prev => ({ ...prev, businessValue: 'ai' })); }
+            if (generated.primaryActor && !primaryActor.trim()) { setPrimaryActor(generated.primaryActor); setFieldOrigins(prev => ({ ...prev, primaryActor: 'ai' })); }
+
+            if (generated.backendRepos && backendRepos.every(r => !r.trim())) { setBackendRepos(generated.backendRepos); setFieldOrigins(prev => ({ ...prev, backendRepos: 'ai' })); }
+            if (generated.frontendRepos && frontendRepos.every(r => !r.trim())) { setFrontendRepos(generated.frontendRepos); setFieldOrigins(prev => ({ ...prev, frontendRepos: 'ai' })); }
+            if (generated.endpoints && endpoints.every(e => !e.trim())) { setEndpoints(generated.endpoints); setFieldOrigins(prev => ({ ...prev, endpoints: 'ai' })); }
+            if (generated.routes && routes.every(r => !r.trim())) { setRoutes(generated.routes); setFieldOrigins(prev => ({ ...prev, routes: 'ai' })); }
+            if (generated.components && components.every(c => !c.trim())) { setComponents(generated.components); setFieldOrigins(prev => ({ ...prev, components: 'ai' })); }
+            if (generated.acceptanceCriteria && acceptanceCriteria.every(ac => !ac.trim())) { setAcceptanceCriteria(generated.acceptanceCriteria); setFieldOrigins(prev => ({ ...prev, acceptanceCriteria: 'ai' })); }
+
+        } catch (error) {
+            setGenerationError('Failed to generate use case. Please try again.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    // Track manual user input
+    const handleUserInput = (field: string, setter: Function, value: any) => {
+        setter(value);
+        if (value && (typeof value === 'string' ? value.trim() : true)) {
+            setFieldOrigins(prev => ({ ...prev, [field]: 'user' }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -93,9 +250,9 @@ export default function NewUseCasePage() {
     };
 
     return (
-        <div className="space-y-6 max-w-4xl">
+        <div className="space-y-6">
             {/* Header with Back Button */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 max-w-7xl">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -107,14 +264,14 @@ export default function NewUseCasePage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Create Use Case</h1>
                     <p className="text-muted-foreground mt-1">
-                        Define a new use case for your project
+                        Define a new use case manually or generate with AI
                     </p>
                 </div>
             </div>
 
             {/* Error Display */}
             {createMutation.isError && (
-                <Card className="border-destructive">
+                <Card className="border-destructive max-w-7xl">
                     <CardContent className="pt-6">
                         <p className="text-destructive text-sm">
                             {createMutation.error.message || 'Failed to create use case'}
@@ -123,388 +280,483 @@ export default function NewUseCasePage() {
                 </Card>
             )}
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Information */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Basic Information</CardTitle>
-                        <CardDescription>
-                            Essential details about the use case
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="key">
-                                    Key <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="key"
-                                    placeholder="e.g., uc-user-login"
-                                    value={key}
-                                    onChange={(e) => setKey(e.target.value)}
-                                    required
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Unique identifier (lowercase, hyphens allowed)
-                                </p>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="name">
-                                    Name <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="name"
-                                    placeholder="e.g., User Login"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="description">
-                                Description <span className="text-destructive">*</span>
-                            </Label>
-                            <Textarea
-                                id="description"
-                                placeholder="Describe what this use case does..."
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                rows={3}
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="businessValue">
-                                Business Value <span className="text-destructive">*</span>
-                            </Label>
-                            <Textarea
-                                id="businessValue"
-                                placeholder="Explain the business value..."
-                                value={businessValue}
-                                onChange={(e) => setBusinessValue(e.target.value)}
-                                rows={2}
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="primaryActor">
-                                Primary Actor <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                                id="primaryActor"
-                                placeholder="e.g., End User, Administrator"
-                                value={primaryActor}
-                                onChange={(e) => setPrimaryActor(e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="complexity">Complexity</Label>
-                            <select
-                                id="complexity"
-                                value={complexity}
-                                onChange={(e) => setComplexity(e.target.value as any)}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Technical Surface */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Technical Surface</CardTitle>
-                        <CardDescription>
-                            Specify the technical implementation details
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Backend */}
-                        <div className="space-y-3">
-                            <Label>Backend Repositories <span className="text-destructive">*</span></Label>
-                            {backendRepos.map((repo, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Input
-                                        placeholder="e.g., api, backend-service"
-                                        value={repo}
-                                        onChange={(e) => handleUpdateItem(index, e.target.value, backendRepos, setBackendRepos)}
-                                        required={index === 0}
-                                    />
-                                    {backendRepos.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveItem(index, backendRepos, setBackendRepos)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
+            {/* Split Container: Form (Left) + AI Panel (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl">
+                {/* LEFT SIDE - Form (60% width) */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Basic Information */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Basic Information</CardTitle>
+                                <CardDescription>
+                                    Essential details about the use case
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="key">
+                                                Key <span className="text-destructive">*</span>
+                                            </Label>
+                                            <FieldOriginBadge field="key" />
+                                        </div>
+                                        <Input
+                                            id="key"
+                                            placeholder="e.g., uc-user-login"
+                                            value={key}
+                                            onChange={(e) => handleUserInput('key', setKey, e.target.value)}
+                                            required
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Unique identifier (lowercase, hyphens allowed)
+                                        </p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="name">
+                                                Name <span className="text-destructive">*</span>
+                                            </Label>
+                                            <FieldOriginBadge field="name" />
+                                        </div>
+                                        <Input
+                                            id="name"
+                                            placeholder="e.g., User Login"
+                                            value={name}
+                                            onChange={(e) => handleUserInput('name', setName, e.target.value)}
+                                            required
+                                        />
+                                    </div>
                                 </div>
-                            ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddItem(backendRepos, setBackendRepos)}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Repository
-                            </Button>
-                        </div>
 
-                        {/* Backend Endpoints */}
-                        <div className="space-y-3">
-                            <Label>API Endpoints</Label>
-                            {endpoints.map((endpoint, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Input
-                                        placeholder="e.g., /api/auth/login"
-                                        value={endpoint}
-                                        onChange={(e) => handleUpdateItem(index, e.target.value, endpoints, setEndpoints)}
+                                <div className="space-y-2">
+                                    <Label htmlFor="description">
+                                        Description <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Textarea
+                                        id="description"
+                                        placeholder="Describe what this use case does..."
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        rows={3}
+                                        required
                                     />
-                                    {endpoints.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveItem(index, endpoints, setEndpoints)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
                                 </div>
-                            ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddItem(endpoints, setEndpoints)}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Endpoint
-                            </Button>
-                        </div>
 
-                        {/* Frontend */}
-                        <div className="space-y-3">
-                            <Label>Frontend Repositories <span className="text-destructive">*</span></Label>
-                            {frontendRepos.map((repo, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Input
-                                        placeholder="e.g., web, mobile-app"
-                                        value={repo}
-                                        onChange={(e) => handleUpdateItem(index, e.target.value, frontendRepos, setFrontendRepos)}
-                                        required={index === 0}
+                                <div className="space-y-2">
+                                    <Label htmlFor="businessValue">
+                                        Business Value <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Textarea
+                                        id="businessValue"
+                                        placeholder="Explain the business value..."
+                                        value={businessValue}
+                                        onChange={(e) => setBusinessValue(e.target.value)}
+                                        rows={2}
+                                        required
                                     />
-                                    {frontendRepos.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveItem(index, frontendRepos, setFrontendRepos)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
                                 </div>
-                            ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddItem(frontendRepos, setFrontendRepos)}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Repository
-                            </Button>
-                        </div>
 
-                        {/* Frontend Routes */}
-                        <div className="space-y-3">
-                            <Label>Routes</Label>
-                            {routes.map((route, index) => (
-                                <div key={index} className="flex gap-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="primaryActor">
+                                        Primary Actor <span className="text-destructive">*</span>
+                                    </Label>
                                     <Input
-                                        placeholder="e.g., /login, /dashboard"
-                                        value={route}
-                                        onChange={(e) => handleUpdateItem(index, e.target.value, routes, setRoutes)}
+                                        id="primaryActor"
+                                        placeholder="e.g., End User, Administrator"
+                                        value={primaryActor}
+                                        onChange={(e) => setPrimaryActor(e.target.value)}
+                                        required
                                     />
-                                    {routes.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveItem(index, routes, setRoutes)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
                                 </div>
-                            ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddItem(routes, setRoutes)}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Route
-                            </Button>
-                        </div>
 
-                        {/* Components */}
-                        <div className="space-y-3">
-                            <Label>Components</Label>
-                            {components.map((component, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Input
-                                        placeholder="e.g., LoginForm, UserProfile"
-                                        value={component}
-                                        onChange={(e) => handleUpdateItem(index, e.target.value, components, setComponents)}
-                                    />
-                                    {components.length > 1 && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemoveItem(index, components, setComponents)}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
+                                <div className="space-y-2">
+                                    <Label htmlFor="complexity">Complexity</Label>
+                                    <select
+                                        id="complexity"
+                                        value={complexity}
+                                        onChange={(e) => setComplexity(e.target.value as any)}
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
                                 </div>
-                            ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddItem(components, setComponents)}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Component
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                            </CardContent>
+                        </Card>
 
-                {/* Acceptance Criteria */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Acceptance Criteria</CardTitle>
-                        <CardDescription>
-                            Define the conditions that must be met
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {acceptanceCriteria.map((criteria, index) => (
-                            <div key={index} className="flex gap-2">
-                                <Input
-                                    placeholder="e.g., User can log in with email and password"
-                                    value={criteria}
-                                    onChange={(e) => handleUpdateItem(index, e.target.value, acceptanceCriteria, setAcceptanceCriteria)}
-                                />
-                                {acceptanceCriteria.length > 1 && (
+                        {/* Technical Surface */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Technical Surface</CardTitle>
+                                <CardDescription>
+                                    Specify the technical implementation details
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Backend */}
+                                <div className="space-y-3">
+                                    <Label>Backend Repositories <span className="text-destructive">*</span></Label>
+                                    {backendRepos.map((repo, index) => (
+                                        <div key={index} className="flex gap-2">
+                                            <Input
+                                                placeholder="e.g., api, backend-service"
+                                                value={repo}
+                                                onChange={(e) => handleUpdateItem(index, e.target.value, backendRepos, setBackendRepos)}
+                                                required={index === 0}
+                                            />
+                                            {backendRepos.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleRemoveItem(index, backendRepos, setBackendRepos)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
                                     <Button
                                         type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleRemoveItem(index, acceptanceCriteria, setAcceptanceCriteria)}
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleAddItem(backendRepos, setBackendRepos)}
                                     >
-                                        <X className="h-4 w-4" />
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Repository
                                     </Button>
-                                )}
-                            </div>
-                        ))}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAddItem(acceptanceCriteria, setAcceptanceCriteria)}
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Criterion
-                        </Button>
-                    </CardContent>
-                </Card>
+                                </div>
 
-                {/* Tags */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Tags</CardTitle>
-                        <CardDescription>
-                            Add tags to categorize this use case
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="e.g., authentication, user-management"
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleAddTag();
-                                    }
-                                }}
-                            />
+                                {/* Backend Endpoints */}
+                                <div className="space-y-3">
+                                    <Label>API Endpoints</Label>
+                                    {endpoints.map((endpoint, index) => (
+                                        <div key={index} className="flex gap-2">
+                                            <Input
+                                                placeholder="e.g., /api/auth/login"
+                                                value={endpoint}
+                                                onChange={(e) => handleUpdateItem(index, e.target.value, endpoints, setEndpoints)}
+                                            />
+                                            {endpoints.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleRemoveItem(index, endpoints, setEndpoints)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleAddItem(endpoints, setEndpoints)}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Endpoint
+                                    </Button>
+                                </div>
+
+                                {/* Frontend */}
+                                <div className="space-y-3">
+                                    <Label>Frontend Repositories <span className="text-destructive">*</span></Label>
+                                    {frontendRepos.map((repo, index) => (
+                                        <div key={index} className="flex gap-2">
+                                            <Input
+                                                placeholder="e.g., web, mobile-app"
+                                                value={repo}
+                                                onChange={(e) => handleUpdateItem(index, e.target.value, frontendRepos, setFrontendRepos)}
+                                                required={index === 0}
+                                            />
+                                            {frontendRepos.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleRemoveItem(index, frontendRepos, setFrontendRepos)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleAddItem(frontendRepos, setFrontendRepos)}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Repository
+                                    </Button>
+                                </div>
+
+                                {/* Frontend Routes */}
+                                <div className="space-y-3">
+                                    <Label>Routes</Label>
+                                    {routes.map((route, index) => (
+                                        <div key={index} className="flex gap-2">
+                                            <Input
+                                                placeholder="e.g., /login, /dashboard"
+                                                value={route}
+                                                onChange={(e) => handleUpdateItem(index, e.target.value, routes, setRoutes)}
+                                            />
+                                            {routes.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleRemoveItem(index, routes, setRoutes)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleAddItem(routes, setRoutes)}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Route
+                                    </Button>
+                                </div>
+
+                                {/* Components */}
+                                <div className="space-y-3">
+                                    <Label>Components</Label>
+                                    {components.map((component, index) => (
+                                        <div key={index} className="flex gap-2">
+                                            <Input
+                                                placeholder="e.g., LoginForm, UserProfile"
+                                                value={component}
+                                                onChange={(e) => handleUpdateItem(index, e.target.value, components, setComponents)}
+                                            />
+                                            {components.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleRemoveItem(index, components, setComponents)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleAddItem(components, setComponents)}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Component
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Acceptance Criteria */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Acceptance Criteria</CardTitle>
+                                <CardDescription>
+                                    Define the conditions that must be met
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {acceptanceCriteria.map((criteria, index) => (
+                                    <div key={index} className="flex gap-2">
+                                        <Input
+                                            placeholder="e.g., User can log in with email and password"
+                                            value={criteria}
+                                            onChange={(e) => handleUpdateItem(index, e.target.value, acceptanceCriteria, setAcceptanceCriteria)}
+                                        />
+                                        {acceptanceCriteria.length > 1 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleRemoveItem(index, acceptanceCriteria, setAcceptanceCriteria)}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAddItem(acceptanceCriteria, setAcceptanceCriteria)}
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Criterion
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        {/* Tags */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Tags</CardTitle>
+                                <CardDescription>
+                                    Add tags to categorize this use case
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder="e.g., authentication, user-management"
+                                        value={tagInput}
+                                        onChange={(e) => setTagInput(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleAddTag();
+                                            }
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleAddTag}
+                                    >
+                                        Add
+                                    </Button>
+                                </div>
+                                {tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {tags.map((tag) => (
+                                            <Badge key={tag} variant="secondary" className="gap-1">
+                                                {tag}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveTag(tag)}
+                                                    className="ml-1 hover:text-destructive"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Actions */}
+                        <div className="flex justify-end gap-3 sticky bottom-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 border rounded-lg">
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={handleAddTag}
+                                onClick={() => router.back()}
+                                disabled={createMutation.isPending}
                             >
-                                Add
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={createMutation.isPending}>
+                                {createMutation.isPending && (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                )}
+                                Create Use Case
                             </Button>
                         </div>
-                        {tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                                {tags.map((tag) => (
-                                    <Badge key={tag} variant="secondary" className="gap-1">
-                                        {tag}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveTag(tag)}
-                                            className="ml-1 hover:text-destructive"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Actions */}
-                <div className="flex justify-end gap-3 sticky bottom-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 border rounded-lg">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => router.back()}
-                        disabled={createMutation.isPending}
-                    >
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={createMutation.isPending}>
-                        {createMutation.isPending && (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        )}
-                        Create Use Case
-                    </Button>
+                    </form>
                 </div>
-            </form>
+
+                {/* RIGHT SIDE - AI Generation Panel (40% width) */}
+                <div className="lg:col-span-1">
+                    <Card className="sticky top-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Sparkles className="h-5 w-5 text-primary" />
+                                AI Generation
+                            </CardTitle>
+                            <CardDescription>
+                                Describe your use case and let AI generate the details
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {/* AI Description Textarea */}
+                            <div className="space-y-2">
+                                <Label htmlFor="aiDescription">
+                                    Describe Your Use Case
+                                </Label>
+                                <Textarea
+                                    id="aiDescription"
+                                    placeholder="e.g., I need a user authentication system where users can login with email and password, reset their password if forgotten, and manage their profile information..."
+                                    value={aiDescription}
+                                    onChange={(e) => setAiDescription(e.target.value)}
+                                    rows={8}
+                                    className="resize-none"
+                                    disabled={isGenerating}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Provide a detailed description of what you want to build
+                                </p>
+                            </div>
+
+                            {/* Error Display */}
+                            {generationError && (
+                                <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                    <p className="text-sm text-destructive">{generationError}</p>
+                                </div>
+                            )}
+
+                            {/* Generate Buttons */}
+                            <div className="space-y-2">
+                                <Button
+                                    type="button"
+                                    variant="default"
+                                    className="w-full"
+                                    onClick={handleGenerateWithManualData}
+                                    disabled={isGenerating || !aiDescription.trim()}
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Zap className="h-4 w-4 mr-2" />
+                                            Generate with Manual Data
+                                        </>
+                                    )}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={handleGenerateWithDescriptionOnly}
+                                    disabled={isGenerating || !aiDescription.trim()}
+                                >
+                                    <Sparkles className="h-4 w-4 mr-2" />
+                                    Generate from Scratch
+                                </Button>
+                            </div>
+
+                            {/* Status/Help Text */}
+                            <div className="pt-4 border-t">
+                                <p className="text-xs text-muted-foreground">
+                                    <strong>💡 Tip:</strong> Use <strong>"Generate with Manual Data"</strong> to preserve your manual entries and only fill empty fields. Use <strong>"Generate from Scratch"</strong> to start fresh.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
     );
 }
