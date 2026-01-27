@@ -83,6 +83,48 @@ JSON STRUCTURE
         "reviewedByHuman": false,
         "generatedByAI": true
     },
+    "stakeholders": ["string"],
+    "functionalRequirements": {
+        "must": ["string"],
+        "should": ["string"],
+        "wont": ["string"]
+    },
+    "scope": {
+        "inScope": ["string"],
+        "outOfScope": ["string"],
+        "assumptions": ["string"],
+        "constraints": ["string"]
+    },
+    "domainModel": {
+        "entities": [{
+            "name": "string",
+            "description": "string",
+            "fields": [{ "name": "string", "type": "string", "required": boolean, "constraints": ["string"] }]
+        }]
+    },
+    "interfaces": {
+        "type": "REST" | "GraphQL" | "Event" | "UI",
+        "endpoints": [{ "method": "string", "path": "string", "request": "string", "response": "string" }],
+        "events": ["string"]
+    },
+    "architecture": {
+        "style": "layered" | "clean" | "hexagonal" | "event-driven",
+        "patterns": ["string"]
+    },
+    "technologyConstraints": {
+        "backend": "string",
+        "frontend": "string",
+        "database": "string",
+        "messaging": "string"
+    },
+    "configuration": {
+        "envVars": ["string"],
+        "featureFlags": ["string"]
+    },
+    "quality": {
+        "testTypes": ["string"],
+        "securityConsiderations": ["string"]
+    },
     "flows": [{
         "name": "string",
         "type": "main" | "alternative" | "error",

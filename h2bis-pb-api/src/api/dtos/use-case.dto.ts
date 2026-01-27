@@ -34,6 +34,81 @@ export const CreateUseCaseRequestDto = z.object({
 
     acceptanceCriteria: z.array(z.string()).default([]),
 
+    stakeholders: z.array(z.string()).optional(),
+
+    functionalRequirements: z.object({
+        must: z.array(z.string()).default([]),
+        should: z.array(z.string()).default([]),
+        wont: z.array(z.string()).default([])
+    }).optional(),
+
+    scope: z.object({
+        inScope: z.array(z.string()).default([]),
+        outOfScope: z.array(z.string()).default([]),
+        assumptions: z.array(z.string()).default([]),
+        constraints: z.array(z.string()).default([])
+    }).optional(),
+
+    domainModel: z.object({
+        entities: z.array(z.object({
+            name: z.string(),
+            description: z.string().optional(),
+            fields: z.array(z.object({
+                name: z.string(),
+                type: z.string(),
+                required: z.boolean(),
+                constraints: z.array(z.string()).default([])
+            })).default([])
+        })).default([])
+    }).optional(),
+
+    interfaces: z.object({
+        type: z.enum(['REST', 'GraphQL', 'Event', 'UI']),
+        endpoints: z.array(z.object({
+            method: z.string(),
+            path: z.string(),
+            request: z.string().optional(),
+            response: z.string().optional()
+        })).default([]),
+        events: z.array(z.string()).default([])
+    }).optional(),
+
+    errorHandling: z.object({
+        knownErrors: z.array(z.object({
+            condition: z.string(),
+            expectedBehavior: z.string()
+        })).default([])
+    }).optional(),
+
+    architecture: z.object({
+        style: z.enum(['layered', 'clean', 'hexagonal', 'event-driven']),
+        patterns: z.array(z.string()).default([])
+    }).optional(),
+
+    technologyConstraints: z.object({
+        backend: z.string().optional(),
+        frontend: z.string().optional(),
+        database: z.string().optional(),
+        messaging: z.string().optional(),
+        auth: z.string().optional()
+    }).optional(),
+
+    configuration: z.object({
+        envVars: z.array(z.string()).default([]),
+        featureFlags: z.array(z.string()).default([])
+    }).optional(),
+
+    quality: z.object({
+        testTypes: z.array(z.enum(['unit', 'integration', 'e2e', 'security'])).default([]),
+        performanceCriteria: z.array(z.string()).default([]),
+        securityConsiderations: z.array(z.string()).default([])
+    }).optional(),
+
+    aiDirectives: z.object({
+        generationLevel: z.enum(['skeleton', 'partial', 'full']),
+        overwritePolicy: z.enum(['never', 'ifEmpty', 'always'])
+    }).optional(),
+
     flows: z.array(z.object({
         name: z.string(),
         steps: z.array(z.string()),
@@ -127,6 +202,70 @@ export interface UseCaseDetailResponseDto {
     businessValue: string;
     primaryActor: string;
     acceptanceCriteria: string[];
+    stakeholders?: string[];
+    functionalRequirements?: {
+        must: string[];
+        should: string[];
+        wont: string[];
+    };
+    scope?: {
+        inScope: string[];
+        outOfScope: string[];
+        assumptions: string[];
+        constraints: string[];
+    };
+    domainModel?: {
+        entities: Array<{
+            name: string;
+            description?: string;
+            fields: Array<{
+                name: string;
+                type: string;
+                required: boolean;
+                constraints: string[];
+            }>;
+        }>;
+    };
+    interfaces?: {
+        type: 'REST' | 'GraphQL' | 'Event' | 'UI';
+        endpoints: Array<{
+            method: string;
+            path: string;
+            request?: string;
+            response?: string;
+        }>;
+        events: string[];
+    };
+    errorHandling?: {
+        knownErrors: Array<{
+            condition: string;
+            expectedBehavior: string;
+        }>;
+    };
+    architecture?: {
+        style: 'layered' | 'clean' | 'hexagonal' | 'event-driven';
+        patterns: string[];
+    };
+    technologyConstraints?: {
+        backend?: string;
+        frontend?: string;
+        database?: string;
+        messaging?: string;
+        auth?: string;
+    };
+    configuration?: {
+        envVars: string[];
+        featureFlags: string[];
+    };
+    quality?: {
+        testTypes: ('unit' | 'integration' | 'e2e' | 'security')[];
+        performanceCriteria: string[];
+        securityConsiderations: string[];
+    };
+    aiDirectives?: {
+        generationLevel: 'skeleton' | 'partial' | 'full';
+        overwritePolicy: 'never' | 'ifEmpty' | 'always';
+    };
     flows: Array<{
         name: string;
         steps: string[];

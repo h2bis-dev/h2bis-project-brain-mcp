@@ -31,6 +31,85 @@ const TechnicalSurfaceSchema = z.object({
     }).strict()
 });
 
+const FunctionalRequirementsSchema = z.object({
+    must: z.array(z.string()).default([]),
+    should: z.array(z.string()).default([]),
+    wont: z.array(z.string()).default([])
+});
+
+const ScopeSchema = z.object({
+    inScope: z.array(z.string()).default([]),
+    outOfScope: z.array(z.string()).default([]),
+    assumptions: z.array(z.string()).default([]),
+    constraints: z.array(z.string()).default([])
+});
+
+const DomainEntityFieldSchema = z.object({
+    name: z.string(),
+    type: z.string(),
+    required: z.boolean(),
+    constraints: z.array(z.string()).default([])
+});
+
+const DomainEntitySchema = z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    fields: z.array(DomainEntityFieldSchema).default([])
+});
+
+const DomainModelSchema = z.object({
+    entities: z.array(DomainEntitySchema).default([])
+});
+
+const InterfaceEndpointSchema = z.object({
+    method: z.string(),
+    path: z.string(),
+    request: z.string().optional(),
+    response: z.string().optional()
+});
+
+const InterfacesSchema = z.object({
+    type: z.enum(["REST", "GraphQL", "Event", "UI"]),
+    endpoints: z.array(InterfaceEndpointSchema).default([]),
+    events: z.array(z.string()).default([])
+});
+
+const ErrorHandlingSchema = z.object({
+    knownErrors: z.array(z.object({
+        condition: z.string(),
+        expectedBehavior: z.string()
+    })).default([])
+});
+
+const ArchitectureSchema = z.object({
+    style: z.enum(["layered", "clean", "hexagonal", "event-driven"]),
+    patterns: z.array(z.string()).default([])
+});
+
+const TechnologyConstraintsSchema = z.object({
+    backend: z.string().optional(),
+    frontend: z.string().optional(),
+    database: z.string().optional(),
+    messaging: z.string().optional(),
+    auth: z.string().optional()
+});
+
+const ConfigurationSchema = z.object({
+    envVars: z.array(z.string()).default([]),
+    featureFlags: z.array(z.string()).default([])
+});
+
+const QualitySchema = z.object({
+    testTypes: z.array(z.enum(["unit", "integration", "e2e", "security"])).default([]),
+    performanceCriteria: z.array(z.string()).default([]),
+    securityConsiderations: z.array(z.string()).default([])
+});
+
+const AIDirectivesSchema = z.object({
+    generationLevel: z.enum(["skeleton", "partial", "full"]),
+    overwritePolicy: z.enum(["never", "ifEmpty", "always"])
+});
+
 const AIMetadataSchema = z.object({
     estimatedComplexity: z.enum(["low", "medium", "high"]),
     implementationRisk: z.array(z.string()).default([]),
@@ -85,15 +164,40 @@ export const HandlerSchema = z.object({
             "in_development",
             "ai_generated",
             "human_reviewed",
-            "completed"
+            "completed",
+            // Keeping existing but adding requested ones just in case needed in future, 
+            // though user asked to keep existing.
+            // "approved", "in_progress", "implemented" - omitted as per user request
         ]),
         reviewedByHuman: z.boolean(),
         generatedByAI: z.boolean()
     }).strict(),
 
+    stakeholders: z.array(z.string()).optional(),
+
     businessValue: z.string(),
 
     primaryActor: z.string(),
+
+    functionalRequirements: FunctionalRequirementsSchema.optional(),
+
+    scope: ScopeSchema.optional(),
+
+    domainModel: DomainModelSchema.optional(),
+
+    interfaces: InterfacesSchema.optional(),
+
+    errorHandling: ErrorHandlingSchema.optional(),
+
+    architecture: ArchitectureSchema.optional(),
+
+    technologyConstraints: TechnologyConstraintsSchema.optional(),
+
+    configuration: ConfigurationSchema.optional(),
+
+    quality: QualitySchema.optional(),
+
+    aiDirectives: AIDirectivesSchema.optional(),
 
     acceptanceCriteria: AcceptanceCriteriaSchema,
 
@@ -140,5 +244,13 @@ export const HandlerSchema = z.object({
 
 /* ---------- Type Exports ---------- */
 
+
 export type Handler = z.infer<typeof HandlerSchema>;
 export type AIMetadata = z.infer<typeof AIMetadataSchema>;
+export type FunctionalRequirements = z.infer<typeof FunctionalRequirementsSchema>;
+export type Scope = z.infer<typeof ScopeSchema>;
+export type DomainModel = z.infer<typeof DomainModelSchema>;
+export type Interfaces = z.infer<typeof InterfacesSchema>;
+export type ErrorHandling = z.infer<typeof ErrorHandlingSchema>;
+export type Architecture = z.infer<typeof ArchitectureSchema>;
+export type AIDirectives = z.infer<typeof AIDirectivesSchema>;

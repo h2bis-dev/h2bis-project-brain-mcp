@@ -12,7 +12,18 @@ export function errorHandler(
     res: Response,
     next: NextFunction
 ) {
-    console.error('❌ Error:', err);
+    // Safe error logging
+    try {
+        console.error('❌ Error caught by global handler:', {
+            message: err.message,
+            stack: err.stack,
+            name: err.name,
+            // Only log non-circular properties if possible, or just the basics
+        });
+    } catch (loggingError) {
+        console.error('❌ Error logging failed:', loggingError);
+        console.error('Original error message:', err.message);
+    }
 
     // Handle AppError instances (our custom errors)
     if (err instanceof AppError) {

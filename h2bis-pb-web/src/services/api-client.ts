@@ -47,6 +47,23 @@ apiClient.interceptors.response.use(
             error.message ||
             "An unexpected error occurred";
 
+        // Log full error details for debugging
+        console.error("API Error Details:", JSON.stringify({
+            message: error.message,
+            stack: error.stack,
+            config: {
+                url: error.config?.url,
+                method: error.config?.method,
+                data: error.config?.data,
+                headers: error.config?.headers
+            },
+            response: {
+                status: error.response?.status,
+                data: error.response?.data,
+                headers: error.response?.headers
+            }
+        }, null, 2));
+
         console.error("API Error:", {
             url: error.config?.url,
             method: error.config?.method,

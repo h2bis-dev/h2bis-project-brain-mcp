@@ -44,6 +44,83 @@ export interface ImplementationRisk {
     normative: boolean;
 }
 
+export interface FunctionalRequirements {
+    must: string[];
+    should: string[];
+    wont: string[];
+}
+
+export interface Scope {
+    inScope: string[];
+    outOfScope: string[];
+    assumptions: string[];
+    constraints: string[];
+}
+
+export interface DomainEntity {
+    name: string;
+    description?: string;
+    fields: {
+        name: string;
+        type: string;
+        required: boolean;
+        constraints: string[];
+    }[];
+}
+
+export interface DomainModel {
+    entities: DomainEntity[];
+}
+
+export interface InterfaceEndpoint {
+    method: string;
+    path: string;
+    request?: string;
+    response?: string;
+}
+
+export interface Interfaces {
+    type: "REST" | "GraphQL" | "Event" | "UI";
+    endpoints: InterfaceEndpoint[];
+    events: string[];
+}
+
+export interface ErrorHandling {
+    knownErrors: {
+        condition: string;
+        expectedBehavior: string;
+    }[];
+}
+
+export interface Architecture {
+    style: "layered" | "clean" | "hexagonal" | "event-driven";
+    patterns: string[];
+}
+
+export interface TechnologyConstraints {
+    backend?: string;
+    frontend?: string;
+    database?: string;
+    messaging?: string;
+    auth?: string;
+}
+
+export interface Configuration {
+    envVars: string[];
+    featureFlags: string[];
+}
+
+export interface Quality {
+    testTypes: ("unit" | "integration" | "e2e")[];
+    performanceCriteria: string[];
+    securityConsiderations: string[];
+}
+
+export interface AIDirectives {
+    generationLevel: "skeleton" | "partial" | "full";
+    overwritePolicy: "never" | "ifEmpty" | "always";
+}
+
 export interface AIMetadata {
     estimatedComplexity: "low" | "medium" | "high";
     implementationRisk: string[];
@@ -81,6 +158,17 @@ export interface UseCase {
     };
     businessValue: string;
     primaryActor: string;
+    stakeholders?: string[];
+    functionalRequirements?: FunctionalRequirements;
+    scope?: Scope;
+    domainModel?: DomainModel;
+    interfaces?: Interfaces;
+    errorHandling?: ErrorHandling;
+    architecture?: Architecture;
+    technologyConstraints?: TechnologyConstraints;
+    configuration?: Configuration;
+    quality?: Quality;
+    aiDirectives?: AIDirectives;
     acceptanceCriteria: string[];
     flows: Flow[];
     technicalSurface: TechnicalSurface;

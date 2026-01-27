@@ -29,6 +29,70 @@ export interface CreateUseCaseRequest {
         reviewedByHuman: boolean;
         generatedByAI: boolean;
     };
+    stakeholders?: string[];
+    functionalRequirements?: {
+        must: string[];
+        should: string[];
+        wont: string[];
+    };
+    scope?: {
+        inScope: string[];
+        outOfScope: string[];
+        assumptions: string[];
+        constraints: string[];
+    };
+    domainModel?: {
+        entities: Array<{
+            name: string;
+            description?: string;
+            fields: Array<{
+                name: string;
+                type: string;
+                required: boolean;
+                constraints: string[];
+            }>;
+        }>;
+    };
+    interfaces?: {
+        type: 'REST' | 'GraphQL' | 'Event' | 'UI';
+        endpoints: Array<{
+            method: string;
+            path: string;
+            request?: string;
+            response?: string;
+        }>;
+        events: string[];
+    };
+    errorHandling?: {
+        knownErrors: Array<{
+            condition: string;
+            expectedBehavior: string;
+        }>;
+    };
+    architecture?: {
+        style: 'layered' | 'clean' | 'hexagonal' | 'event-driven';
+        patterns: string[];
+    };
+    technologyConstraints?: {
+        backend?: string;
+        frontend?: string;
+        database?: string;
+        messaging?: string;
+        auth?: string;
+    };
+    configuration?: {
+        envVars: string[];
+        featureFlags: string[];
+    };
+    quality?: {
+        testTypes: ('unit' | 'integration' | 'e2e')[];
+        performanceCriteria: string[];
+        securityConsiderations: string[];
+    };
+    aiDirectives?: {
+        generationLevel: 'skeleton' | 'partial' | 'full';
+        overwritePolicy: 'never' | 'ifEmpty' | 'always';
+    };
     acceptanceCriteria?: string[];
     flows?: Array<{
         name: string;

@@ -10,8 +10,11 @@ import { generateCapabilityFromHandlerHandler } from '../capability/generate-cap
 export class CreateUseCaseHandler {
     async execute(dto: CreateUseCaseRequestDto, userId?: string): Promise<CreateUseCaseResponseDto> {
         // Check if use case with this key already exists
+        console.log('[CreateUseCaseHandler] Executing with DTO:', JSON.stringify(dto, null, 2));
+
         const existing = await useCaseRepository.findByKey(dto.key);
         if (existing) {
+            console.error(`[CreateUseCaseHandler] Use case with key '${dto.key}' already exists`);
             throw new Error(`Use case with key '${dto.key}' already exists`);
         }
 
@@ -28,6 +31,17 @@ export class CreateUseCaseHandler {
             },
             businessValue: dto.businessValue,
             primaryActor: dto.primaryActor,
+            stakeholders: dto.stakeholders,
+            functionalRequirements: dto.functionalRequirements,
+            scope: dto.scope,
+            domainModel: dto.domainModel,
+            interfaces: dto.interfaces,
+            errorHandling: dto.errorHandling,
+            architecture: dto.architecture,
+            technologyConstraints: dto.technologyConstraints,
+            configuration: dto.configuration,
+            quality: dto.quality,
+            aiDirectives: dto.aiDirectives,
             acceptanceCriteria: dto.acceptanceCriteria || [],
             flows: dto.flows || [],
             technicalSurface: dto.technicalSurface,
