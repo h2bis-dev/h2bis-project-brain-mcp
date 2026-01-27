@@ -33,7 +33,7 @@ export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 export const API_CONFIG = {
     BASE_URL: API_BASE_URL,
-    TIMEOUT: 30000, // 30 seconds
+    TIMEOUT: 150000, // 150 seconds for AI generation
     RETRY_ATTEMPTS: 3,
 } as const;
 
@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
         CREATE: '/api/use-cases',
         UPDATE: (id: string) => `/api/use-cases/${id}`,
         DELETE: (id: string) => `/api/use-cases/${id}`,
+        GENERATE: '/api/use-cases/generate',
     },
     CAPABILITIES: {
         LIST: '/api/capabilities',

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL } from "@/lib/config";
+import { API_BASE_URL, API_CONFIG } from "@/lib/config";
 import { getSession } from "next-auth/react";
 
 /**
@@ -10,7 +10,7 @@ export const apiClient = axios.create({
     headers: {
         "Content-Type": "application/json",
     },
-    timeout: 30000, // 30 seconds
+    timeout: API_CONFIG.TIMEOUT,
 });
 
 /**

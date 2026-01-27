@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/error.middleware.js';
-import { CreateUseCaseRequestDto } from '../dtos/use-case.dto.js';
+import { CreateUseCaseRequestDto, GenerateUseCaseRequestDto } from '../dtos/use-case.dto.js';
 import { getUseCasesHandler } from '../../application/handlers/use-case/get-use-cases.handler.js';
 import { getUseCaseByIdHandler } from '../../application/handlers/use-case/get-use-case-by-id.handler.js';
 import { createUseCaseHandler } from '../../application/handlers/use-case/create-use-case.handler.js';
 import { deleteUseCaseHandler } from '../../application/handlers/use-case/delete-use-case.handler.js';
+import { generateUseCaseHandler } from '../../application/handlers/use-case/generate-use-case.handler.js';
 
 /**
  * Get all use cases
@@ -46,8 +47,27 @@ export const createUseCase = asyncHandler(async (req: Request, res: Response) =>
     // Execute handler
     const result = await createUseCaseHandler.execute(dto, userId);
 
+    // Handle rejection cases with appropriate status codes
+    if (result.mode === 'REJECTED') {
+        return res.status(400).json(result);
+    }
     // Send response
     res.status(201).json(result);
+});
+
+/**
+ * Generate a use case structure from description (AI)
+ * POST /api/use-cases/generate
+ */
+export const generateUseCase = asyncHandler(async (req: Request, res: Response) => {
+    // Validate request DTO
+    const dto = GenerateUseCaseRequestDto.parse(req.body);
+
+    // Execute handler
+    const result = await generateUseCaseHandler.execute(dto);
+
+    // Send response
+    res.status(200).json(result);
 });
 
 /**

@@ -17,6 +17,9 @@ router.get('/', authenticate, useCaseController.getAllUseCases);
 // POST /api/use-cases - Create a new use case
 router.post('/', authenticate, useCaseController.createUseCase);
 
+// POST /api/use-cases/generate - Generate use case from description (AI)
+router.post('/generate', authenticate, useCaseController.generateUseCase);
+
 // GET /api/use-cases/:id - Get a single use case by ID
 router.get('/:id', authenticate, useCaseController.getUseCaseById);
 

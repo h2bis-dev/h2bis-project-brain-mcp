@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, X, Loader2, Sparkles, AlertCircle, Zap } from 'lucide-react';
 import { useCreateUseCase } from '@/hooks/useUseCases';
-import type { CreateUseCaseRequest } from '@/services/use-case.service';
+import { useCaseService, type CreateUseCaseRequest } from '@/services/use-case.service';
 
 export default function NewUseCasePage() {
     const router = useRouter();
@@ -82,45 +82,35 @@ export default function NewUseCasePage() {
         setTags(tags.filter(t => t !== tag));
     };
 
-    // Mock AI Generation Function (will be replaced with real API call in Phase 2)
-    const mockAIGeneration = (desc: string, existingData: any): Partial<typeof existingData> => {
-        // Simulate AI processing
-        const generated: any = {};
+    const updateFormWithGeneratedData = (generated: any) => {
+        const update = (field: string, setter: Function, val: any) => {
+            if (val !== undefined && val !== null && val !== '' && !(Array.isArray(val) && val.length === 0)) {
+                setter(val);
+                setFieldOrigins(prev => ({ ...prev, [field]: 'ai' }));
+            }
+        };
 
-        // Only generate fields that are empty (preserve user data)
-        if (!existingData.key) generated.key = 'uc-' + desc.toLowerCase().replace(/\s+/g, '-').substring(0, 30);
-        if (!existingData.name) generated.name = desc.split('.')[0] || 'Generated Use Case';
-        if (!existingData.description) generated.description = desc;
-        if (!existingData.businessValue) generated.businessValue = 'Provides value by enabling ' + desc.toLowerCase();
-        if (!existingData.primaryActor) generated.primaryActor = 'End User';
+        update('key', setKey, generated.key);
+        update('name', setName, generated.name);
+        update('description', setDescription, generated.description);
+        update('businessValue', setBusinessValue, generated.businessValue);
+        update('primaryActor', setPrimaryActor, generated.primaryActor);
 
-        // Technical surface - only if empty
-        if (!existingData.backendRepos || existingData.backendRepos.every(r => !r.trim())) {
-            generated.backendRepos = ['api', 'backend-service'];
-        }
-        if (!existingData.frontendRepos || existingData.frontendRepos.every(r => !r.trim())) {
-            generated.frontendRepos = ['web', 'mobile-app'];
-        }
-        if (!existingData.endpoints || existingData.endpoints.every(e => !e.trim())) {
-            generated.endpoints = ['/api/resource', '/api/resource/:id'];
-        }
-        if (!existingData.routes || existingData.routes.every(r => !r.trim())) {
-            generated.routes = ['/dashboard', '/resource'];
-        }
-        if (!existingData.components || existingData.components.every(c => !c.trim())) {
-            generated.components = ['ResourceList', 'ResourceDetail'];
-        }
-
-        // Acceptance criteria
-        if (!existingData.acceptanceCriteria || existingData.acceptanceCriteria.every(ac => !ac.trim())) {
-            generated.acceptanceCriteria = [
-                'User can successfully complete the action',
-                'System provides appropriate feedback',
-                'Data is persisted correctly'
-            ];
+        // Technical surface mapping
+        if (generated.technicalSurface) {
+            const ts = generated.technicalSurface;
+            if (ts.backend) {
+                update('backendRepos', setBackendRepos, ts.backend.repos);
+                update('endpoints', setEndpoints, ts.backend.endpoints);
+            }
+            if (ts.frontend) {
+                update('frontendRepos', setFrontendRepos, ts.frontend.repos);
+                update('routes', setRoutes, ts.frontend.routes);
+                update('components', setComponents, ts.frontend.components);
+            }
         }
 
-        return generated;
+        update('acceptanceCriteria', setAcceptanceCriteria, generated.acceptanceCriteria);
     };
 
     const handleGenerateWithDescriptionOnly = async () => {
@@ -133,35 +123,18 @@ export default function NewUseCasePage() {
         setGenerationError('');
 
         try {
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Call API
+            const response = await useCaseService.generate({
+                description: aiDescription
+            });
 
-            // Clear all fields first
-            const emptyData = {
-                key: '', name: '', description: '', businessValue: '', primaryActor: '',
-                backendRepos: [''], frontendRepos: [''], endpoints: [''],
-                routes: [''], components: [''], acceptanceCriteria: ['']
-            };
+            // Update form with result
+            updateFormWithGeneratedData(response.useCase);
+            setGenerationError('');
 
-            // Generate everything from scratch
-            const generated = mockAIGeneration(aiDescription, emptyData);
-
-            // Update all fields
-            if (generated.key) { setKey(generated.key); setFieldOrigins(prev => ({ ...prev, key: 'ai' })); }
-            if (generated.name) { setName(generated.name); setFieldOrigins(prev => ({ ...prev, name: 'ai' })); }
-            if (generated.description) { setDescription(generated.description); setFieldOrigins(prev => ({ ...prev, description: 'ai' })); }
-            if (generated.businessValue) { setBusinessValue(generated.businessValue); setFieldOrigins(prev => ({ ...prev, businessValue: 'ai' })); }
-            if (generated.primaryActor) { setPrimaryActor(generated.primaryActor); setFieldOrigins(prev => ({ ...prev, primaryActor: 'ai' })); }
-
-            if (generated.backendRepos) { setBackendRepos(generated.backendRepos); setFieldOrigins(prev => ({ ...prev, backendRepos: 'ai' })); }
-            if (generated.frontendRepos) { setFrontendRepos(generated.frontendRepos); setFieldOrigins(prev => ({ ...prev, frontendRepos: 'ai' })); }
-            if (generated.endpoints) { setEndpoints(generated.endpoints); setFieldOrigins(prev => ({ ...prev, endpoints: 'ai' })); }
-            if (generated.routes) { setRoutes(generated.routes); setFieldOrigins(prev => ({ ...prev, routes: 'ai' })); }
-            if (generated.components) { setComponents(generated.components); setFieldOrigins(prev => ({ ...prev, components: 'ai' })); }
-            if (generated.acceptanceCriteria) { setAcceptanceCriteria(generated.acceptanceCriteria); setFieldOrigins(prev => ({ ...prev, acceptanceCriteria: 'ai' })); }
-
-        } catch (error) {
-            setGenerationError('Failed to generate use case. Please try again.');
+        } catch (error: any) {
+            console.error('AI Generation failed:', error);
+            setGenerationError(error.message || 'Failed to generate use case. Please try again.');
         } finally {
             setIsGenerating(false);
         }
@@ -177,34 +150,35 @@ export default function NewUseCasePage() {
         setGenerationError('');
 
         try {
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
             // Collect existing data
-            const existingData = {
+            const existingData: Partial<CreateUseCaseRequest> = {
                 key, name, description, businessValue, primaryActor,
-                backendRepos, frontendRepos, endpoints, routes, components, acceptanceCriteria
+                technicalSurface: {
+                    backend: {
+                        repos: backendRepos.filter(r => r.trim()),
+                        endpoints: endpoints.filter(e => e.trim())
+                    },
+                    frontend: {
+                        repos: frontendRepos.filter(r => r.trim()),
+                        routes: routes.filter(r => r.trim()),
+                        components: components.filter(c => c.trim())
+                    }
+                },
+                acceptanceCriteria: acceptanceCriteria.filter(ac => ac.trim())
             };
 
-            // Generate only for empty fields
-            const generated = mockAIGeneration(aiDescription, existingData);
+            // Call API with existing data
+            const response = await useCaseService.generate({
+                description: aiDescription,
+                existingData
+            });
 
-            // Update ONLY empty fields (preserve user data)
-            if (generated.key && !key.trim()) { setKey(generated.key); setFieldOrigins(prev => ({ ...prev, key: 'ai' })); }
-            if (generated.name && !name.trim()) { setName(generated.name); setFieldOrigins(prev => ({ ...prev, name: 'ai' })); }
-            if (generated.description && !description.trim()) { setDescription(generated.description); setFieldOrigins(prev => ({ ...prev, description: 'ai' })); }
-            if (generated.businessValue && !businessValue.trim()) { setBusinessValue(generated.businessValue); setFieldOrigins(prev => ({ ...prev, businessValue: 'ai' })); }
-            if (generated.primaryActor && !primaryActor.trim()) { setPrimaryActor(generated.primaryActor); setFieldOrigins(prev => ({ ...prev, primaryActor: 'ai' })); }
+            // Update form with result (AI agent respects existing data)
+            updateFormWithGeneratedData(response.useCase);
 
-            if (generated.backendRepos && backendRepos.every(r => !r.trim())) { setBackendRepos(generated.backendRepos); setFieldOrigins(prev => ({ ...prev, backendRepos: 'ai' })); }
-            if (generated.frontendRepos && frontendRepos.every(r => !r.trim())) { setFrontendRepos(generated.frontendRepos); setFieldOrigins(prev => ({ ...prev, frontendRepos: 'ai' })); }
-            if (generated.endpoints && endpoints.every(e => !e.trim())) { setEndpoints(generated.endpoints); setFieldOrigins(prev => ({ ...prev, endpoints: 'ai' })); }
-            if (generated.routes && routes.every(r => !r.trim())) { setRoutes(generated.routes); setFieldOrigins(prev => ({ ...prev, routes: 'ai' })); }
-            if (generated.components && components.every(c => !c.trim())) { setComponents(generated.components); setFieldOrigins(prev => ({ ...prev, components: 'ai' })); }
-            if (generated.acceptanceCriteria && acceptanceCriteria.every(ac => !ac.trim())) { setAcceptanceCriteria(generated.acceptanceCriteria); setFieldOrigins(prev => ({ ...prev, acceptanceCriteria: 'ai' })); }
-
-        } catch (error) {
-            setGenerationError('Failed to generate use case. Please try again.');
+        } catch (error: any) {
+            console.error('AI Generation failed:', error);
+            setGenerationError(error.message || 'Failed to generate use case. Please try again.');
         } finally {
             setIsGenerating(false);
         }

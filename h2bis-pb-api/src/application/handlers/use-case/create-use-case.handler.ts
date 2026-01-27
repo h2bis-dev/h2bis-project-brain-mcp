@@ -1,7 +1,7 @@
 import { useCaseRepository } from '../../../infrastructure/database/repositories/use-case.repository.js';
 import type { CreateUseCaseRequestDto, CreateUseCaseResponseDto } from '../../../api/dtos/use-case.dto.js';
-import type { Handler } from '../../../domain/schemas/use_case_schema.js';
-import { createDefaultAudit } from '../../../domain/schemas/use_case_schema.js';
+import { HandlerSchema, type Handler, createDefaultAudit } from '../../../domain/schemas/use_case_schema.js';
+import { generateCapabilityFromHandlerHandler } from '../capability/generate-capability.handler.js';
 
 /**
  * Create Use Case Handler
@@ -47,11 +47,64 @@ export class CreateUseCaseHandler {
         // Create the use case
         const id = await useCaseRepository.create(useCase);
 
-        return {
-            id,
-            key: dto.key,
-            message: 'Use case created successfully'
-        };
+        // // AUTO-GENERATE CAPABILITY
+        console.log('🔍 Checking for capability auto-generation for use case:', useCase.key);
+
+        const handlerResult = HandlerSchema.safeParse(useCase);
+
+        if (handlerResult.success) {
+            // const capabilityResult = await generateCapabilityFromHandlerHandler.execute(handlerResult.data);
+
+            // if (capabilityResult.mode === 'REJECTED' && capabilityResult.insufficiencyReport) {
+            //     // Normative use case was incomplete
+            //     return {
+            //         id,
+            //         key: dto.key,
+            //         message: 'Use case created but capability generation rejected (insufficient data)',
+            //         capabilityGenerated: false,
+            //         mode: 'REJECTED',
+            //         insufficiencyReport: capabilityResult.insufficiencyReport
+            //     };
+            // }
+
+            // if (capabilityResult.mode === 'REJECTED' && capabilityResult.validationReport) {
+            //     // Validation failed after retries
+            //     return {
+            //         id,
+            //         key: dto.key,
+            //         message: 'Use case created but capability generation failed validation',
+            //         capabilityGenerated: false,
+            //         mode: 'REJECTED',
+            //         validationReport: capabilityResult.validationReport
+            //     };
+            // }
+
+            // return {
+            //     id,
+            //     key: dto.key,
+            
+            //     message: 'Use case created and capability generated successfully',
+            //     capabilityGenerated: capabilityResult.generated,
+            //     capabilityId: capabilityResult.capabilityId,
+            //     mode: capabilityResult.mode
+            // };
+            return {
+                id,
+                key: dto.key,
+                message: 'Use case created and capability generated successfully',
+                capabilityGenerated: false,
+                capabilityId: null,
+                mode: 'REJECTED'
+            };
+        } else {
+            console.warn('⚠️ Handler validation failed:', handlerResult.error.errors);
+            return {
+                id,
+                key: dto.key,
+                message: 'Use case created but validation failed for capability generation',
+                capabilityGenerated: false
+            };
+        }
     }
 }
 

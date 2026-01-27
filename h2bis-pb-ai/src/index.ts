@@ -28,3 +28,7 @@ export { CacheService } from './services/cache/cache.service.js';
 // Export utilities
 export { logger } from './utils/logger.js';
 export { validateIntentExtraction } from './utils/validators.js';
+
+// New Agents
+export { UseCaseGenerationAgent } from './agents/use-case-generation/use-case-generation.agent.js';
+export type { UseCaseGenerationInput, UseCaseGenerationResult } from './agents/use-case-generation/types/use-case-generation.types.js';

@@ -106,4 +106,23 @@ export const useCaseService = {
         const response = await apiClient.delete(API_ENDPOINTS.USE_CASES.DELETE(id));
         return response.data;
     },
+
+    /**
+     * Generate a use case using AI
+     */
+    generate: async (data: GenerateUseCaseRequest): Promise<GenerateUseCaseResponse> => {
+        const response = await apiClient.post(API_ENDPOINTS.USE_CASES.GENERATE, data);
+        return response.data;
+    }
 };
+
+export interface GenerateUseCaseRequest {
+    description: string;
+    existingData?: Partial<CreateUseCaseRequest>;
+}
+
+export interface GenerateUseCaseResponse {
+    useCase: Partial<CreateUseCaseRequest>;
+    generatedFields: string[];
+    confidence: number;
+}

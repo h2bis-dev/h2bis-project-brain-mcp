@@ -77,7 +77,10 @@ export const CreateUseCaseRequestDto = z.object({
         implementationRisk: z.array(z.string()).default([]),
         suggestedOrder: z.number().optional(),
         testStrategy: z.array(z.string()).default([]),
-        nonFunctionalRequirements: z.array(z.string()).default([])
+        nonFunctionalRequirements: z.array(z.string()).default([]),
+        skipValidation: z.boolean().optional(),
+        normativeMode: z.boolean().optional(),
+        insufficiencyReasons: z.array(z.string()).optional() // Feedback channel for validation failures
     }).optional()
 });
 
@@ -181,4 +184,22 @@ export interface CreateUseCaseResponseDto {
     id: string;
     key: string;
     message: string;
+    capabilityGenerated: boolean;
+    capabilityId?: string | null;
+    mode?: string;
+    insufficiencyReport?: any;
+    validationReport?: any;
+}
+
+export const GenerateUseCaseRequestDto = z.object({
+    description: z.string().min(1, 'Description is required'),
+    existingData: z.record(z.any()).optional()
+});
+
+export type GenerateUseCaseRequestDto = z.infer<typeof GenerateUseCaseRequestDto>;
+
+export interface GenerateUseCaseResponseDto {
+    useCase: any; // Partial<UseCase>
+    generatedFields: string[];
+    confidence: number;
 }
