@@ -1,4 +1,4 @@
-import { Handler } from '../schemas/use_case_schema.js';
+import { UseCase } from '../schemas/use_case_schema.js';
 import { CapabilityNode } from '../schemas/capability_schema.js';
 import { IntentAnalysis } from 'h2bis-pb-ai';
 import { NormativityCheck, Insufficiency, InsufficientReport } from '../types/normative-validation.types.js';
@@ -51,76 +51,76 @@ export class ValidationService {
      * Layer 1: Validate use case has minimum required fields
      * Runs BEFORE intent extraction
      */
-    validateHandlerCompleteness(Handler: Handler): ValidationResult {
+    validateHandlerCompleteness(useCase: UseCase): ValidationResult {
         const criticalIssues: string[] = [];
         const warnings: string[] = [];
 
         // Critical Fields (MUST be present)
-        if (!Handler.type || Handler.type !== 'use_case') {
+        if (!useCase.type || useCase.type !== 'use_case') {
             criticalIssues.push('type must be "use_case"');
         }
 
-        if (!Handler.key || Handler.key.trim() === '') {
+        if (!useCase.key || useCase.key.trim() === '') {
             criticalIssues.push('key is required and cannot be empty');
         }
 
-        if (!Handler.name || Handler.name.trim() === '') {
+        if (!useCase.name || useCase.name.trim() === '') {
             criticalIssues.push('name is required and cannot be empty');
         }
 
-        if (!Handler.description || Handler.description.trim() === '') {
+        if (!useCase.description || useCase.description.trim() === '') {
             criticalIssues.push('description is required and cannot be empty');
         }
 
-        if (!Handler.businessValue || Handler.businessValue.trim() === '') {
+        if (!useCase.businessValue || useCase.businessValue.trim() === '') {
             criticalIssues.push('businessValue is required and cannot be empty');
         }
 
-        if (!Handler.primaryActor || Handler.primaryActor.trim() === '') {
+        if (!useCase.primaryActor || useCase.primaryActor.trim() === '') {
             criticalIssues.push('primaryActor is required and cannot be empty');
         }
 
-        if (!Handler.status?.lifecycle) {
+        if (!useCase.status?.lifecycle) {
             criticalIssues.push('status.lifecycle is required');
         }
 
-        if (!Handler.acceptanceCriteria || Handler.acceptanceCriteria.length === 0) {
+        if (!useCase.acceptanceCriteria || useCase.acceptanceCriteria.length === 0) {
             warnings.push('No acceptance criteria provided - LLM will infer from description');
         }
 
-        if (!Handler.flows || Handler.flows.length === 0) {
+        if (!useCase.flows || useCase.flows.length === 0) {
             warnings.push('No flows provided - LLM will infer basic flow structure');
         } else {
-            const hasMainFlow = Handler.flows.some(f => f.type === 'main');
+            const hasMainFlow = useCase.flows.some(f => f.type === 'main');
             if (!hasMainFlow) {
                 warnings.push('No main flow specified - one will be inferred');
             }
         }
 
         // Important Fields (SHOULD be present - warnings only)
-        const hasFrontend = Handler.technicalSurface?.frontend?.routes?.length > 0 ||
-            Handler.technicalSurface?.frontend?.components?.length > 0;
-        const hasBackend = Handler.technicalSurface?.backend?.endpoints?.length > 0 ||
-            Handler.technicalSurface?.backend?.repos?.length > 0;
+        const hasFrontend = useCase.technicalSurface?.frontend?.routes?.length > 0 ||
+            useCase.technicalSurface?.frontend?.components?.length > 0;
+        const hasBackend = useCase.technicalSurface?.backend?.endpoints?.length > 0 ||
+            useCase.technicalSurface?.backend?.repos?.length > 0;
 
         if (!hasFrontend && !hasBackend) {
             warnings.push('No technical surface specified (neither frontend nor backend)');
         }
 
-        if (Handler.flows.length > 0 && Handler.flows[0].steps?.length < 3) {
+        if (useCase.flows.length > 0 && useCase.flows[0].steps?.length < 3) {
             warnings.push('Main flow has fewer than 3 steps - may be too simplistic');
         }
 
         // Warning Conditions
-        if (!Handler.relationships || Handler.relationships.length === 0) {
+        if (!useCase.relationships || useCase.relationships.length === 0) {
             warnings.push('No relationships defined - capability may be isolated');
         }
 
-        if (!Handler.tags || Handler.tags.length === 0) {
+        if (!useCase.tags || useCase.tags.length === 0) {
             warnings.push('No tags specified - may affect discoverability');
         }
 
-        if (!Handler.aiMetadata) {
+        if (!useCase.aiMetadata) {
             warnings.push('No AI metadata provided - using defaults');
         }
 
@@ -152,9 +152,9 @@ export class ValidationService {
      * 
      * This runs BEFORE LLM call to prevent expensive API calls on incomplete data
      */
-    checkNormativity(Handler: Handler): NormativityCheck {
+    checkNormativity(useCase: UseCase): NormativityCheck {
         // If not normative, allow standard generation with inference
-        if (!Handler.normative) {
+        if (!useCase.normative) {
             return {
                 isNormative: false,
                 isComplete: true,
@@ -167,10 +167,10 @@ export class ValidationService {
 
         // CRITICAL: All these must be present and non-empty for normative mode
         const criticalStringFields = [
-            { field: 'name', value: Handler.name },
-            { field: 'description', value: Handler.description },
-            { field: 'businessValue', value: Handler.businessValue },
-            { field: 'primaryActor', value: Handler.primaryActor }
+            { field: 'name', value: useCase.name },
+            { field: 'description', value: useCase.description },
+            { field: 'businessValue', value: useCase.businessValue },
+            { field: 'primaryActor', value: useCase.primaryActor }
         ];
 
         for (const check of criticalStringFields) {
@@ -184,7 +184,7 @@ export class ValidationService {
         }
 
         // CRITICAL: Acceptance criteria must exist
-        if (!Handler.acceptanceCriteria || Handler.acceptanceCriteria.length === 0) {
+        if (!useCase.acceptanceCriteria || useCase.acceptanceCriteria.length === 0) {
             insufficiencies.push({
                 field: 'acceptanceCriteria',
                 reason: 'Normative use case requires at least one acceptance criterion',
@@ -193,7 +193,7 @@ export class ValidationService {
         }
 
         // CRITICAL: Flows must exist
-        if (!Handler.flows || Handler.flows.length === 0) {
+        if (!useCase.flows || useCase.flows.length === 0) {
             insufficiencies.push({
                 field: 'flows',
                 reason: 'Normative use case requires at least one flow',
@@ -201,7 +201,7 @@ export class ValidationService {
             });
         } else {
             // CRITICAL: At least one main flow
-            const hasMainFlow = Handler.flows.some(f => f.type === 'main');
+            const hasMainFlow = useCase.flows.some(f => f.type === 'main');
             if (!hasMainFlow) {
                 insufficiencies.push({
                     field: 'flows',
@@ -211,7 +211,7 @@ export class ValidationService {
             }
 
             // CRITICAL: Main flow must have steps
-            const mainFlow = Handler.flows.find(f => f.type === 'main');
+            const mainFlow = useCase.flows.find(f => f.type === 'main');
             if (mainFlow && (!mainFlow.steps || mainFlow.steps.length === 0)) {
                 insufficiencies.push({
                     field: 'flows[0].steps',
@@ -222,9 +222,9 @@ export class ValidationService {
         }
 
         // CRITICAL: Technical surface must be specified
-        const hasFrontend = Handler.technicalSurface?.frontend?.routes?.length > 0 ||
-            Handler.technicalSurface?.frontend?.components?.length > 0;
-        const hasBackend = Handler.technicalSurface?.backend?.endpoints?.length > 0;
+        const hasFrontend = useCase.technicalSurface?.frontend?.routes?.length > 0 ||
+            useCase.technicalSurface?.frontend?.components?.length > 0;
+        const hasBackend = useCase.technicalSurface?.backend?.endpoints?.length > 0;
 
         if (!hasFrontend && !hasBackend) {
             insufficiencies.push({
@@ -273,7 +273,7 @@ export class ValidationService {
      * 
      * V1 Simplified: Only 4 critical checks, everything else is warnings
      */
-    validateIntentExtraction(analysis: IntentAnalysis, Handler: Handler): ValidationResult {
+    validateIntentExtraction(analysis: IntentAnalysis, useCase: UseCase): ValidationResult {
         const criticalIssues: string[] = [];
         const warnings: string[] = [];
 
@@ -288,9 +288,9 @@ export class ValidationService {
         }
 
         // CRITICAL CHECK 3: acceptanceCriteria count matches
-        if (analysis.acceptanceCriteria.length !== Handler.acceptanceCriteria.length) {
+        if (analysis.acceptanceCriteria.length !== useCase.acceptanceCriteria.length) {
             criticalIssues.push(
-                `Acceptance criteria count mismatch with use case: expected ${Handler.acceptanceCriteria.length}, got ${analysis.acceptanceCriteria.length}`
+                `Acceptance criteria count mismatch with use case: expected ${useCase.acceptanceCriteria.length}, got ${analysis.acceptanceCriteria.length}`
             );
         }
 
@@ -323,7 +323,7 @@ export class ValidationService {
         }
 
         // Security considerations for security-tagged features
-        const hasSecurityTag = Handler.tags?.some(tag =>
+        const hasSecurityTag = useCase.tags?.some(tag =>
             ['auth', 'payment', 'security'].includes(tag.toLowerCase())
         );
         if (hasSecurityTag && (!analysis.securityConsiderations || analysis.securityConsiderations.length === 0)) {
@@ -363,16 +363,16 @@ export class ValidationService {
     validateCapabilityConsistency(
         capability: CapabilityNode,
         analysis: IntentAnalysis,
-        Handler: Handler
+        useCase: UseCase
     ): ConsistencyValidationResult {
         const consistencyIssues: string[] = [];
         const missingFields: string[] = [];
 
         // Data Consistency: Acceptance criteria count
-        if (capability.behavior.acceptanceCriteria.length !== Handler.acceptanceCriteria.length) {
+        if (capability.behavior.acceptanceCriteria.length !== useCase.acceptanceCriteria.length) {
             consistencyIssues.push(
                 `Capability acceptance criteria count (${capability.behavior.acceptanceCriteria.length}) ` +
-                `doesn't match use case (${Handler.acceptanceCriteria.length})`
+                `doesn't match use case (${useCase.acceptanceCriteria.length})`
             );
         }
 
@@ -384,10 +384,10 @@ export class ValidationService {
         }
 
         // Data Consistency: Flow count
-        if (capability.behavior.flows.length !== Handler.flows.length) {
+        if (capability.behavior.flows.length !== useCase.flows.length) {
             consistencyIssues.push(
                 `Capability flow count (${capability.behavior.flows.length}) ` +
-                `doesn't match use case (${Handler.flows.length})`
+                `doesn't match use case (${useCase.flows.length})`
             );
         }
 
@@ -506,7 +506,7 @@ export class ValidationService {
      * Returns aggregated results
      */
     async runFullValidation(
-        Handler: Handler,
+        useCase: UseCase,
         analysis: IntentAnalysis,
         capability: CapabilityNode
     ): Promise<{
@@ -519,13 +519,13 @@ export class ValidationService {
         allWarnings: string[];
     }> {
         // Layer 1: Pre-validation
-        const layer1 = this.validateHandlerCompleteness(Handler);
+        const layer1 = this.validateHandlerCompleteness(useCase);
 
         // Layer 3: Extraction validation
-        const layer3 = this.validateIntentExtraction(analysis, Handler);
+        const layer3 = this.validateIntentExtraction(analysis, useCase);
 
         // Layer 5: Post-generation validation
-        const layer5 = this.validateCapabilityConsistency(capability, analysis, Handler);
+        const layer5 = this.validateCapabilityConsistency(capability, analysis, useCase);
 
         // Layer 6: Review decision
         const layer6 = this.shouldRequireReview(capability, analysis);

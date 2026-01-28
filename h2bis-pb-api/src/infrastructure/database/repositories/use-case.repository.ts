@@ -1,5 +1,5 @@
 import { getDb } from '../connection.js';
-import type { Handler } from '../../../domain/schemas/use_case_schema.js';
+import type { UseCase } from '../../../domain/schemas/use_case_schema.js';
 import { NotFoundError } from '../../../shared/errors/app.error.js';
 
 /**
@@ -12,18 +12,18 @@ export class UseCaseRepository {
     /**
      * Find all use cases
      */
-    async findAll(): Promise<Handler[]> {
+    async findAll(): Promise<UseCase[]> {
         const db = await getDb();
         const useCases = await db.collection(this.collectionName)
             .find({})
             .toArray();
-        return useCases as unknown as Handler[];
+        return useCases as unknown as UseCase[];
     }
 
     /**
      * Find a use case by ID (supports both key-based _id and MongoDB ObjectId)
      */
-    async findById(id: string): Promise<Handler | null> {
+    async findById(id: string): Promise<UseCase | null> {
         const db = await getDb();
 
         // Try to find by _id first (which is set to the key)
@@ -34,22 +34,22 @@ export class UseCaseRepository {
             return this.findByKey(id);
         }
 
-        return useCase as Handler | null;
+        return useCase as UseCase | null;
     }
 
     /**
      * Find a use case by key
      */
-    async findByKey(key: string): Promise<Handler | null> {
+    async findByKey(key: string): Promise<UseCase | null> {
         const db = await getDb();
         const useCase = await db.collection(this.collectionName).findOne({ key });
-        return useCase as Handler | null;
+        return useCase as UseCase | null;
     }
 
     /**
      * Create a new use case
      */
-    async create(useCase: Handler): Promise<string> {
+    async create(useCase: UseCase): Promise<string> {
         const db = await getDb();
         const doc = { _id: useCase.key, ...useCase };
         await db.collection(this.collectionName).insertOne(doc as any);
@@ -59,7 +59,7 @@ export class UseCaseRepository {
     /**
      * Update a use case
      */
-    async update(id: string, useCase: Handler): Promise<void> {
+    async update(id: string, useCase: UseCase): Promise<void> {
         const db = await getDb();
         const result = await db.collection(this.collectionName).replaceOne(
             { _id: id as any },

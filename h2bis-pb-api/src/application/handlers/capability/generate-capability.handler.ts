@@ -1,4 +1,4 @@
-import type { Handler } from '../../../domain/schemas/use_case_schema.js';
+import type { UseCase } from '../../../domain/schemas/use_case_schema.js';
 import type { Feature } from '../../../domain/schemas/features_schema.js';
 import type { CapabilityNode } from '../../../domain/schemas/capability_schema.js';
 import { validationService } from '../../../domain/services/validation.service.js';
@@ -23,14 +23,14 @@ export interface GenerateCapabilityResult {
 export class GenerateCapabilityFromHandlerHandler {
     private readonly maxRetries = 3;
 
-    async execute(Handler: Handler): Promise<GenerateCapabilityResult> {
-        console.log('✅ Handler detected, starting capability generation workflow...');
-        console.log('   Handler key:', Handler.key);
-        console.log('   Normative flag:', Handler.normative);
+    async execute(useCase: UseCase): Promise<GenerateCapabilityResult> {
+        console.log('✅ UseCase detected, starting capability generation workflow...');
+        console.log('   UseCase key:', useCase.key);
+        console.log('   Normative flag:', useCase.normative);
 
         try {
             // STEP 1: Check normativity BEFORE any LLM calls
-            const normativityCheck = validationService.checkNormativity(Handler);
+            const normativityCheck = validationService.checkNormativity(useCase);
 
             console.log('🔒 Normativity Check:', {
                 isNormative: normativityCheck.isNormative,
@@ -68,7 +68,7 @@ export class GenerateCapabilityFromHandlerHandler {
                 try {
                     // Use LLM-based transformation with strict mode flag and feedback
                     capability = await transformationService.transformHandlerToCapabilityWithIntent(
-                        Handler,
+                        useCase,
                         {
                             strictMode: normativityCheck.isNormative,
                             validationFeedback: validationFeedback.length > 0 ? validationFeedback : undefined
@@ -85,13 +85,13 @@ export class GenerateCapabilityFromHandlerHandler {
                     console.log('   Intent confidence:', (capability as any).intentAnalysis?.confidenceLevel);
 
                     // STEP 4: Validate transformation using LLM
-                    const shouldSkipValidation = Handler.aiMetadata?.skipValidation === true;
+                    const shouldSkipValidation = useCase.aiMetadata?.skipValidation === true;
 
                     if (!shouldSkipValidation) {
                         console.log('🔍 Running post-generation validation by LLM...');
 
                         const validationResult = await transformationValidationService.validateTransformation(
-                            Handler,
+                            useCase,
                             capability
                         );
 
@@ -116,7 +116,7 @@ export class GenerateCapabilityFromHandlerHandler {
                             if (attempt < this.maxRetries) {
                                 try {
                                     const fixResult = await surgicalFixService.applySurgicalFixes(
-                                        Handler,
+                                        useCase,
                                         capability,
                                         validationResult.issues,
                                         validationResult.confidenceScore
@@ -190,7 +190,7 @@ export class GenerateCapabilityFromHandlerHandler {
             // STEP 5: Save capability (if we got here, generation succeeded)
             if (capability) {
                 const capabilityId = await capabilityRepository.create(capability);
-                console.log(`✅ Auto-generated capability ${capabilityId} in ${mode} mode from use case ${Handler.key}`);
+                console.log(`✅ Auto-generated capability ${capabilityId} in ${mode} mode from use case ${useCase.key}`);
 
                 if (attempt > 1) {
                     console.log(`   ℹ️  Required ${attempt} attempt(s) with self-correction`);

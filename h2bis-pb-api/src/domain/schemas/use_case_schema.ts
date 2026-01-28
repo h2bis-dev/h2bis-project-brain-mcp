@@ -1,4 +1,3 @@
-import { BaseEntitySchema } from "./base_schema.js";
 import { z } from "zod";
 
 const AcceptanceCriteriaSchema = z.array(z.string());
@@ -124,31 +123,11 @@ const AIMetadataSchema = z.object({
 
 /* ---------- Helper Functions for Defaults ---------- */
 
-/**
- * Create default AI metadata for backward compatibility
- * Estimates complexity as "medium" by default
- */
-export const createDefaultAIMetadata = () => ({
-    estimatedComplexity: "medium" as const,
-    implementationRisk: [],
-    testStrategy: [],
-    nonFunctionalRequirements: []
-});
-
-/**
- * Create default audit information
- * @param user - Username to attribute creation/update to (defaults to "system")
- */
-export const createDefaultAudit = (user: string = "system") => ({
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdBy: user,
-    updatedBy: user
-});
+// Removed redundant helper functions as requested. defaults are handled inline or by Zod.
 
 /* ---------- Use Case Schema ---------- */
 
-export const HandlerSchema = z.object({
+export const UseCaseSchema = z.object({
     // MongoDB auto-generated field (optional for validation)
     _id: z.any().optional(),
 
@@ -164,14 +143,15 @@ export const HandlerSchema = z.object({
             "in_development",
             "ai_generated",
             "human_reviewed",
-            "completed",
-            // Keeping existing but adding requested ones just in case needed in future, 
-            // though user asked to keep existing.
-            // "approved", "in_progress", "implemented" - omitted as per user request
+            "completed"
         ]),
         reviewedByHuman: z.boolean(),
         generatedByAI: z.boolean()
-    }).strict(),
+    }).default({
+        lifecycle: "idea",
+        reviewedByHuman: false,
+        generatedByAI: false
+    }),
 
     stakeholders: z.array(z.string()).optional(),
 
@@ -199,11 +179,14 @@ export const HandlerSchema = z.object({
 
     aiDirectives: AIDirectivesSchema.optional(),
 
-    acceptanceCriteria: AcceptanceCriteriaSchema,
+    acceptanceCriteria: AcceptanceCriteriaSchema.default([]),
 
-    flows: z.array(FlowSchema),
+    flows: z.array(FlowSchema).default([]),
 
-    technicalSurface: TechnicalSurfaceSchema,
+    technicalSurface: TechnicalSurfaceSchema.default({
+        backend: { repos: [], endpoints: [], collections: [] },
+        frontend: { repos: [], routes: [], components: [] }
+    }),
 
     relationships: z.array(
         z.object({
@@ -231,21 +214,26 @@ export const HandlerSchema = z.object({
     normative: z.boolean().default(false),
 
     // Optional with defaults for backward compatibility
-    aiMetadata: AIMetadataSchema.optional().default(createDefaultAIMetadata),
+    aiMetadata: AIMetadataSchema.optional().default({
+        estimatedComplexity: "medium",
+        implementationRisk: [],
+        testStrategy: [],
+        nonFunctionalRequirements: []
+    }),
 
-    // Optional with defaults for backward compatibility
+    // Audit trail (Created/Updated timestamps)
     audit: z.object({
         createdAt: z.date(),
         updatedAt: z.date(),
         createdBy: z.string(),
         updatedBy: z.string()
-    }).optional().default(createDefaultAudit)
+    }).optional()
 }).strict();
 
 /* ---------- Type Exports ---------- */
 
 
-export type Handler = z.infer<typeof HandlerSchema>;
+export type UseCase = z.infer<typeof UseCaseSchema>;
 export type AIMetadata = z.infer<typeof AIMetadataSchema>;
 export type FunctionalRequirements = z.infer<typeof FunctionalRequirementsSchema>;
 export type Scope = z.infer<typeof ScopeSchema>;
@@ -253,4 +241,36 @@ export type DomainModel = z.infer<typeof DomainModelSchema>;
 export type Interfaces = z.infer<typeof InterfacesSchema>;
 export type ErrorHandling = z.infer<typeof ErrorHandlingSchema>;
 export type Architecture = z.infer<typeof ArchitectureSchema>;
-export type AIDirectives = z.infer<typeof AIDirectivesSchema>;
+
+/* ---------- Factories ---------- */
+
+export type CreateUseCaseProps = Partial<UseCase>;
+
+/**
+ * Factory function to create a standardized Use Case object
+ * Relies on Zod Schema for defaults to keep logic simple and centralized.
+ */
+export const createUseCase = (props: CreateUseCaseProps, userId: string = "system"): UseCase => {
+    // 1. Prepare minimal required fields that Zod requires (if not provided in props)
+    const defaults = {
+        type: "use_case" as const,
+        key: "",
+        name: "",
+        description: "",
+        businessValue: "",
+        primaryActor: "",
+        audit: {
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            createdBy: userId,
+            updatedBy: userId
+        }
+    };
+
+    // 2. Merge and parse
+    // usage of 'parse' ensures the Output object strictly adheres to UseCaseSchema
+    return UseCaseSchema.parse({
+        ...defaults,
+        ...props
+    });
+};

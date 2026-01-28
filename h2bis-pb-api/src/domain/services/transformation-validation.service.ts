@@ -1,6 +1,6 @@
 import { TransformationValidationAgent, ValidationInput, TransformationValidationResult } from 'h2bis-pb-ai';
 import { z } from 'zod';
-import { HandlerSchema } from '../schemas/use_case_schema.js';
+import { UseCaseSchema } from '../schemas/use_case_schema.js';
 import { CapabilityNodeSchema } from '../schemas/capability_schema.js';
 
 /**
@@ -32,7 +32,7 @@ class TransformationValidationService {
         return this.agent.validateTransformation({
             useCase,
             capability,
-            useCaseSchema: HandlerSchema.shape,
+            useCaseSchema: UseCaseSchema.shape,
             capabilitySchema: CapabilityNodeSchema.shape
         });
     }

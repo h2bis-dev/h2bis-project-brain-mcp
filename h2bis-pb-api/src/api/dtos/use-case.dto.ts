@@ -337,8 +337,10 @@ export const GenerateUseCaseRequestDto = z.object({
 
 export type GenerateUseCaseRequestDto = z.infer<typeof GenerateUseCaseRequestDto>;
 
+import type { UseCase } from '../../domain/schemas/use_case_schema.js';
+
 export interface GenerateUseCaseResponseDto {
-    useCase: any; // Partial<UseCase>
+    useCase: Partial<UseCase>;
     generatedFields: string[];
     confidence: number;
 }

@@ -111,7 +111,7 @@ export interface Configuration {
 }
 
 export interface Quality {
-    testTypes: ("unit" | "integration" | "e2e")[];
+    testTypes: ("unit" | "integration" | "e2e" | "security")[];
     performanceCriteria: string[];
     securityConsiderations: string[];
 }

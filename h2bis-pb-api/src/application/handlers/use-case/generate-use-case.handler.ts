@@ -1,4 +1,4 @@
-
+import type { UseCase } from '../../../domain/schemas/use_case_schema.js';
 import { UseCaseGenerationAgent } from 'h2bis-pb-ai';
 import type { GenerateUseCaseRequestDto, GenerateUseCaseResponseDto } from '../../../api/dtos/use-case.dto.js';
 import type { UseCaseGenerationInput } from 'h2bis-pb-ai';
@@ -29,7 +29,7 @@ export class GenerateUseCaseHandler {
             const result = await this.agent.generate(input);
 
             return {
-                useCase: result.useCase,
+                useCase: result.useCase as unknown as Partial<UseCase>,
                 generatedFields: result.generatedFields,
                 confidence: result.confidence
             };

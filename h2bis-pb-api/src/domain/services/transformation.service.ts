@@ -1,4 +1,4 @@
-import { Handler } from '../schemas/use_case_schema.js';
+import { UseCase } from '../schemas/use_case_schema.js';
 import { Feature } from '../schemas/features_schema.js';
 import { CapabilityNode } from '../schemas/capability_schema.js';
 
@@ -7,7 +7,7 @@ import { IntentExtractionAgent, IntentAnalysis } from 'h2bis-pb-ai';
 
 /**
  * Transformation Service
- * Converts legacy Handler/Feature entities to modern CapabilityNode schema
+ * Converts legacy UseCase/Feature entities to modern CapabilityNode schema
  * 
  * NOW WITH LLM-BASED INTENT EXTRACTION
  */
@@ -19,14 +19,14 @@ export class TransformationService {
     }
 
     /**
-     * Transform a Handler into a CapabilityNode using LLM intent extraction
+     * Transform a UseCase into a CapabilityNode using LLM intent extraction
      * 
-     * @param Handler - The source Handler entity
+     * @param useCase - The source UseCase entity
      * @param options - Transformation options
      * @returns CapabilityNode ready for insertion
      */
     async transformHandlerToCapabilityWithIntent(
-        Handler: Handler,
+        useCase: UseCase,
         options: {
             generateId?: boolean;
             includeArtifacts?: boolean;
@@ -38,10 +38,10 @@ export class TransformationService {
 
         // Step 1: Extract intent using LLM (with strict mode if normative)
         const feedbackMsg = validationFeedback ? ` with ${validationFeedback.length} corrections` : '';
-        console.log(`🤖 Extracting intent for use case: ${Handler.key}${strictMode ? ' (STRICT MODE)' : ''}${feedbackMsg}`);
+        console.log(`🤖 Extracting intent for use case: ${useCase.key}${strictMode ? ' (STRICT MODE)' : ''}${feedbackMsg}`);
 
         const intentAnalysis = await this.intentAgent.extractIntent(
-            Handler as any,
+            useCase as any,
             {
                 strictMode,
                 validationFeedback  // Pass feedback for retry attempts
@@ -51,7 +51,7 @@ export class TransformationService {
         // Step 2: Generate capability from intent analysis
         console.log(`✅ Intent extraction complete - Confidence: ${intentAnalysis.confidenceLevel}`);
 
-        const capability = this.transformIntentToCapability(intentAnalysis, Handler, {
+        const capability = this.transformIntentToCapability(intentAnalysis, useCase, {
             generateId,
             includeArtifacts
         });
@@ -63,13 +63,13 @@ export class TransformationService {
      * Transform IntentAnalysis into CapabilityNode (deterministic mapping)
      * 
      * @param analysis - LLM-extracted intent
-     * @param Handler - Original use case (for metadata)
+     * @param useCase - Original use case (for metadata)
      * @param options - Transformation options
      * @returns CapabilityNode
      */
     transformIntentToCapability(
         analysis: IntentAnalysis,
-        Handler: Handler,
+        useCase: UseCase,
         options: {
             generateId?: boolean;
             includeArtifacts?: boolean;
@@ -77,7 +77,7 @@ export class TransformationService {
     ): CapabilityNode {
         const { generateId = true, includeArtifacts = true } = options;
 
-        const capabilityId = generateId ? `cap-${Handler.key}` : Handler.key;
+        const capabilityId = generateId ? `cap-${useCase.key}` : useCase.key;
 
         const capability: CapabilityNode = {
             id: capabilityId,
@@ -126,7 +126,7 @@ export class TransformationService {
             },
 
             // DEPENDENCIES: Transform relationships
-            dependencies: this.transformRelationshipsToDependencies(Handler.relationships),
+            dependencies: this.transformRelationshipsToDependencies(useCase.relationships),
 
             // AI HINTS: Use extracted quality indicators
             aiHints: {
@@ -142,23 +142,23 @@ export class TransformationService {
 
             // LIFECYCLE: Map from use case status
             lifecycle: {
-                status: Handler.status.lifecycle,
-                maturity: this.mapLifecycleToMaturity(Handler.status.lifecycle)
+                status: useCase.status.lifecycle,
+                maturity: this.mapLifecycleToMaturity(useCase.status.lifecycle)
             },
 
             // ARTIFACTS: Generate if requested
-            artifacts: includeArtifacts ? this.generateArtifactsFromTechnicalSurface(Handler) : undefined,
+            artifacts: includeArtifacts ? this.generateArtifactsFromTechnicalSurface(useCase) : undefined,
 
             // IMPLEMENTATION: Initialize
             implementation: {
-                status: this.mapLifecycleToImplementationStatus(Handler.status.lifecycle),
-                completionPercentage: this.estimateCompletionPercentage(Handler.status.lifecycle),
-                lastUpdated: Handler.audit?.updatedAt || new Date(),
+                status: this.mapLifecycleToImplementationStatus(useCase.status.lifecycle),
+                completionPercentage: this.estimateCompletionPercentage(useCase.status.lifecycle),
+                lastUpdated: useCase.audit?.updatedAt || new Date(),
                 blockers: []
             },
 
             // TAGS: Copy from use case
-            tags: Handler.tags || [],
+            tags: useCase.tags || [],
 
             // NEW: Store intent analysis for traceability
             intentAnalysis: {
@@ -177,7 +177,7 @@ export class TransformationService {
             },
 
             // NEW: Source traceability
-            sourceHandlerId: (Handler as any)._id?.toString(),
+            sourceHandlerId: (useCase as any)._id?.toString(),
             transformedAt: new Date(),
 
             schemaVersion: 1,
@@ -330,10 +330,10 @@ export class TransformationService {
      * Helper: Generate artifacts from technical surface
      * @private
      */
-    private generateArtifactsFromTechnicalSurface(Handler: Handler) {
+    private generateArtifactsFromTechnicalSurface(useCase: UseCase) {
         const source: any[] = [];
 
-        Handler.technicalSurface.frontend.components.forEach(comp => {
+        useCase.technicalSurface.frontend.components.forEach(comp => {
             source.push({
                 path: `src/components/${comp}.tsx`,
                 type: 'component',
@@ -341,7 +341,7 @@ export class TransformationService {
             });
         });
 
-        Handler.technicalSurface.backend.repos.forEach(repo => {
+        useCase.technicalSurface.backend.repos.forEach(repo => {
             source.push({
                 path: `src/${repo}/index.ts`,
                 type: 'module',
