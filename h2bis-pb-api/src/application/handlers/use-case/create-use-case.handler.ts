@@ -67,7 +67,14 @@ export class CreateUseCaseHandler {
         const handlerResult = HandlerSchema.safeParse(useCase);
 
         if (handlerResult.success) {
-            const capabilityResult = await generateCapabilityFromHandlerHandler.execute(handlerResult.data);
+            // const capabilityResult = await generateCapabilityFromHandlerHandler.execute(handlerResult.data);
+            const capabilityResult = {
+                mode: 'REJECTED',
+                insufficiencyReport: 'Use case was incomplete',
+                validationReport: 'Use case was incomplete',
+                generated: false,
+                capabilityId: ''
+            };
 
             if (capabilityResult.mode === 'REJECTED' && capabilityResult.insufficiencyReport) {
                 // Normative use case was incomplete
