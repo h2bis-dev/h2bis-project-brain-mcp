@@ -132,10 +132,13 @@ export interface CreateUseCaseResponse {
  */
 export const useCaseService = {
     /**
-     * Get all use cases
+     * Get all use cases for a project
      */
-    getAll: async (): Promise<UseCase[]> => {
-        const response = await apiClient.get(API_ENDPOINTS.USE_CASES.LIST);
+    getAll: async (projectId?: string): Promise<UseCase[]> => {
+        const url = projectId
+            ? `${API_ENDPOINTS.USE_CASES.LIST}?projectId=${projectId}`
+            : API_ENDPOINTS.USE_CASES.LIST;
+        const response = await apiClient.get(url);
         return response.data;
     },
 
@@ -158,8 +161,9 @@ export const useCaseService = {
     /**
      * Create a new use case
      */
-    create: async (data: CreateUseCaseRequest): Promise<CreateUseCaseResponse> => {
-        const response = await apiClient.post(API_ENDPOINTS.USE_CASES.CREATE, data);
+    create: async (data: CreateUseCaseRequest, projectId?: string): Promise<CreateUseCaseResponse> => {
+        const payload = projectId ? { ...data, projectId } : data;
+        const response = await apiClient.post(API_ENDPOINTS.USE_CASES.CREATE, payload);
         return response.data;
     },
 

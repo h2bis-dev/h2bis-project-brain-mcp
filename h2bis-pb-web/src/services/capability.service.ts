@@ -7,12 +7,13 @@ import type { Capability, ImpactAnalysis, DependencyTree } from "@/types";
  */
 export const capabilityService = {
     /**
-     * Get all capabilities
+     * Get all capabilities for a project
      */
-    async getAllCapabilities(): Promise<Capability[]> {
+    async getAllCapabilities(projectId?: string): Promise<Capability[]> {
+        const query = projectId ? { projectId } : {};
         const response = await apiClient.post("/api/find", {
             collection: "capabilities",
-            query: {},
+            query,
         });
         return response.data;
     },

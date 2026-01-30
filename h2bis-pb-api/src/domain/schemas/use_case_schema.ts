@@ -121,14 +121,9 @@ const AIMetadataSchema = z.object({
     skipValidation: z.boolean().optional()
 });
 
-/* ---------- Helper Functions for Defaults ---------- */
-
-// Removed redundant helper functions as requested. defaults are handled inline or by Zod.
-
 /* ---------- Use Case Schema ---------- */
 
 export const UseCaseSchema = z.object({
-    // MongoDB auto-generated field (optional for validation)
     _id: z.any().optional(),
 
     type: z.literal("use_case"),

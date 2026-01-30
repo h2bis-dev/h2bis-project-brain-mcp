@@ -1,0 +1,316 @@
+PROJECT ROOT FILES
+===================
+ARCHITECTURE.md
+AUTH_FLOW.md
+RBAC.md
+SCHEMA_EVOLUTION_WALKTHROUGH.md
+PROJECT_STRUCTURE.txt
+QUICK_START.md
+PROJECT_SELECTION_IMPLEMENTATION.md
+CHANGES_DETAILED.md
+ARCHITECTURE_DIAGRAMS.md
+package.json
+package-lock.json
+.gitignore
+.git/
+.vscode/
+node_modules/
+test-data/
+
+PROJECT DIRECTORIES
+===================
+h2bis-pb-ai/
+  src/
+    index.ts
+    agents/
+      intent-extraction/
+        intent-extraction.agent.ts
+        AGENT_INSTRUCTIONS.md
+        prompts/
+          system-prompt.ts
+          user-prompt.template.ts
+        types/
+          intent-analysis.types.ts
+      surgical-fix/
+        surgical-fix.agent.ts
+        prompts/
+          surgical-fix-prompt.ts
+      transformation-validation/
+        transformation-validation.agent.ts
+        prompts/
+          validation-prompt.ts
+      use-case-generation/
+        use-case-generation.agent.ts
+        prompts/
+          system-prompt.ts
+          user-prompt.template.ts
+        types/
+          use-case-generation.types.ts
+    config/
+      config.ts
+      prompts.config.ts
+    services/
+      cache/
+        cache.service.ts
+      llm/
+        llm.service.ts
+        providers/
+          openai.provider.ts
+        types/
+          llm.types.ts
+    utils/
+      logger.ts
+      validators.ts
+  tests/
+    integration/
+      intent-extraction.integration.test.ts
+    unit/
+      validators.test.ts
+  package.json
+  tsconfig.json
+  ARCHITECTURE.md
+  README.md
+  dist/
+  node_modules/
+
+h2bis-pb-api/
+  src/
+    index.ts
+    init-indexes.ts
+    api/
+      controllers/
+        auth.controller.ts
+        capability.controller.ts
+        use-case.controller.ts
+      dtos/
+        auth.dto.ts
+        capability.dto.ts
+        use-case.dto.ts
+      middleware/
+        auth.middleware.ts
+        error.middleware.ts
+        permission.middleware.ts
+      routes/
+        auth.routes.ts
+        capability.routes.ts
+        use-case.routes.ts
+        index.ts
+    application/handlers/
+      auth/
+        authenticate-user.handler.ts
+        register-user.handler.ts
+      capability/
+        generate-capability.handler.ts
+      use-case/
+        create-use-case.handler.ts
+        delete-use-case.handler.ts
+        generate-use-case.handler.ts
+        get-use-case-by-id.handler.ts
+        get-use-cases.handler.ts
+    domain/
+      models/
+        user_model.ts
+      schemas/
+        capability_schema.ts
+        features_schema.ts
+        use_case_schema.ts
+      services/
+        authorization.service.ts
+        capability.service.ts
+        jwt.service.ts
+        password.service.ts
+        surgical-fix.service.ts
+        transformation-validation.service.ts
+        transformation.service.ts
+        validation.service.ts
+      types/
+        normative-validation.types.ts
+    infrastructure/
+      config/config.ts
+      database/
+        connection.ts
+        repositories/
+          capability.repository.ts
+          knowledge.repository.ts
+          use-case.repository.ts
+          user.repository.ts
+    shared/
+      errors/app.error.ts
+      types/common.types.ts
+      utils/response.mapper.ts
+  docs/
+    AUTH_FLOW.md
+  examples/
+    INSERT_INSTRUCTIONS.md
+    uc-user-login.json
+    uc-user-registration.json
+  package.json
+  tsconfig.json
+  .env
+  .env.example
+  nodemon.json
+  BA_REQUIREMENTS_TEMPLATE.md
+  JWT_TESTING_GUIDE.md
+  LLM_DEVELOPMENT_GUIDE.md
+  TEST_CASES_NORMATIVE.md
+  RESTART_SERVER.md
+  BACKEND_IMPLEMENTATION_GUIDE.md
+  fix-imports.ps1
+  test-jwt.js
+  restart-server.bat
+  debug_error.log
+  tsc-errors.txt
+  dist/
+  node_modules/
+
+h2bis-pb-mcp/
+  src/
+    index.ts
+    config/config.ts
+    infrastructure/http-client.ts
+    services/api.service.ts
+    tools/
+      analyzeCapabilityImpact.ts
+      deleteDocument.ts
+      findDocument.ts
+      getCapabilityDependencies.ts
+      getImplementationOrder.ts
+      insertDocument.ts
+      listCollections.ts
+      updateDocument.ts
+      index.ts
+  package.json
+  tsconfig.json
+  .env
+  nodemon.json
+  ARCHITECTURE.md
+  CHANGELOG.md
+  DOCS_README.md
+  INSTRUCTIONS.md
+  MCP_TOOL_UPDATE.md
+  QUICK_REFERENCE.md
+  dist/
+  node_modules/
+
+h2bis-pb-web/
+  src/
+    index.ts
+    middleware.ts
+    app/
+      layout.tsx
+      page.tsx
+      providers.tsx
+      globals.css
+      login/
+        page.tsx
+      register/
+        page.tsx
+      forgot-password/
+        page.tsx
+      (app)/
+        layout.tsx
+        analytics/
+          page.tsx
+        capabilities/
+          page.tsx
+        dashboard/
+          page.tsx
+        develop/
+          page.tsx
+        summaries/
+          page.tsx
+        use-cases/
+          page.tsx
+          create-use-case/
+            page.tsx
+      api/
+        auth/
+          [...nextauth]/
+            route.ts
+    components/
+      auth/
+        PermissionGuard.tsx
+      layout/
+        navbar.tsx
+        sidebar.tsx
+      ui/
+        accordion.tsx
+        alert-dialog.tsx
+        badge.tsx
+        button.tsx
+        card.tsx
+        checkbox.tsx
+        input.tsx
+        label.tsx
+        select.tsx
+        separator.tsx
+        switch.tsx
+        tabs.tsx
+        textarea.tsx
+        tooltip.tsx
+      use-cases/
+        UseCaseDetail.tsx
+    contexts/
+      ProjectContext.tsx
+    hooks/
+      useAuth.ts
+      usePermissions.ts
+      useUseCases.ts
+      useProject.ts
+    lib/
+      auth/
+        auth.config.ts
+        rbac.ts
+        session-helper.ts
+      config.ts
+      constants.ts
+      query-keys.ts
+      use-case-definitions.ts
+      utils.ts
+    schemas/
+      auth.schema.ts
+    services/
+      api/
+        client.ts
+        config.ts
+      api-client.ts
+      auth.service.ts
+      capability.service.ts
+      knowledge.service.ts
+      project.service.ts
+      use-case.service.ts
+    types/
+      api.types.ts
+      auth.types.ts
+      capability.types.ts
+      project.types.ts
+      use-case.types.ts
+      next-auth.d.ts
+      index.ts
+  package.json
+  tsconfig.json
+  next.config.ts
+  postcss.config.mjs
+  tailwind.config.ts
+  components.json
+  next-env.d.ts
+  .env.local
+  .gitignore
+  .next/
+  PROJECT_SELECTION_FEATURE.md
+  node_modules/
+
+test-data/
+  invalid-entity.json
+  update-feature.json
+  valid-feature.json
+  valid-usecase.json
+
+KEY CHARACTERISTICS
+===================
+Monorepo: 4 packages
+Package Types: AI/LLM, REST API, MCP Server, Next.js Frontend
+Build Outputs: dist/ in each package
+Database: MongoDB
+Auth: JWT + NextAuth
+UI Framework: React + shadcn

@@ -47,6 +47,7 @@ export const API_ENDPOINTS = {
         LOGIN: '/api/auth/login',
         LOGOUT: '/api/auth/logout',
     },
+    PROJECTS: '/api/projects',
     USE_CASES: {
         LIST: '/api/use-cases',
         GET: (id: string) => `/api/use-cases/${id}`,
