@@ -7,8 +7,16 @@ export const projectService = {
      * Get all projects
      */
     async getAll(): Promise<Project[]> {
-        const response = await apiClient.get(API_ENDPOINTS.PROJECTS);
-        return response.data;
+        try {
+            const response = await apiClient.get(API_ENDPOINTS.PROJECTS);
+            // Handle API response structure: { success: true, data: { projects: [], total: 0 } }
+            const projects = response.data?.data?.projects || response.data?.projects || response.data || [];
+            return Array.isArray(projects) ? projects : [];
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+            // Return empty array on error to prevent UI crashes
+            return [];
+        }
     },
 
     /**

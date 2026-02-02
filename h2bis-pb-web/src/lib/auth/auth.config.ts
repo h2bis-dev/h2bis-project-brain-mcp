@@ -16,33 +16,56 @@ export const authOptions: NextAuthOptions = {
                     throw new Error('Invalid credentials');
                 }
 
-                try {
-                    // Call your API to authenticate with email
-                    const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
-                        email: credentials.username, // username field contains email
-                        password: credentials.password,
-                    });
+                // Retry logic to handle API server startup delays
+                const maxRetries = 3;
+                const retryDelay = 1000; // 1 second
 
-                    const user = response.data;
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        // Call your API to authenticate with email
+                        const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+                            email: credentials.username, // username field contains email
+                            password: credentials.password,
+                        }, {
+                            timeout: 5000, // 5 second timeout
+                        });
 
-                    if (!user) {
-                        throw new Error('User not found');
+                        const user = response.data;
+
+                        if (!user) {
+                            throw new Error('User not found');
+                        }
+
+                        // Return user with tokens and permissions from API
+                        return {
+                            id: user.id,
+                            email: user.email,
+                            name: user.email,
+                            role: user.role, // Roles from API
+                            permissions: user.permissions, // Permissions from API (Authorization Contract)
+                            accessToken: user.accessToken, // JWT from API
+                            refreshToken: user.refreshToken, // Refresh token from API
+                        };
+                    } catch (error: any) {
+                        const isConnectionError = error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT';
+
+                        // Retry on connection errors, but not on authentication errors
+                        if (isConnectionError && attempt < maxRetries) {
+                            console.warn(`API connection failed (attempt ${attempt}/${maxRetries}), retrying...`);
+                            await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+                            continue;
+                        }
+
+                        // On final attempt or non-connection errors, throw
+                        console.error('Authentication error:', error);
+                        if (isConnectionError) {
+                            throw new Error('API server is not available. Please try again later.');
+                        }
+                        throw new Error('Invalid credentials');
                     }
-
-                    // Return user with tokens and permissions from API
-                    return {
-                        id: user.id,
-                        email: user.email,
-                        name: user.email,
-                        role: user.role, // Roles from API
-                        permissions: user.permissions, // Permissions from API (Authorization Contract)
-                        accessToken: user.accessToken, // JWT from API
-                        refreshToken: user.refreshToken, // Refresh token from API
-                    };
-                } catch (error) {
-                    console.error('Authentication error:', error);
-                    throw new Error('Invalid credentials');
                 }
+
+                throw new Error('API server is not available. Please try again later.');
             },
         }),
     ],

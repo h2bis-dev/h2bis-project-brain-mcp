@@ -17,6 +17,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!session?.user?.id) {
             setIsLoading(false);
+            setProjects([]);
+            setSelectedProject(null);
             return;
         }
 
@@ -24,25 +26,37 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
             try {
                 setIsLoading(true);
                 const projectsList = await projectService.getAll();
-                setProjects(projectsList);
 
-                // Set default project (first one or from localStorage)
-                const savedProjectId = localStorage.getItem('selectedProjectId');
-                let defaultProject = projectsList[0];
+                // Handle null or undefined response
+                const safeProjectsList = Array.isArray(projectsList) ? projectsList : [];
+                setProjects(safeProjectsList);
 
-                if (savedProjectId && projectsList.length > 0) {
-                    const savedProject = projectsList.find(p => p.id === savedProjectId);
-                    if (savedProject) {
-                        defaultProject = savedProject;
+                // Only try to set default project if we have projects
+                if (safeProjectsList.length > 0) {
+                    // Set default project (first one or from localStorage)
+                    const savedProjectId = localStorage.getItem('selectedProjectId');
+                    let defaultProject = safeProjectsList[0];
+
+                    if (savedProjectId) {
+                        const savedProject = safeProjectsList.find(p => p.id === savedProjectId);
+                        if (savedProject) {
+                            defaultProject = savedProject;
+                        }
                     }
-                }
 
-                if (defaultProject) {
                     setSelectedProject(defaultProject);
                     localStorage.setItem('selectedProjectId', defaultProject.id);
+                } else {
+                    // No projects available - clear selection
+                    setSelectedProject(null);
+                    localStorage.removeItem('selectedProjectId');
+                    console.info('No projects available. Please create a project to get started.');
                 }
             } catch (error) {
                 console.error('Failed to load projects:', error);
+                // Set empty state on error
+                setProjects([]);
+                setSelectedProject(null);
             } finally {
                 setIsLoading(false);
             }

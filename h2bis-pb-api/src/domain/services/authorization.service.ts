@@ -11,6 +11,13 @@ export const PERMISSIONS = {
     DASHBOARD: {
         VIEW: 'view:dashboard',
     },
+    PROJECT: {
+        VIEW: 'view:projects',
+        CREATE: 'create:project',
+        EDIT: 'edit:project',
+        DELETE: 'delete:project',
+        MANAGE_MEMBERS: 'manage:project-members',
+    },
     USE_CASE: {
         VIEW: 'view:use-case',
         CREATE: 'create:use-case',
@@ -47,6 +54,7 @@ export const PERMISSIONS = {
 const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     user: [
         PERMISSIONS.DASHBOARD.VIEW,
+        PERMISSIONS.PROJECT.VIEW,
         PERMISSIONS.USE_CASE.VIEW,
         PERMISSIONS.USE_CASE.CREATE,
         PERMISSIONS.USE_CASE.EDIT,
@@ -59,6 +67,10 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     ],
     moderator: [
         PERMISSIONS.DASHBOARD.VIEW,
+        PERMISSIONS.PROJECT.VIEW,
+        PERMISSIONS.PROJECT.CREATE,
+        PERMISSIONS.PROJECT.EDIT,
+        PERMISSIONS.PROJECT.MANAGE_MEMBERS,
         PERMISSIONS.USE_CASE.VIEW,
         PERMISSIONS.USE_CASE.CREATE,
         PERMISSIONS.USE_CASE.EDIT,
@@ -74,6 +86,11 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
     admin: [
         // Dashboard & Content
         PERMISSIONS.DASHBOARD.VIEW,
+        PERMISSIONS.PROJECT.VIEW,
+        PERMISSIONS.PROJECT.CREATE,
+        PERMISSIONS.PROJECT.EDIT,
+        PERMISSIONS.PROJECT.DELETE,
+        PERMISSIONS.PROJECT.MANAGE_MEMBERS,
         PERMISSIONS.USE_CASE.VIEW,
         PERMISSIONS.USE_CASE.CREATE,
         PERMISSIONS.USE_CASE.EDIT,
