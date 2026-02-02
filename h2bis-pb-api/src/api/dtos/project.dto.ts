@@ -14,6 +14,17 @@ export const CreateProjectRequestSchema = z.object({
         allowAdmins: z.boolean().optional().default(true),
         allowedRoles: z.array(z.string()).optional().default([]),
     }).optional(),
+    metadata: z.object({
+        repository: z.string().optional().default(''),
+        techStack: z.array(z.string()).optional().default([]),
+        language: z.string().optional().default(''),
+        framework: z.string().optional().default('')
+    }).optional().default({
+        repository: '',
+        techStack: [],
+        language: '',
+        framework: ''
+    }),
 });
 
 export const UpdateProjectRequestSchema = z.object({
@@ -54,6 +65,18 @@ export interface ProjectResponseDto {
     members: ProjectMemberDto[];
     accessControl: ProjectAccessControlDto;
     status: 'active' | 'archived' | 'deleted';
+    type: 'software_development';
+    metadata: {
+        repository: string;
+        techStack: string[];
+        language: string;
+        framework: string;
+    };
+    stats: {
+        useCaseCount: number;
+        capabilityCount: number;
+        completionPercentage: number;
+    };
     createdAt: string;
     updatedAt: string;
 }

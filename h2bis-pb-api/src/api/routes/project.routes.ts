@@ -6,6 +6,18 @@ import { requirePermission } from '../middleware/permission.middleware.js';
 const projectRouter = Router();
 
 /**
+ * POST /api/projects
+ * Creates a new software development project
+ * Permissions: create:project
+ */
+projectRouter.post(
+    '/',
+    authenticate,
+    requirePermission('create:project'),
+    projectController.createProject
+);
+
+/**
  * GET /api/projects
  * Retrieves all projects accessible to the current user
  * Permissions: view:projects

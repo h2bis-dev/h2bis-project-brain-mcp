@@ -126,6 +126,9 @@ const AIMetadataSchema = z.object({
 export const UseCaseSchema = z.object({
     _id: z.any().optional(),
 
+    // Foreign key to project
+    projectId: z.string(),
+
     type: z.literal("use_case"),
     key: z.string(),
     name: z.string(),
@@ -248,6 +251,7 @@ export type CreateUseCaseProps = Partial<UseCase>;
 export const createUseCase = (props: CreateUseCaseProps, userId: string = "system"): UseCase => {
     // 1. Prepare minimal required fields that Zod requires (if not provided in props)
     const defaults = {
+        projectId: "", // Must be provided by caller
         type: "use_case" as const,
         key: "",
         name: "",

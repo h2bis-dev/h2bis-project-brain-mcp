@@ -34,14 +34,13 @@ export function Navbar() {
 
                     {/* Project Selector */}
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Project:</span>
                         <Select
-                            value={selectedProject?.id || ""}
+                            value={selectedProject?.id}
                             onValueChange={handleProjectChange}
                             disabled={isLoading || projects.length === 0}
                         >
                             <SelectTrigger className="w-48">
-                                <SelectValue placeholder={isLoading ? "Loading..." : "Select project"} />
+                                <SelectValue placeholder={isLoading ? "Loading projects..." : "Select a project"} />
                             </SelectTrigger>
                             <SelectContent>
                                 {projects.map((project) => (

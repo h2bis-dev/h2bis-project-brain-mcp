@@ -6,15 +6,15 @@ const ProjectSchema = new mongoose.Schema(
         name: { type: String, required: true, unique: true, trim: true },
         description: { type: String, default: '' },
         status: { type: String, enum: ['active', 'archived', 'deleted'], default: 'active' },
-        
+
         // RBAC: Who owns and can access this project
         owner: { type: String, required: true }, // userId of the owner
         members: {
             type: [
                 {
                     userId: { type: String, required: true },
-                    role: { 
-                        type: String, 
+                    role: {
+                        type: String,
                         enum: ['owner', 'admin', 'moderator', 'viewer'],
                         default: 'viewer'
                     },
@@ -23,17 +23,33 @@ const ProjectSchema = new mongoose.Schema(
             ],
             default: []
         },
-        
+
         // Access control: Which system roles can access this project
         accessControl: {
             // Admin users can always access all projects
             allowAdmins: { type: Boolean, default: true },
             // Specific roles allowed
-            allowedRoles: { 
+            allowedRoles: {
                 type: [String],
                 enum: ['user', 'moderator', 'admin'],
                 default: ['user', 'moderator', 'admin']
             }
+        },
+
+        // Software Development Project Metadata
+        type: { type: String, enum: ['software_development'], default: 'software_development' },
+        metadata: {
+            repository: { type: String, default: '' },
+            techStack: { type: [String], default: [] },
+            language: { type: String, default: '' },
+            framework: { type: String, default: '' }
+        },
+
+        // Project Statistics
+        stats: {
+            useCaseCount: { type: Number, default: 0 },
+            capabilityCount: { type: Number, default: 0 },
+            completionPercentage: { type: Number, default: 0 }
         },
     },
     { timestamps: true }
@@ -65,6 +81,18 @@ export interface ProjectDocument {
     owner: string;
     members: ProjectMember[];
     accessControl: ProjectAccessControl;
+    type: 'software_development';
+    metadata: {
+        repository: string;
+        techStack: string[];
+        language: string;
+        framework: string;
+    };
+    stats: {
+        useCaseCount: number;
+        capabilityCount: number;
+        completionPercentage: number;
+    };
     createdAt: Date;
     updatedAt: Date;
 }

@@ -2,6 +2,20 @@ export interface Project {
     id: string;
     name: string;
     description?: string;
+    status?: 'active' | 'archived' | 'deleted';
+    owner?: string;
+    type?: 'software_development';
+    metadata?: {
+        repository?: string;
+        techStack?: string[];
+        language?: string;
+        framework?: string;
+    };
+    stats?: {
+        useCaseCount?: number;
+        capabilityCount?: number;
+        completionPercentage?: number;
+    };
     createdAt?: string;
     updatedAt?: string;
 }

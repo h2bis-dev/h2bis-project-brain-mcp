@@ -1,7 +1,42 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Database, FileText, Network, Activity } from "lucide-react";
+import { Database, FileText, Network, Activity, AlertCircle } from "lucide-react";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function DashboardPage() {
+    const { selectedProject } = useProject();
+
+    // Show notice if no project is selected
+    if (!selectedProject) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Card className="max-w-md">
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-yellow-500" />
+                            <CardTitle>Select a Project</CardTitle>
+                        </div>
+                        <CardDescription>
+                            Please select a project from the dropdown menu above to access the dashboard and other features.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                            Once you select a project, you'll be able to:
+                        </p>
+                        <ul className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside">
+                            <li>View project statistics</li>
+                            <li>Manage use cases and capabilities</li>
+                            <li>Access analytics and summaries</li>
+                            <li>Track development progress</li>
+                        </ul>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -22,9 +57,9 @@ export default function DashboardPage() {
                         <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">0</div>
+                        <div className="text-2xl font-bold">{selectedProject.stats?.useCaseCount || 0}</div>
                         <p className="text-xs text-muted-foreground">
-                            Total use cases in system
+                            Total use cases in project
                         </p>
                     </CardContent>
                 </Card>
@@ -37,7 +72,7 @@ export default function DashboardPage() {
                         <Network className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">0</div>
+                        <div className="text-2xl font-bold">{selectedProject.stats?.capabilityCount || 0}</div>
                         <p className="text-xs text-muted-foreground">
                             Generated capabilities
                         </p>
@@ -47,14 +82,14 @@ export default function DashboardPage() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Features
+                            Completion
                         </CardTitle>
                         <Database className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">0</div>
+                        <div className="text-2xl font-bold">{selectedProject.stats?.completionPercentage || 0}%</div>
                         <p className="text-xs text-muted-foreground">
-                            Active features
+                            Project progress
                         </p>
                     </CardContent>
                 </Card>

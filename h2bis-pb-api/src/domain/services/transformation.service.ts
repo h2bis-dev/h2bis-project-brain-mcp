@@ -81,6 +81,7 @@ export class TransformationService {
 
         const capability: CapabilityNode = {
             id: capabilityId,
+            projectId: useCase.projectId, // Foreign key from use case
             kind: 'use_case',
 
             // INTENT: Use LLM-extracted semantic intent
@@ -197,6 +198,7 @@ export class TransformationService {
 
         const capability: CapabilityNode = {
             id: capabilityId,
+            projectId: (feature as any).projectId || 'default-project-1', // Foreign key from feature
             kind: 'feature',
 
             intent: {

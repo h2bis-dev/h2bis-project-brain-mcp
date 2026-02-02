@@ -11,7 +11,16 @@ export const projectService = {
             const response = await apiClient.get(API_ENDPOINTS.PROJECTS);
             // Handle API response structure: { success: true, data: { projects: [], total: 0 } }
             const projects = response.data?.data?.projects || response.data?.projects || response.data || [];
-            return Array.isArray(projects) ? projects : [];
+
+            // Map _id to id for consistency with web layer
+            const mappedProjects = Array.isArray(projects)
+                ? projects.map((p: any) => ({
+                    ...p,
+                    id: p._id || p.id,
+                }))
+                : [];
+
+            return mappedProjects;
         } catch (error) {
             console.error('Error fetching projects:', error);
             // Return empty array on error to prevent UI crashes

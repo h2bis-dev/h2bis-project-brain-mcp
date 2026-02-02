@@ -31,25 +31,13 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
                 const safeProjectsList = Array.isArray(projectsList) ? projectsList : [];
                 setProjects(safeProjectsList);
 
-                // Only try to set default project if we have projects
+                // DO NOT auto-select - user must explicitly choose a project
+                setSelectedProject(null);
+                localStorage.removeItem('selectedProjectId');
+
                 if (safeProjectsList.length > 0) {
-                    // Set default project (first one or from localStorage)
-                    const savedProjectId = localStorage.getItem('selectedProjectId');
-                    let defaultProject = safeProjectsList[0];
-
-                    if (savedProjectId) {
-                        const savedProject = safeProjectsList.find(p => p.id === savedProjectId);
-                        if (savedProject) {
-                            defaultProject = savedProject;
-                        }
-                    }
-
-                    setSelectedProject(defaultProject);
-                    localStorage.setItem('selectedProjectId', defaultProject.id);
+                    console.info(`${safeProjectsList.length} project(s) loaded. Please select a project to continue.`);
                 } else {
-                    // No projects available - clear selection
-                    setSelectedProject(null);
-                    localStorage.removeItem('selectedProjectId');
                     console.info('No projects available. Please create a project to get started.');
                 }
             } catch (error) {

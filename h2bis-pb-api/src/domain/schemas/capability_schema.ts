@@ -19,6 +19,7 @@ export const RelationshipSchema = z.object({
 
 export const CapabilityNodeSchema = z.object({
     id: z.string(),
+    projectId: z.string(), // Foreign key to project
     kind: z.enum(["use_case", "feature", "service", "data_entity"]),
 
     intent: z.object({

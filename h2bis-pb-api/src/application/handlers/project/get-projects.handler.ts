@@ -35,6 +35,18 @@ export class GetProjectsHandler {
             })),
             accessControl: project.accessControl || { allowAdmins: true, allowedRoles: [] },
             status: project.status,
+            type: 'software_development' as const,
+            metadata: project.metadata || {
+                repository: '',
+                techStack: [],
+                language: '',
+                framework: ''
+            },
+            stats: project.stats || {
+                useCaseCount: 0,
+                capabilityCount: 0,
+                completionPercentage: 0
+            },
             createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
             updatedAt: project.updatedAt?.toISOString() || new Date().toISOString(),
         }));
@@ -75,6 +87,18 @@ export class GetProjectByIdHandler {
             })),
             accessControl: project.accessControl || { allowAdmins: true, allowedRoles: [] },
             status: project.status,
+            type: 'software_development' as const,
+            metadata: project.metadata || {
+                repository: '',
+                techStack: [],
+                language: '',
+                framework: ''
+            },
+            stats: project.stats || {
+                useCaseCount: 0,
+                capabilityCount: 0,
+                completionPercentage: 0
+            },
             createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
             updatedAt: project.updatedAt?.toISOString() || new Date().toISOString(),
             userRole,

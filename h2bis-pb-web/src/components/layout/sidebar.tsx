@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { useProject } from "@/contexts/ProjectContext";
 import {
     LayoutDashboard,
     FileText,
@@ -55,6 +56,10 @@ const navigation = [
 export function Sidebar() {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const { selectedProject } = useProject();
+
+    // Disable all tabs except dashboard when no project is selected
+    const isDisabled = !selectedProject;
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -78,7 +83,22 @@ export function Sidebar() {
                 <nav className="space-y-1 flex-1">
                     {navigation.map((item) => {
                         const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-                        const linkContent = (
+                        const isDashboard = item.href === ROUTES.DASHBOARD;
+                        const shouldDisable = isDisabled && !isDashboard;
+
+                        const linkContent = shouldDisable ? (
+                            <div
+                                key={item.name}
+                                className={cn(
+                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-not-allowed opacity-50",
+                                    "text-muted-foreground",
+                                    isCollapsed && "justify-center"
+                                )}
+                            >
+                                <item.icon className="h-5 w-5 flex-shrink-0" />
+                                {!isCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
+                            </div>
+                        ) : (
                             <Link
                                 key={item.name}
                                 href={item.href}
@@ -101,7 +121,7 @@ export function Sidebar() {
                                     {linkContent}
                                 </TooltipTrigger>
                                 <TooltipContent side="right">
-                                    <p>{item.name}</p>
+                                    <p>{item.name}{shouldDisable && " (Select a project)"}</p>
                                 </TooltipContent>
                             </Tooltip>
                         ) : (
