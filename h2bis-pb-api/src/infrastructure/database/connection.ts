@@ -22,8 +22,13 @@ export async function connectDb(): Promise<Db> {
 
         // Connect Mongoose
         const mongooseUri = `${config.mongoUri}${config.dbName}`;
-        await mongoose.connect(mongooseUri);
-        console.log(`✅ Mongoose connected to: ${config.dbName}`);
+        await mongoose.connect(mongooseUri, {
+            // Disable automatic collection creation
+            // Collections will only be created when first document is inserted
+            autoCreate: false,
+            autoIndex: false, // Also disable automatic index creation for performance
+        });
+        console.log(`✅ Mongoose connected to: ${config.dbName} (lazy collection mode)`);
 
         return dbInstance;
     } catch (error) {
