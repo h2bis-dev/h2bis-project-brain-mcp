@@ -26,4 +26,5 @@ export interface ProjectContextType {
     isLoading: boolean;
     selectProject: (project: Project) => void;
     setDefaultProject: (project: Project) => void;
+    refreshProjects: () => Promise<void>;
 }

@@ -13,6 +13,7 @@ import {
     Network,
     Brain,
     BookText,
+    FolderKanban,
     Code,
     ChevronLeft,
     ChevronRight,
@@ -30,26 +31,37 @@ const navigation = [
         name: "Dashboard",
         href: ROUTES.DASHBOARD,
         icon: LayoutDashboard,
+        alwaysEnabled: true, // Dashboard is always accessible
+    },
+    {
+        name: "Project",
+        href: (projectId: string) => ROUTES.PROJECT(projectId),
+        icon: FolderKanban,
+        requiresProject: true,
     },
     {
         name: "Use Cases",
         href: ROUTES.USE_CASES,
         icon: FileText,
+        requiresProject: true,
     },
     {
         name: "Capabilities",
         href: ROUTES.CAPABILITIES,
         icon: Network,
+        requiresProject: true,
     },
     {
         name: "Analytics",
         href: ROUTES.ANALYTICS,
         icon: Brain,
+        requiresProject: true,
     },
     {
         name: "Summaries",
         href: ROUTES.SUMMARIES,
         icon: BookText,
+        requiresProject: true,
     },
 ];
 
@@ -57,9 +69,6 @@ export function Sidebar() {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const { selectedProject } = useProject();
-
-    // Disable all tabs except dashboard when no project is selected
-    const isDisabled = !selectedProject;
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -82,9 +91,13 @@ export function Sidebar() {
                 {/* Navigation */}
                 <nav className="space-y-1 flex-1">
                     {navigation.map((item) => {
-                        const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-                        const isDashboard = item.href === ROUTES.DASHBOARD;
-                        const shouldDisable = isDisabled && !isDashboard;
+                        // Determine the actual href
+                        const href = typeof item.href === 'function'
+                            ? selectedProject ? item.href(selectedProject.id) : '#'
+                            : item.href;
+
+                        const isActive = pathname === href || pathname?.startsWith(href + "/");
+                        const shouldDisable = item.requiresProject && !selectedProject;
 
                         const linkContent = shouldDisable ? (
                             <div
@@ -101,7 +114,7 @@ export function Sidebar() {
                         ) : (
                             <Link
                                 key={item.name}
-                                href={item.href}
+                                href={href}
                                 className={cn(
                                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                                     isActive

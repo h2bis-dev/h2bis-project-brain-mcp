@@ -33,7 +33,13 @@ export const projectService = {
      */
     async getById(id: string): Promise<Project> {
         const response = await apiClient.get(`${API_ENDPOINTS.PROJECTS}/${id}`);
-        return response.data;
+        const project = response.data?.data || response.data;
+
+        // Map _id to id for consistency
+        return {
+            ...project,
+            id: project._id || project.id,
+        };
     },
 
     /**
@@ -41,7 +47,13 @@ export const projectService = {
      */
     async create(data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
         const response = await apiClient.post(API_ENDPOINTS.PROJECTS, data);
-        return response.data;
+        const project = response.data?.data || response.data;
+
+        // Map _id to id for consistency with web layer
+        return {
+            ...project,
+            id: project._id || project.id,
+        };
     },
 
     /**
@@ -49,6 +61,12 @@ export const projectService = {
      */
     async update(id: string, data: Partial<Project>): Promise<Project> {
         const response = await apiClient.put(`${API_ENDPOINTS.PROJECTS}/${id}`, data);
-        return response.data;
+        const project = response.data?.data || response.data;
+
+        // Map _id to id for consistency
+        return {
+            ...project,
+            id: project._id || project.id,
+        };
     },
 };

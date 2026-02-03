@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { projectService } from '@/services/project.service';
 import type { Project, ProjectContextType } from '@/types/project.types';
@@ -13,8 +13,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load projects when session is available
-    useEffect(() => {
+    const loadProjects = useCallback(async () => {
         if (!session?.user?.id) {
             setIsLoading(false);
             setProjects([]);
@@ -22,36 +21,33 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        const loadProjects = async () => {
-            try {
-                setIsLoading(true);
-                const projectsList = await projectService.getAll();
+        try {
+            setIsLoading(true);
+            const projectsList = await projectService.getAll();
 
-                // Handle null or undefined response
-                const safeProjectsList = Array.isArray(projectsList) ? projectsList : [];
-                setProjects(safeProjectsList);
+            // Handle null or undefined response
+            const safeProjectsList = Array.isArray(projectsList) ? projectsList : [];
+            setProjects(safeProjectsList);
 
-                // DO NOT auto-select - user must explicitly choose a project
-                setSelectedProject(null);
-                localStorage.removeItem('selectedProjectId');
-
-                if (safeProjectsList.length > 0) {
-                    console.info(`${safeProjectsList.length} project(s) loaded. Please select a project to continue.`);
-                } else {
-                    console.info('No projects available. Please create a project to get started.');
-                }
-            } catch (error) {
-                console.error('Failed to load projects:', error);
-                // Set empty state on error
-                setProjects([]);
-                setSelectedProject(null);
-            } finally {
-                setIsLoading(false);
+            if (safeProjectsList.length > 0) {
+                console.info(`${safeProjectsList.length} project(s) loaded. Please select a project to continue.`);
+            } else {
+                console.info('No projects available. Please create a project to get started.');
             }
-        };
-
-        loadProjects();
+        } catch (error) {
+            console.error('Failed to load projects:', error);
+            // Set empty state on error
+            setProjects([]);
+            setSelectedProject(null);
+        } finally {
+            setIsLoading(false);
+        }
     }, [session?.user?.id]);
+
+    // Load projects when session is available
+    useEffect(() => {
+        loadProjects();
+    }, [loadProjects]);
 
     const selectProject = (project: Project) => {
         setSelectedProject(project);
@@ -68,12 +64,17 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         selectProject(project);
     };
 
+    const refreshProjects = async () => {
+        await loadProjects();
+    };
+
     const value: ProjectContextType = {
         selectedProject,
         projects,
         isLoading,
         selectProject,
         setDefaultProject,
+        refreshProjects,
     };
 
     return (
