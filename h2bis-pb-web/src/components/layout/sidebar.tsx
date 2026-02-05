@@ -28,16 +28,10 @@ import { Button } from "@/components/ui/button";
 
 const navigation = [
     {
-        name: "Dashboard",
-        href: ROUTES.DASHBOARD,
-        icon: LayoutDashboard,
-        alwaysEnabled: true, // Dashboard is always accessible
-    },
-    {
         name: "Project",
-        href: (projectId: string) => ROUTES.PROJECT(projectId),
+        href: ROUTES.PROJECTS,
         icon: FolderKanban,
-        requiresProject: true,
+        requiresProject: false,
     },
     {
         name: "Use Cases",
@@ -80,7 +74,7 @@ export function Sidebar() {
             >
                 {/* Logo */}
                 <div className={cn("mb-8 transition-all duration-300", isCollapsed ? "mx-auto" : "")}>
-                    <Link href={ROUTES.HOME} className={cn("flex items-center gap-2", isCollapsed && "justify-center")}>
+                    <Link href={ROUTES.PROJECTS} className={cn("flex items-center gap-2", isCollapsed && "justify-center")}>
                         <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
                             <Brain className="h-5 w-5 text-primary-foreground" />
                         </div>
@@ -91,10 +85,7 @@ export function Sidebar() {
                 {/* Navigation */}
                 <nav className="space-y-1 flex-1">
                     {navigation.map((item) => {
-                        // Determine the actual href
-                        const href = typeof item.href === 'function'
-                            ? selectedProject ? item.href(selectedProject.id) : '#'
-                            : item.href;
+                        const href = item.href;
 
                         const isActive = pathname === href || pathname?.startsWith(href + "/");
                         const shouldDisable = item.requiresProject && !selectedProject;

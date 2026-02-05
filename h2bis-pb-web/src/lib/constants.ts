@@ -22,7 +22,7 @@ export {
 // Application-specific constants
 export const ROUTES = {
     HOME: "/",
-    DASHBOARD: "/dashboard",
+    PROJECTS: "/projects",
     PROJECT: (id: string) => `/projects/${id}`,
     USE_CASES: "/use-cases",
     USE_CASE_DETAIL: (id: string) => `/use-cases/${id}`,

@@ -3,6 +3,7 @@ import { findDocument, findDocumentSchema } from "./findDocument.js";
 import { updateDocument, updateDocumentSchema } from "./updateDocument.js";
 import { deleteDocument, deleteDocumentSchema } from "./deleteDocument.js";
 import { listCollections, listCollectionsSchema } from "./listCollections.js";
+import { listProjects, listProjectsSchema } from "./listProjects.js";
 import { getCapabilityDependencies, getCapabilityDependenciesSchema } from "./getCapabilityDependencies.js";
 import { analyzeCapabilityImpact, analyzeCapabilityImpactSchema } from "./analyzeCapabilityImpact.js";
 import { getImplementationOrder, getImplementationOrderSchema } from "./getImplementationOrder.js";
@@ -37,6 +38,12 @@ export const tools = [
     description: "List all collections in the MongoDB database",
     schema: listCollectionsSchema,
     handler: listCollections,
+  },
+  {
+    name: "listProjects",
+    description: "List all projects from the MongoDB database",
+    schema: listProjectsSchema,
+    handler: listProjects,
   },
   // Capability Graph Tools
   {

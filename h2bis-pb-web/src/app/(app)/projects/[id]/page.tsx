@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { projectService } from '@/services/project.service';
 import type { Project } from '@/types/project.types';
-import { Loader2, ArrowLeft, Edit, Save, X, Calendar, Code, Folder, Network } from 'lucide-react';
+import { Loader2, ArrowLeft, Edit, Save, X, Calendar, Code, Folder, Network, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -87,28 +87,40 @@ export default function ProjectDetailsPage() {
 
     if (!project) {
         return (
-            <div className="flex flex-col items-center justify-center h-96 gap-4">
-                <p className="text-muted-foreground">Project not found</p>
-                <Button onClick={() => router.push('/dashboard')}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Dashboard
-                </Button>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Card className="max-w-md">
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-yellow-500" />
+                            <CardTitle>Select a Project</CardTitle>
+                        </div>
+                        <CardDescription>
+                            Please select a project from the dropdown menu above to access the dashboard and other features.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                            Once you select a project, you'll be able to:
+                        </p>
+                        <ul className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside">
+                            <li>View project statistics</li>
+                            <li>Manage use cases and capabilities</li>
+                            <li>Access analytics and summaries</li>
+                            <li>Track development progress</li>
+                        </ul>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
-
+    
     return (
         <div className="container mx-auto p-6 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard')}>
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h1 className="text-3xl font-bold">{project.name}</h1>
-                        <p className="text-muted-foreground">Project Details</p>
-                    </div>
+                <div>
+                    <h1 className="text-3xl font-bold">{project.name}</h1>
+                    <p className="text-muted-foreground">Project Details</p>
                 </div>
 
                 <div className="flex gap-2">

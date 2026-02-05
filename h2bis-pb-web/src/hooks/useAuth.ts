@@ -49,9 +49,9 @@ export function useLogin() {
             // Invalidate user/auth queries to refetch fresh data
             queryClient.invalidateQueries({ queryKey: ['auth', 'user'] });
             // Navigate to dashboard
-            router.push('/dashboard');
+            router.push('/projects');
             router.refresh();
-        },
+        }
     });
 }
 
