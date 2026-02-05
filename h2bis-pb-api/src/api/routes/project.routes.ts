@@ -5,6 +5,19 @@ import { requirePermission } from '../middleware/permission.middleware.js';
 
 const projectRouter = Router();
 
+// ========== PUBLIC MCP ENDPOINTS (No Auth) ==========
+
+// GET /api/projects/mcp/list - List all projects (for MCP)
+projectRouter.get('/mcp/list', projectController.getProjects);
+
+// GET /api/projects/mcp/find/:projectId - Find project by ID (for MCP)
+projectRouter.get('/mcp/find/:projectId', projectController.getProjectById);
+
+// POST /api/projects/mcp/create - Create project (for MCP)
+projectRouter.post('/mcp/create', projectController.createProject);
+
+// ========== AUTHENTICATED ENDPOINTS ==========
+
 /**
  * POST /api/projects
  * Creates a new software development project

@@ -6,6 +6,23 @@ import { PERMISSIONS } from '../../domain/services/authorization.service.js';
 
 const router = Router();
 
+// ========== PUBLIC MCP ENDPOINTS (No Auth) ==========
+// These endpoints are for MCP server access only
+
+// GET /api/use-cases/mcp/list - List all use cases (for MCP)
+router.get('/mcp/list', useCaseController.getAllUseCases);
+
+// GET /api/use-cases/mcp/find/:id - Find by ID (for MCP)
+router.get('/mcp/find/:id', useCaseController.getUseCaseById);
+
+// POST /api/use-cases/mcp/create - Create use case (for MCP)
+router.post('/mcp/create', useCaseController.createUseCase);
+
+// DELETE /api/use-cases/mcp/delete/:id - Delete use case (for MCP)
+router.delete('/mcp/delete/:id', useCaseController.deleteUseCase);
+
+// ========== AUTHENTICATED ENDPOINTS ==========
+
 // All use case routes require authentication
 // 'view:use-case' permission: user, moderator, admin
 // 'create:use-case' permission: user, moderator, admin

@@ -1,0 +1,21 @@
+{
+    "mcp.servers": {
+        "h2bis-pb-mcp": {
+            "command": "node",
+            "args": [
+                "c:/My_work/RnD/project_brain_prototype_node/h2bis-pb/h2bis-pb-mcp/dist/index.js"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            }
+        }
+    },
+    "antigravity.mcp.servers": {
+        "h2bis-pb-mcp": {
+            "command": "node",
+            "args": [
+                "c:/My_work/RnD/project_brain_prototype_node/h2bis-pb/h2bis-pb-mcp/dist/index.js"
+            ]
+        }
+    }
+}

@@ -3,6 +3,8 @@ import * as capabilityController from '../controllers/capability.controller.js';
 
 const router = Router();
 
+// ========== PUBLIC ENDPOINTS (No Auth - Available for MCP) ==========
+
 // Basic CRUD
 router.post('/', capabilityController.createCapability);
 router.get('/:id', capabilityController.getCapability);
