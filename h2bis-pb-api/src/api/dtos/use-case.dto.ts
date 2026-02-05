@@ -7,6 +7,7 @@ import { z } from 'zod';
  * Validates incoming create use case requests
  */
 export const CreateUseCaseRequestDto = z.object({
+    projectId: z.string().min(1, 'Project ID is required'), // Foreign key to project
     type: z.literal('use_case').default('use_case'),
     key: z.string().min(1, 'Key is required').regex(/^[a-z0-9-]+$/, 'Key must be lowercase alphanumeric with hyphens'),
     name: z.string().min(1, 'Name is required'),

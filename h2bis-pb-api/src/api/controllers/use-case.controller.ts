@@ -10,10 +10,14 @@ import { generateUseCaseHandler } from '../../application/handlers/use-case/gene
 /**
  * Get all use cases
  * GET /api/use-cases
+ * GET /api/use-cases?projectId=<id> - Filter by project
  */
 export const getAllUseCases = asyncHandler(async (req: Request, res: Response) => {
-    // Execute handler
-    const result = await getUseCasesHandler.execute();
+    // Extract optional projectId filter from query parameters
+    const projectId = req.query.projectId as string | undefined;
+
+    // Execute handler with optional project filter
+    const result = await getUseCasesHandler.execute(projectId);
 
     // Send response
     res.status(200).json(result);

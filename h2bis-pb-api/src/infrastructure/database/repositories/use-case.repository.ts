@@ -21,6 +21,17 @@ export class UseCaseRepository {
     }
 
     /**
+     * Find all use cases for a specific project
+     */
+    async findByProjectId(projectId: string): Promise<UseCase[]> {
+        const db = await getDb();
+        const useCases = await db.collection(this.collectionName)
+            .find({ projectId })
+            .toArray();
+        return useCases as unknown as UseCase[];
+    }
+
+    /**
      * Find a use case by ID (supports both key-based _id and MongoDB ObjectId)
      */
     async findById(id: string): Promise<UseCase | null> {

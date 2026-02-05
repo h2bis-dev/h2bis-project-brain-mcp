@@ -6,9 +6,11 @@ import type { UseCaseResponseDto } from '../../../api/dtos/use-case.dto.js';
  * Retrieves all use cases from the database
  */
 export class GetUseCasesHandler {
-    async execute(): Promise<UseCaseResponseDto[]> {
-        // Fetch all use cases from repository
-        const useCases = await useCaseRepository.findAll();
+    async execute(projectId?: string): Promise<UseCaseResponseDto[]> {
+        // Fetch use cases from repository - filter by project if provided
+        const useCases = projectId
+            ? await useCaseRepository.findByProjectId(projectId)
+            : await useCaseRepository.findAll();
 
         // Transform to response DTOs (return summary fields only)
         return useCases.map(uc => ({
