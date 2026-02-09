@@ -28,6 +28,12 @@ import { Button } from "@/components/ui/button";
 
 const navigation = [
     {
+        name: "Dashboard",
+        href: ROUTES.DASHBOARD,
+        icon: LayoutDashboard,
+        requiresProject: false,
+    },
+    {
         name: "Project",
         href: ROUTES.PROJECTS,
         icon: FolderKanban,
@@ -74,7 +80,7 @@ export function Sidebar() {
             >
                 {/* Logo */}
                 <div className={cn("mb-8 transition-all duration-300", isCollapsed ? "mx-auto" : "")}>
-                    <Link href={ROUTES.PROJECTS} className={cn("flex items-center gap-2", isCollapsed && "justify-center")}>
+                    <Link href={ROUTES.DASHBOARD} className={cn("flex items-center gap-2", isCollapsed && "justify-center")}>
                         <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
                             <Brain className="h-5 w-5 text-primary-foreground" />
                         </div>

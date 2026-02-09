@@ -120,7 +120,7 @@ export class ProjectRepository {
         const result = await db.collection(this.collectionName)
             .findOneAndUpdate(
                 { _id: id, status: { $ne: 'deleted' } } as Filter<any>,
-                { 
+                {
                     $set: {
                         ...data,
                         updatedAt: new Date()
@@ -187,6 +187,63 @@ export class ProjectRepository {
                     }
                 }
             );
+    }
+
+    /**
+     * Get dashboard statistics for accessible projects
+     * Returns projects with aggregated use case counts
+     * 
+     * @param userId - The user ID
+     * @param userRoles - The user's system roles (user, moderator, admin)
+     * @returns Array of projects with use case counts
+     */
+    async getDashboardStats(userId: string, userRoles: string[]): Promise<Array<ProjectDocument & { useCaseCount: number }>> {
+        const db = await getDb();
+
+        // Build query for accessible projects (same as findAccessibleProjects)
+        const query = {
+            status: { $ne: 'deleted' },
+            $or: [
+                { owner: userId },
+                { 'members.userId': userId },
+                {
+                    'accessControl.allowedRoles': {
+                        $in: userRoles
+                    }
+                },
+                ...(userRoles.includes('admin') ? [{ 'accessControl.allowAdmins': true }] : [])
+            ]
+        };
+
+        // Aggregation pipeline to join with use_cases and count
+        const pipeline = [
+            { $match: query },
+            {
+                $lookup: {
+                    from: 'use_cases',
+                    localField: '_id',
+                    foreignField: 'projectId',
+                    as: 'useCases'
+                }
+            },
+            {
+                $addFields: {
+                    useCaseCount: { $size: '$useCases' }
+                }
+            },
+            {
+                $project: {
+                    useCases: 0 // Remove the useCases array from the result
+                }
+            },
+            { $sort: { createdAt: -1 } }
+        ];
+
+        const projects = await db.collection(this.collectionName)
+            .aggregate(pipeline)
+            .toArray();
+
+        return projects as unknown as Array<ProjectDocument & { useCaseCount: number }>;
     }
 }
 

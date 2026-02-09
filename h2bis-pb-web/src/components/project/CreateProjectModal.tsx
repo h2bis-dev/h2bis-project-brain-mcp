@@ -59,12 +59,12 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
         defaultValues: {
             _id: '',
             name: '',
-            description: '',
+            description: undefined,
             metadata: {
                 repository: '',
                 techStack: [],
-                language: '',
-                framework: '',
+                language: undefined,
+                framework: undefined,
             },
         },
     });

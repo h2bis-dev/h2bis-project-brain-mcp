@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -20,6 +20,7 @@ import type { Project } from "@/types/project.types";
 
 export function Navbar() {
     const router = useRouter();
+    const pathname = usePathname();
     const { selectedProject, projects, isLoading, refreshProjects } = useProject();
     const { switchProject } = useSwitchProject();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -28,6 +29,11 @@ export function Navbar() {
         const project = projects.find(p => p.id === projectId);
         if (project) {
             switchProject(project);
+
+            // If currently on a project details page, navigate to the new project
+            if (pathname?.startsWith('/projects/')) {
+                router.push(`/projects/${projectId}`);
+            }
         }
     };
 

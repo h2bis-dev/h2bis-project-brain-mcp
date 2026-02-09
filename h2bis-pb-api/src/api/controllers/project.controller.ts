@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema } from '../dtos/project.dto.js';
 import { getProjectsHandler, getProjectByIdHandler } from '../../application/handlers/project/get-projects.handler.js';
+import { getDashboardStatsHandler } from '../../application/handlers/project/get-dashboard-stats.handler.js';
 import { createProjectHandler } from '../../application/handlers/project/create-project.handler.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logger } from '../../infrastructure/config/logger.js';
@@ -137,6 +138,38 @@ export const projectController = {
                 }
                 logger.error(`Error fetching project ${req.params.projectId}: ${error}`);
                 return res.status(500).json({ error: 'Failed to fetch project' });
+            }
+        }
+    ),
+
+    /**
+     * GET /api/projects/dashboard
+     * Retrieves dashboard statistics with all accessible projects and their use case counts
+     */
+    getDashboardStats: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const user = (req as any).user;
+                if (!user) {
+                    return res.status(401).json({ error: 'Unauthorized' });
+                }
+
+                logger.info(`Fetching dashboard stats for user ${user.userId}`);
+
+                const projects = await getDashboardStatsHandler.execute(
+                    user.userId,
+                    user.roles
+                );
+
+                logger.info(`Retrieved ${projects.length} projects for dashboard`);
+
+                return res.status(200).json({
+                    success: true,
+                    data: { projects },
+                });
+            } catch (error) {
+                logger.error(`Error fetching dashboard stats: ${error}`);
+                return res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
             }
         }
     ),

@@ -157,6 +157,14 @@ export class ProjectService {
         const member = project.members.find((m: ProjectMember) => m.userId === userId);
         return member?.role || null;
     }
+
+    /**
+     * Get dashboard statistics
+     * Returns all accessible projects with their use case counts
+     */
+    async getDashboardStats(userId: string, userRoles: string[]): Promise<Array<ProjectDocument & { useCaseCount: number }>> {
+        return await projectRepository.getDashboardStats(userId, userRoles);
+    }
 }
 
 export const projectService = new ProjectService();

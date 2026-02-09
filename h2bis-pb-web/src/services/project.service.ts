@@ -8,7 +8,7 @@ export const projectService = {
      */
     async getAll(): Promise<Project[]> {
         try {
-            const response = await apiClient.get(API_ENDPOINTS.PROJECTS);
+            const response = await apiClient.get(API_ENDPOINTS.PROJECTS.LIST);
             // Handle API response structure: { success: true, data: { projects: [], total: 0 } }
             const projects = response.data?.data?.projects || response.data?.projects || response.data || [];
 
@@ -32,7 +32,7 @@ export const projectService = {
      * Get a single project by ID
      */
     async getById(id: string): Promise<Project> {
-        const response = await apiClient.get(`${API_ENDPOINTS.PROJECTS}/${id}`);
+        const response = await apiClient.get(`${API_ENDPOINTS.PROJECTS.LIST}/${id}`);
         const project = response.data?.data || response.data;
 
         // Map _id to id for consistency
@@ -46,7 +46,7 @@ export const projectService = {
      * Create a new project
      */
     async create(data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
-        const response = await apiClient.post(API_ENDPOINTS.PROJECTS, data);
+        const response = await apiClient.post(API_ENDPOINTS.PROJECTS.LIST, data);
         const project = response.data?.data || response.data;
 
         // Map _id to id for consistency with web layer
@@ -60,7 +60,7 @@ export const projectService = {
      * Update a project
      */
     async update(id: string, data: Partial<Project>): Promise<Project> {
-        const response = await apiClient.put(`${API_ENDPOINTS.PROJECTS}/${id}`, data);
+        const response = await apiClient.put(`${API_ENDPOINTS.PROJECTS.LIST}/${id}`, data);
         const project = response.data?.data || response.data;
 
         // Map _id to id for consistency

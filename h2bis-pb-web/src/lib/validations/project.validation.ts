@@ -17,20 +17,14 @@ export const createProjectSchema = z.object({
 
     description: z.string()
         .max(500, "Description must be less than 500 characters")
-        .optional()
-        .default(''),
+        .optional(),
 
     metadata: z.object({
-        repository: z.string().url("Must be a valid URL").optional().or(z.literal('')).default(''),
-        techStack: z.array(z.string()).optional().default([]),
-        language: z.string().optional().default(''),
-        framework: z.string().optional().default(''),
-    }).optional().default({
-        repository: '',
-        techStack: [],
-        language: '',
-        framework: ''
-    }),
+        repository: z.string().optional(),
+        techStack: z.array(z.string()).optional(),
+        language: z.string().optional(),
+        framework: z.string().optional(),
+    }).optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;

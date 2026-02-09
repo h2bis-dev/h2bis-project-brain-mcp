@@ -43,6 +43,18 @@ projectRouter.get(
 );
 
 /**
+ * GET /api/projects/dashboard
+ * Retrieves dashboard statistics with all accessible projects and their use case counts
+ * Permissions: view:projects
+ */
+projectRouter.get(
+    '/dashboard',
+    authenticate,
+    requirePermission('view:projects'),
+    projectController.getDashboardStats
+);
+
+/**
  * GET /api/projects/:projectId
  * Retrieves a specific project with user's role and management status
  * Permissions: view:projects
