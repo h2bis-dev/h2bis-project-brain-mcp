@@ -35,12 +35,45 @@ export class GetProjectsHandler {
             })),
             accessControl: project.accessControl || { allowAdmins: true, allowedRoles: [] },
             status: project.status,
+            lifecycle: project.lifecycle || 'planning',
             type: 'software_development' as const,
-            metadata: project.metadata || {
-                repository: '',
-                techStack: [],
-                language: '',
-                framework: ''
+            developedEndpoints: project.developedEndpoints || [],
+            metadata: {
+                repository: project.metadata?.repository || '',
+                techStack: project.metadata?.techStack || [],
+                language: project.metadata?.language || '',
+                framework: project.metadata?.framework || '',
+                architecture: project.metadata?.architecture || {
+                    overview: '',
+                    style: '',
+                    directoryStructure: '',
+                    stateManagement: []
+                },
+                authStrategy: project.metadata?.authStrategy || {
+                    approach: '',
+                    implementation: []
+                },
+                deployment: project.metadata?.deployment || {
+                    environment: '',
+                    cicd: []
+                },
+                externalServices: project.metadata?.externalServices || [],
+                standards: project.metadata?.standards || {
+                    codingStyle: { guide: '', linter: [] },
+                    namingConventions: '',
+                    errorHandling: [],
+                    loggingConvention: []
+                },
+                qualityGates: project.metadata?.qualityGates || {
+                    definitionOfDone: [],
+                    codeReviewChecklist: [],
+                    testingRequirements: {
+                        coverage: 0,
+                        testTypes: [],
+                        requiresE2ETests: false
+                    },
+                    documentationStandards: ''
+                }
             },
             stats: project.stats || {
                 useCaseCount: 0,
@@ -87,12 +120,45 @@ export class GetProjectByIdHandler {
             })),
             accessControl: project.accessControl || { allowAdmins: true, allowedRoles: [] },
             status: project.status,
+            lifecycle: project.lifecycle || 'planning',
             type: 'software_development' as const,
-            metadata: project.metadata || {
-                repository: '',
-                techStack: [],
-                language: '',
-                framework: ''
+            developedEndpoints: project.developedEndpoints || [],
+            metadata: {
+                repository: project.metadata?.repository || '',
+                techStack: project.metadata?.techStack || [],
+                language: project.metadata?.language || '',
+                framework: project.metadata?.framework || '',
+                architecture: project.metadata?.architecture || {
+                    overview: '',
+                    style: '',
+                    directoryStructure: '',
+                    stateManagement: []
+                },
+                authStrategy: project.metadata?.authStrategy || {
+                    approach: '',
+                    implementation: []
+                },
+                deployment: project.metadata?.deployment || {
+                    environment: '',
+                    cicd: []
+                },
+                externalServices: project.metadata?.externalServices || [],
+                standards: project.metadata?.standards || {
+                    codingStyle: { guide: '', linter: [] },
+                    namingConventions: '',
+                    errorHandling: [],
+                    loggingConvention: []
+                },
+                qualityGates: project.metadata?.qualityGates || {
+                    definitionOfDone: [],
+                    codeReviewChecklist: [],
+                    testingRequirements: {
+                        coverage: 0,
+                        testTypes: [],
+                        requiresE2ETests: false
+                    },
+                    documentationStandards: ''
+                }
             },
             stats: project.stats || {
                 useCaseCount: 0,

@@ -32,6 +32,7 @@ export class CreateProjectHandler {
             name: data.name,
             description: data.description || '',
             status: 'active',
+            lifecycle: data.lifecycle || 'planning',
             owner: userId,
             members: [
                 {
@@ -45,11 +46,46 @@ export class CreateProjectHandler {
                 allowedRoles: ['user', 'moderator', 'admin']
             },
             type: 'software_development',
-            metadata: data.metadata || {
-                repository: '',
-                techStack: [],
-                language: '',
-                framework: ''
+            developedEndpoints: [],
+            metadata: {
+                repository: data.metadata?.repository || '',
+                techStack: data.metadata?.techStack || [],
+                language: data.metadata?.language || '',
+                framework: data.metadata?.framework || '',
+                architecture: {
+                    overview: data.metadata?.architecture?.overview || '',
+                    style: data.metadata?.architecture?.style || '',
+                    directoryStructure: data.metadata?.architecture?.directoryStructure || '',
+                    stateManagement: data.metadata?.architecture?.stateManagement || []
+                },
+                authStrategy: {
+                    approach: data.metadata?.authStrategy?.approach || '',
+                    implementation: data.metadata?.authStrategy?.implementation || []
+                },
+                deployment: {
+                    environment: data.metadata?.deployment?.environment || '',
+                    cicd: data.metadata?.deployment?.cicd || []
+                },
+                externalServices: data.metadata?.externalServices || [],
+                standards: {
+                    codingStyle: {
+                        guide: data.metadata?.standards?.codingStyle?.guide || '',
+                        linter: data.metadata?.standards?.codingStyle?.linter || []
+                    },
+                    namingConventions: data.metadata?.standards?.namingConventions || '',
+                    errorHandling: data.metadata?.standards?.errorHandling || [],
+                    loggingConvention: data.metadata?.standards?.loggingConvention || []
+                },
+                qualityGates: {
+                    definitionOfDone: data.metadata?.qualityGates?.definitionOfDone || [],
+                    codeReviewChecklist: data.metadata?.qualityGates?.codeReviewChecklist || [],
+                    testingRequirements: {
+                        coverage: data.metadata?.qualityGates?.testingRequirements?.coverage || 0,
+                        testTypes: data.metadata?.qualityGates?.testingRequirements?.testTypes || [],
+                        requiresE2ETests: data.metadata?.qualityGates?.testingRequirements?.requiresE2ETests || false
+                    },
+                    documentationStandards: data.metadata?.qualityGates?.documentationStandards || ''
+                }
             },
             stats: {
                 useCaseCount: 0,

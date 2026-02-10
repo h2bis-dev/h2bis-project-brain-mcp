@@ -86,6 +86,7 @@ export default function DashboardPage() {
                                     name={project.name}
                                     description={project.description}
                                     useCaseCount={project.useCaseCount}
+                                    lifecycle={project.lifecycle}
                                 />
                             ))}
                         </div>

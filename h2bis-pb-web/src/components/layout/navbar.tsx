@@ -14,16 +14,15 @@ import {
 import { Bell, Settings, User, Plus } from "lucide-react";
 import { useProject } from "@/contexts/ProjectContext";
 import { useSwitchProject } from "@/hooks/useProject";
-import { CreateProjectModal } from "@/components/project/CreateProjectModal";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { ROUTES } from "@/lib/constants";
 import type { Project } from "@/types/project.types";
 
 export function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
-    const { selectedProject, projects, isLoading, refreshProjects } = useProject();
+    const { projects, selectedProject, isLoading } = useProject();
     const { switchProject } = useSwitchProject();
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const handleProjectChange = (projectId: string) => {
         const project = projects.find(p => p.id === projectId);
@@ -37,15 +36,8 @@ export function Navbar() {
         }
     };
 
-    const handleProjectCreated = async (newProject: Project) => {
-        // Refresh projects list to include the new project
-        await refreshProjects();
-
-        // Switch to the new project
-        switchProject(newProject);
-
-        // Navigate to project details
-        router.push(`/projects/${newProject.id}`);
+    const handleCreateProject = () => {
+        router.push('/projects/new?new=true');
     };
 
     return (
@@ -77,12 +69,11 @@ export function Navbar() {
                                 </SelectContent>
                             </Select>
 
-                            {/* Create Project Button - Admin Only */}
                             <PermissionGuard permission="create:project">
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => setIsCreateModalOpen(true)}
+                                    onClick={handleCreateProject}
                                     className="gap-2"
                                 >
                                     <Plus className="h-4 w-4" />
@@ -106,13 +97,6 @@ export function Navbar() {
                     </div>
                 </div>
             </header>
-
-            {/* Create Project Modal */}
-            <CreateProjectModal
-                open={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onSuccess={handleProjectCreated}
-            />
         </>
     );
 }

@@ -245,6 +245,64 @@ export class ProjectRepository {
 
         return projects as unknown as Array<ProjectDocument & { useCaseCount: number }>;
     }
+
+    /**
+     * Add a developed endpoint to the project registry
+     * @param projectId - The project ID
+     * @param endpointPath - Endpoint path in format "{METHOD} {path}" (e.g., "POST /api/projects")
+     */
+    async addDevelopedEndpoint(projectId: string, endpointPath: string): Promise<void> {
+        const db = await getDb();
+        await db.collection(this.collectionName)
+            .updateOne(
+                { _id: projectId, status: { $ne: 'deleted' } } as Filter<any>,
+                {
+                    $addToSet: {
+                        developedEndpoints: endpointPath
+                    },
+                    $set: {
+                        updatedAt: new Date()
+                    }
+                }
+            );
+    }
+
+    /**
+     * Remove a developed endpoint from the project registry
+     * @param projectId - The project ID
+     * @param endpointPath - Endpoint path to remove
+     */
+    async removeDevelopedEndpoint(projectId: string, endpointPath: string): Promise<void> {
+        const db = await getDb();
+        await db.collection(this.collectionName)
+            .updateOne(
+                { _id: projectId, status: { $ne: 'deleted' } } as Filter<any>,
+                {
+                    $pull: {
+                        developedEndpoints: endpointPath
+                    } as any,
+                    $set: {
+                        updatedAt: new Date()
+                    }
+                }
+            );
+    }
+
+    /**
+     * Get all developed endpoints for a project
+     * @param projectId - The project ID
+     * @returns Array of endpoint paths
+     */
+    async getDevelopedEndpoints(projectId: string): Promise<string[]> {
+        const db = await getDb();
+        const project = await db.collection(this.collectionName)
+            .findOne(
+                { _id: projectId, status: { $ne: 'deleted' } } as Filter<any>,
+                { projection: { developedEndpoints: 1 } }
+            );
+
+        return (project?.developedEndpoints as string[]) || [];
+    }
 }
 
 export const projectRepository = new ProjectRepository();

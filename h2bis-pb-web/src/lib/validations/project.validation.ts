@@ -19,6 +19,8 @@ export const createProjectSchema = z.object({
         .max(500, "Description must be less than 500 characters")
         .optional(),
 
+    lifecycle: z.string().min(1, "Lifecycle status is required"),
+
     metadata: z.object({
         repository: z.string().optional(),
         techStack: z.array(z.string()).optional(),

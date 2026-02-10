@@ -6,6 +6,7 @@ export interface DashboardProject {
     name: string;
     description: string;
     status: 'active' | 'archived' | 'deleted';
+    lifecycle?: string;
     useCaseCount: number;
     createdAt: string;
     updatedAt: string;

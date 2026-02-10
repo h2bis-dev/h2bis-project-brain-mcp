@@ -1,402 +1,777 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { projectService } from '@/services/project.service';
-import type { Project } from '@/types/project.types';
-import { Loader2, ArrowLeft, Edit, Save, X, Calendar, Code, Folder, Network, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
+import { useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Loader2, FolderOpen, Code2, Shield, Rocket, FileCheck, Link as LinkIcon, Users, Save, ArrowLeft } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { projectService } from "@/services/project.service";
+import { TagInput } from "@/components/ui/tag-input";
+import { PROJECT_METADATA_CONSTANTS } from "@/constants/project-metadata.constants";
+import { ROUTES } from "@/lib/constants";
 
-export default function ProjectDetailsPage() {
+interface ExternalService {
+    name: string;
+    purpose: string;
+    apiDocs?: string;
+}
+
+interface ProjectFormData {
+    _id: string;
+    name: string;
+    description: string;
+    lifecycle: string;
+    metadata: {
+        repository?: string;
+        language?: string;
+        framework?: string;
+        techStack?: string[];
+        architecture?: {
+            overview?: string;
+            style?: string;
+            directoryStructure?: string;
+            stateManagement?: string[];
+        };
+        authStrategy?: {
+            approach?: string;
+            implementation?: string[];
+        };
+        deployment?: {
+            environment?: string;
+            cicd?: string[];
+        };
+        externalServices?: ExternalService[];
+        standards?: {
+            codingStyle?: {
+                guide?: string;
+                linter?: string[];
+            };
+            namingConventions?: string[];
+            errorHandling?: string[];
+            loggingConvention?: string[];
+        };
+        qualityGates?: {
+            definitionOfDone?: string[];
+            codeReviewChecklist?: string[];
+            testingRequirements?: string[];
+            documentationStandards?: string[];
+        };
+    };
+}
+
+export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const projectId = params.id as string;
+    const isNewProject = searchParams?.get('new') === 'true';
     const { toast } = useToast();
-    const projectId = params?.id as string;
 
-    const [project, setProject] = useState<Project | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [editedProject, setEditedProject] = useState<Partial<Project>>({});
+    const [formData, setFormData] = useState<ProjectFormData>({
+        _id: '',
+        name: '',
+        description: '',
+        lifecycle: 'planning',
+        metadata: {
+            architecture: {},
+            authStrategy: {},
+            deployment: {},
+            standards: {
+                codingStyle: {},
+            },
+            qualityGates: {},
+        },
+    });
+
+    const [loading, setLoading] = useState(!isNewProject);
+    const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState("basic");
+    const [developedEndpoints, setDevelopedEndpoints] = useState<string[]>([]);
+    const [members, setMembers] = useState<any[]>([]);
+    const [hasChanges, setHasChanges] = useState(isNewProject);
 
     useEffect(() => {
-        if (projectId) {
+        if (!isNewProject && projectId !== 'new') {
             loadProject();
+        } else {
+            setFormData(prev => ({ ...prev, _id: projectId === 'new' ? '' : projectId }));
         }
-    }, [projectId]);
+    }, [projectId, isNewProject]);
 
     const loadProject = async () => {
         try {
-            setIsLoading(true);
+            setLoading(true);
             const data = await projectService.getById(projectId);
-            setProject(data);
-            setEditedProject(data);
+            setFormData({
+                _id: data._id || data.id,
+                name: data.name,
+                description: data.description || '',
+                lifecycle: data.lifecycle || 'planning',
+                metadata: data.metadata || {},
+            });
+            setDevelopedEndpoints(data.developedEndpoints || []);
+            setMembers(data.members || []);
         } catch (error) {
-            console.error('Error loading project:', error);
+            console.error("Error loading project:", error);
             toast({
-                title: 'Error',
-                description: 'Failed to load project details',
-                variant: 'destructive',
+                title: "Error",
+                description: "Failed to load project details",
+                variant: "destructive",
             });
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
+    };
+
+    const updateField = (path: string, value: any) => {
+        setFormData(prev => {
+            const keys = path.split('.');
+            const updated = { ...prev };
+            let current: any = updated;
+
+            for (let i = 0; i < keys.length - 1; i++) {
+                current[keys[i]] = { ...current[keys[i]] };
+                current = current[keys[i]];
+            }
+
+            current[keys[keys.length - 1]] = value;
+            return updated;
+        });
+        setHasChanges(true);
+    };
+
+    const generateProjectId = (name: string) => {
+        return name
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .slice(0, 50);
+    };
+
+    const handleNameChange = (name: string) => {
+        updateField('name', name);
+        if (isNewProject || !formData._id) {
+            updateField('_id', generateProjectId(name));
+        }
+    };
+
+    const isFormValid = () => {
+        return formData._id.length >= 3 && formData.name.length >= 1;
     };
 
     const handleSave = async () => {
-        try {
-            setIsSaving(true);
-            await projectService.update(projectId, editedProject);
-            setProject({ ...project, ...editedProject } as Project);
-            setIsEditing(false);
+        if (!isFormValid()) {
             toast({
-                title: 'Success',
-                description: 'Project updated successfully',
+                title: "Validation Error",
+                description: "Project ID (min 3 chars) and Name are required",
+                variant: "destructive",
             });
-        } catch (error) {
-            console.error('Error updating project:', error);
+            setActiveTab("basic");
+            return;
+        }
+
+        try {
+            setSaving(true);
+
+            if (isNewProject || projectId === 'new') {
+                const newProject = await projectService.create(formData);
+                toast({
+                    title: "Success",
+                    description: `Project "${formData.name}" created successfully`,
+                });
+                router.push(ROUTES.PROJECT(newProject._id || newProject.id));
+            } else {
+                await projectService.update(projectId, formData);
+                toast({
+                    title: "Success",
+                    description: "Project updated successfully",
+                });
+                setHasChanges(false);
+            }
+        } catch (error: any) {
+            console.error("Error saving project:", error);
             toast({
-                title: 'Error',
-                description: 'Failed to update project',
-                variant: 'destructive',
+                title: "Error",
+                description: error?.message || "Failed to save project",
+                variant: "destructive",
             });
         } finally {
-            setIsSaving(false);
+            setSaving(false);
         }
     };
 
-    const handleCancel = () => {
-        setEditedProject(project || {});
-        setIsEditing(false);
+    const getLifecycleBadgeColor = (lifecycle: string) => {
+        const colors: Record<string, string> = {
+            planning: 'bg-gray-100 text-gray-700 border-gray-300',
+            in_development: 'bg-blue-100 text-blue-700 border-blue-300',
+            in_review: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+            in_testing: 'bg-purple-100 text-purple-700 border-purple-300',
+            staging: 'bg-orange-100 text-orange-700 border-orange-300',
+            production: 'bg-green-100 text-green-700 border-green-300',
+            maintenance: 'bg-cyan-100 text-cyan-700 border-cyan-300',
+            archived: 'bg-slate-100 text-slate-700 border-slate-300',
+        };
+        return colors[lifecycle] || colors.planning;
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
-
-    if (!project) {
+    if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <Card className="max-w-md">
-                    <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5 text-yellow-500" />
-                            <CardTitle>Select a Project</CardTitle>
-                        </div>
-                        <CardDescription>
-                            Please select a project from the dropdown menu above to access the dashboard and other features.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                            Once you select a project, you'll be able to:
-                        </p>
-                        <ul className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside">
-                            <li>View project statistics</li>
-                            <li>Manage use cases and capabilities</li>
-                            <li>Access analytics and summaries</li>
-                            <li>Track development progress</li>
-                        </ul>
-                    </CardContent>
-                </Card>
+                <div className="text-center space-y-4">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="text-muted-foreground">Loading project...</p>
+                </div>
             </div>
         );
     }
-    
-    return (
-        <div className="container mx-auto p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">{project.name}</h1>
-                    <p className="text-muted-foreground">Project Details</p>
-                </div>
 
-                <div className="flex gap-2">
-                    {isEditing ? (
-                        <>
-                            <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
-                                <X className="h-4 w-4 mr-2" />
-                                Cancel
-                            </Button>
-                            <Button onClick={handleSave} disabled={isSaving}>
-                                {isSaving ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                    <Save className="h-4 w-4 mr-2" />
-                                )}
-                                Save Changes
-                            </Button>
-                        </>
-                    ) : (
-                        <Button onClick={() => setIsEditing(true)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Details
+    const lifecycleStatus = PROJECT_METADATA_CONSTANTS.lifecycleStatuses.find(
+        (s) => s.value === formData.lifecycle
+    );
+
+    return (
+        <div className="space-y-6 pb-24">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+                <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push(ROUTES.DASHBOARD)}
+                        >
+                            <ArrowLeft className="h-5 w-5" />
                         </Button>
-                    )}
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">
+                                {isNewProject || !formData.name ? "New Project" : formData.name}
+                            </h1>
+                            <p className="text-muted-foreground">
+                                {isNewProject ? "Fill in the project details below" : formData._id}
+                            </p>
+                        </div>
+                    </div>
                 </div>
+                {lifecycleStatus && !isNewProject && (
+                    <Badge variant="outline" className={getLifecycleBadgeColor(formData.lifecycle)}>
+                        {lifecycleStatus.label}
+                    </Badge>
+                )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Content - Left Column */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Overview Card */}
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+                    <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                    <TabsTrigger value="tech">Tech Stack</TabsTrigger>
+                    <TabsTrigger value="architecture">Architecture</TabsTrigger>
+                    <TabsTrigger value="auth-deploy">Auth & Deploy</TabsTrigger>
+                    <TabsTrigger value="standards">Standards</TabsTrigger>
+                    <TabsTrigger value="services">Services</TabsTrigger>
+                    <TabsTrigger value="endpoints">API Registry</TabsTrigger>
+                    <TabsTrigger value="team">Team</TabsTrigger>
+                </TabsList>
+
+                {/* Basic Info Tab */}
+                <TabsContent value="basic" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Overview</CardTitle>
-                            <CardDescription>Basic project information</CardDescription>
+                            <CardTitle>Basic Information</CardTitle>
+                            <CardDescription>Essential project details (required)</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {isEditing ? (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Project Name</Label>
-                                        <Input
-                                            id="name"
-                                            value={editedProject.name || ''}
-                                            onChange={(e) => setEditedProject({ ...editedProject, name: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="description">Description</Label>
-                                        <Textarea
-                                            id="description"
-                                            rows={4}
-                                            value={editedProject.description || ''}
-                                            onChange={(e) => setEditedProject({ ...editedProject, description: e.target.value })}
-                                        />
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div>
-                                        <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
-                                        <p className="mt-1">{project.description || 'No description provided'}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
-                                            Created {new Date(project.createdAt || '').toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                            <div className="space-y-2">
+                                <Label htmlFor="name">
+                                    Project Name <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                    id="name"
+                                    placeholder="My Awesome Project"
+                                    value={formData.name}
+                                    onChange={(e) => handleNameChange(e.target.value)}
+                                />
+                                {formData.name.length < 1 && hasChanges && (
+                                    <p className="text-sm text-destructive">Project name is required</p>
+                                )}
+                            </div>
 
-                    {/* Metadata Card */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Technical Details</CardTitle>
-                            <CardDescription>Technology stack and configuration</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {isEditing ? (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="language">Primary Language</Label>
-                                        <Input
-                                            id="language"
-                                            value={editedProject.metadata?.language || ''}
-                                            onChange={(e) => setEditedProject({
-                                                ...editedProject,
-                                                metadata: { ...editedProject.metadata, language: e.target.value }
-                                            })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="framework">Framework</Label>
-                                        <Input
-                                            id="framework"
-                                            value={editedProject.metadata?.framework || ''}
-                                            onChange={(e) => setEditedProject({
-                                                ...editedProject,
-                                                metadata: { ...editedProject.metadata, framework: e.target.value }
-                                            })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="repository">Repository URL</Label>
-                                        <Input
-                                            id="repository"
-                                            type="url"
-                                            value={editedProject.metadata?.repository || ''}
-                                            onChange={(e) => setEditedProject({
-                                                ...editedProject,
-                                                metadata: { ...editedProject.metadata, repository: e.target.value }
-                                            })}
-                                        />
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <h4 className="text-sm font-medium text-muted-foreground">Language</h4>
-                                        <p className="mt-1">{project.metadata?.language || 'Not specified'}</p>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-medium text-muted-foreground">Framework</h4>
-                                        <p className="mt-1">{project.metadata?.framework || 'Not specified'}</p>
-                                    </div>
-                                    {project.metadata?.repository && (
-                                        <div className="col-span-2">
-                                            <h4 className="text-sm font-medium text-muted-foreground">Repository</h4>
-                                            <a
-                                                href={project.metadata.repository}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="mt-1 text-primary hover:underline flex items-center gap-1"
-                                            >
-                                                {project.metadata.repository}
-                                            </a>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            <div className="space-y-2">
+                                <Label htmlFor="_id">
+                                    Project ID <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                    id="_id"
+                                    placeholder="my-awesome-project"
+                                    value={formData._id}
+                                    onChange={(e) => updateField('_id', e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Lowercase, numbers, and hyphens only. Min 3 characters.
+                                </p>
+                                {formData._id.length < 3 && hasChanges && (
+                                    <p className="text-sm text-destructive">ID must be at least 3 characters</p>
+                                )}
+                            </div>
 
-                            {project.metadata?.techStack && project.metadata.techStack.length > 0 && (
-                                <>
-                                    <Separator />
-                                    <div>
-                                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Tech Stack</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                            {project.metadata.techStack.map((tech) => (
-                                                <Badge key={tech} variant="secondary">
-                                                    {tech}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea
+                                    id="description"
+                                    placeholder="Brief description of your project..."
+                                    rows={4}
+                                    value={formData.description}
+                                    onChange={(e) => updateField('description', e.target.value)}
+                                />
+                            </div>
 
-                    {/* Placeholder: Code Structure */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Folder className="h-5 w-5" />
-                                Code Structure
-                            </CardTitle>
-                            <CardDescription>Project folder structure and files</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <Code className="h-12 w-12 text-muted-foreground mb-4" />
-                                <p className="text-muted-foreground">Code structure viewer coming soon</p>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    This will display your project's folder structure and files
+                            <div className="space-y-2">
+                                <Label htmlFor="lifecycle">Lifecycle Status</Label>
+                                <Select
+                                    value={formData.lifecycle}
+                                    onValueChange={(value) => updateField('lifecycle', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PROJECT_METADATA_CONSTANTS.lifecycleStatuses.map((status) => (
+                                            <SelectItem key={status.value} value={status.value}>
+                                                {status.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">
+                                    Current development stage
                                 </p>
                             </div>
                         </CardContent>
                     </Card>
+                </TabsContent>
 
-                    {/* Placeholder: Generated APIs */}
+                {/* Tech Stack Tab */}
+                <TabsContent value="tech" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Network className="h-5 w-5" />
-                                Generated APIs
-                            </CardTitle>
-                            <CardDescription>API endpoints generated from use cases</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <Network className="h-12 w-12 text-muted-foreground mb-4" />
-                                <p className="text-muted-foreground">API list coming soon</p>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    This will show all API endpoints created from your use cases
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Sidebar - Right Column */}
-                <div className="space-y-6">
-                    {/* Status Badge */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Status</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Badge
-                                variant={project.status === 'active' ? 'default' : 'secondary'}
-                                className="text-lg py-2 px-4"
-                            >
-                                {project.status || 'Active'}
-                            </Badge>
-                        </CardContent>
-                    </Card>
-
-                    {/* Statistics */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Statistics</CardTitle>
-                            <CardDescription>Project metrics and progress</CardDescription>
+                            <CardTitle>Technology Stack</CardTitle>
+                            <CardDescription>Languages, frameworks, and tools</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Use Cases</span>
-                                <span className="font-bold text-2xl">{project.stats?.useCaseCount || 0}</span>
+                            <div className="space-y-2">
+                                <Label htmlFor="repository">Repository URL</Label>
+                                <Input
+                                    id="repository"
+                                    type="url"
+                                    placeholder="https://github.com/username/repo"
+                                    value={formData.metadata.repository || ''}
+                                    onChange={(e) => updateField('metadata.repository', e.target.value)}
+                                />
                             </div>
-                            <Separator />
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Capabilities</span>
-                                <span className="font-bold text-2xl">{project.stats?.capabilityCount || 0}</span>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="language">Primary Language</Label>
+                                <Select
+                                    value={formData.metadata.language || ''}
+                                    onValueChange={(value) => updateField('metadata.language', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select language" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PROJECT_METADATA_CONSTANTS.languages.map((lang) => (
+                                            <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <Separator />
-                            <div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-muted-foreground">Completion</span>
-                                    <span className="font-bold">{project.stats?.completionPercentage || 0}%</span>
-                                </div>
-                                <div className="w-full bg-secondary rounded-full h-2">
-                                    <div
-                                        className="bg-primary h-2 rounded-full transition-all"
-                                        style={{ width: `${project.stats?.completionPercentage || 0}%` }}
-                                    />
-                                </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="framework">Primary Framework</Label>
+                                <Select
+                                    value={formData.metadata.framework || ''}
+                                    onValueChange={(value) => updateField('metadata.framework', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select framework" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PROJECT_METADATA_CONSTANTS.frameworks.map((fw) => (
+                                            <SelectItem key={fw} value={fw}>{fw}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Tech Stack</Label>
+                                <TagInput
+                                    value={formData.metadata.techStack || []}
+                                    onChange={(value) => updateField('metadata.techStack', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.techStack}
+                                    placeholder="Add technologies..."
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Architecture Tab */}
+                <TabsContent value="architecture" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Architecture</CardTitle>
+                            <CardDescription>System design and structure</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="arch-overview">Architecture Overview</Label>
+                                <Textarea
+                                    id="arch-overview"
+                                    rows={3}
+                                    placeholder="High-level description of your system architecture..."
+                                    value={formData.metadata.architecture?.overview || ''}
+                                    onChange={(e) => updateField('metadata.architecture.overview', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Architecture Style</Label>
+                                <Select
+                                    value={formData.metadata.architecture?.style || ''}
+                                    onValueChange={(value) => updateField('metadata.architecture.style', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select style" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PROJECT_METADATA_CONSTANTS.architectureStyle.map((style) => (
+                                            <SelectItem key={style} value={style}>{style}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="dir-structure">Directory Structure</Label>
+                                <Textarea
+                                    id="dir-structure"
+                                    rows={4}
+                                    placeholder="Describe key folders and their purposes..."
+                                    value={formData.metadata.architecture?.directoryStructure || ''}
+                                    onChange={(e) => updateField('metadata.architecture.directoryStructure', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>State Management</Label>
+                                <TagInput
+                                    value={formData.metadata.architecture?.stateManagement || []}
+                                    onChange={(value) => updateField('metadata.architecture.stateManagement', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.stateManagement}
+                                    placeholder="Add state management tools..."
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Auth & Deployment Tab */}
+                <TabsContent value="auth-deploy" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Authentication & Authorization</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="auth-approach">Approach</Label>
+                                <Textarea
+                                    id="auth-approach"
+                                    rows={2}
+                                    placeholder="e.g., JWT-based authentication with role-based access control..."
+                                    value={formData.metadata.authStrategy?.approach || ''}
+                                    onChange={(e) => updateField('metadata.authStrategy.approach', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Implementation</Label>
+                                <TagInput
+                                    value={formData.metadata.authStrategy?.implementation || []}
+                                    onChange={(value) => updateField('metadata.authStrategy.implementation', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.authApproach}
+                                    placeholder="Add auth methods..."
+                                />
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Project Info */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Information</CardTitle>
+                            <CardTitle>Deployment</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">ID</span>
-                                <code className="text-xs bg-muted px-2 py-1 rounded">{project.id}</code>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Environment</Label>
+                                <Select
+                                    value={formData.metadata.deployment?.environment || ''}
+                                    onValueChange={(value) => updateField('metadata.deployment.environment', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select environment" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PROJECT_METADATA_CONSTANTS.deploymentEnvironment.map((env) => (
+                                            <SelectItem key={env} value={env}>{env}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            {project.owner && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Owner</span>
-                                    <span>{project.owner}</span>
+
+                            <div className="space-y-2">
+                                <Label>CI/CD Tools</Label>
+                                <TagInput
+                                    value={formData.metadata.deployment?.cicd || []}
+                                    onChange={(value) => updateField('metadata.deployment.cicd', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.cicdTools}
+                                    placeholder="Add CI/CD tools..."
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Standards & Quality Tab */}
+                <TabsContent value="standards" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Coding Standards</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Style Guide</Label>
+                                <Input
+                                    placeholder="e.g., Airbnb JavaScript Style Guide"
+                                    value={formData.metadata.standards?.codingStyle?.guide || ''}
+                                    onChange={(e) => updateField('metadata.standards.codingStyle.guide', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Linters & Formatters</Label>
+                                <TagInput
+                                    value={formData.metadata.standards?.codingStyle?.linter || []}
+                                    onChange={(value) => updateField('metadata.standards.codingStyle.linter', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.linters}
+                                    placeholder="Add linters..."
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Naming Conventions</Label>
+                                <TagInput
+                                    value={formData.metadata.standards?.namingConventions || []}
+                                    onChange={(value) => updateField('metadata.standards.namingConventions', value)}
+                                    placeholder="e.g., camelCase for variables, PascalCase for classes..."
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Error Handling Patterns</Label>
+                                <TagInput
+                                    value={formData.metadata.standards?.errorHandling || []}
+                                    onChange={(value) => updateField('metadata.standards.errorHandling', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.errorHandlingPatterns}
+                                    placeholder="Add error handling patterns..."
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Logging Convention</Label>
+                                <TagInput
+                                    value={formData.metadata.standards?.loggingConvention || []}
+                                    onChange={(value) => updateField('metadata.standards.loggingConvention', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.loggingTools}
+                                    placeholder="Add logging tools..."
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Quality Gates</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Definition of Done</Label>
+                                <TagInput
+                                    value={formData.metadata.qualityGates?.definitionOfDone || []}
+                                    onChange={(value) => updateField('metadata.qualityGates.definitionOfDone', value)}
+                                    placeholder="Add criteria..."
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Code Review Checklist</Label>
+                                <TagInput
+                                    value={formData.metadata.qualityGates?.codeReviewChecklist || []}
+                                    onChange={(value) => updateField('metadata.qualityGates.codeReviewChecklist', value)}
+                                    placeholder="Add review items..."
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Testing Requirements</Label>
+                                <TagInput
+                                    value={formData.metadata.qualityGates?.testingRequirements || []}
+                                    onChange={(value) => updateField('metadata.qualityGates.testingRequirements', value)}
+                                    suggestions={PROJECT_METADATA_CONSTANTS.testTypes}
+                                    placeholder="Add test types..."
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Documentation Standards</Label>
+                                <TagInput
+                                    value={formData.metadata.qualityGates?.documentationStandards || []}
+                                    onChange={(value) => updateField('metadata.qualityGates.documentationStandards', value)}
+                                    placeholder="Add documentation requirements..."
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* External Services Tab */}
+                <TabsContent value="services" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>External Services</CardTitle>
+                            <CardDescription>Third-party integrations and APIs</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-8 text-muted-foreground">
+                                <LinkIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>External services management</p>
+                                <p className="text-sm mt-1">Coming soon - Add external API integrations</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* API Registry Tab */}
+                <TabsContent value="endpoints" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Developed Endpoints</CardTitle>
+                            <CardDescription>
+                                API endpoints automatically registered from use cases
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {developedEndpoints.length > 0 ? (
+                                <div className="space-y-2">
+                                    {developedEndpoints.map((endpoint, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between p-3 border rounded-md"
+                                        >
+                                            <code className="text-sm font-mono">{endpoint}</code>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                            {project.updatedAt && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Last Updated</span>
-                                    <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Code2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                    <p>No endpoints registered yet</p>
+                                    <p className="text-sm mt-1">
+                                        Endpoints will be added automatically when use cases are created
+                                    </p>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                {/* Team Tab */}
+                <TabsContent value="team" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Team Members</CardTitle>
+                            <CardDescription>Manage project team and permissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {members.length > 0 ? (
+                                <div className="space-y-3">
+                                    {members.map((member) => (
+                                        <div
+                                            key={member.userId}
+                                            className="flex items-center justify-between p-3 border rounded-md"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                    <Users className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium">{member.userId}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Added {new Date(member.addedAt).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
+                                                {member.role}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                    <p>No team members yet</p>
+                                    <p className="text-sm mt-1">Team management coming soon</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+
+            {/* Sticky Save Button */}
+            <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+                <div className="container flex items-center justify-between h-16 px-6">
+                    <div className="text-sm text-muted-foreground">
+                        {!isFormValid() && (
+                            <span className="text-destructive">* Fill required fields to save</span>
+                        )}
+                        {hasChanges && isFormValid() && (
+                            <span>Unsaved changes</span>
+                        )}
+                    </div>
+                    <Button
+                        onClick={handleSave}
+                        disabled={!isFormValid() || saving}
+                        size="lg"
+                    >
+                        {saving ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="mr-2 h-4 w-4" />
+                                {isNewProject ? "Create Project" : "Save Changes"}
+                            </>
+                        )}
+                    </Button>
                 </div>
             </div>
         </div>

@@ -11,6 +11,7 @@ import {
     LANGUAGE_OPTIONS,
     FRAMEWORK_OPTIONS
 } from '@/lib/validations/project.validation';
+import { PROJECT_METADATA_CONSTANTS } from '@/constants/project-metadata.constants';
 import { projectService } from '@/services/project.service';
 import type { Project } from '@/types/project.types';
 
@@ -59,6 +60,7 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
         defaultValues: {
             _id: '',
             name: '',
+            lifecycle: 'planning',
             description: undefined,
             metadata: {
                 repository: '',
@@ -195,6 +197,30 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
                         {errors.description && (
                             <p className="text-sm text-red-500">{errors.description.message}</p>
                         )}
+                    </div>
+
+                    {/* Lifecycle Status */}
+                    <div className="space-y-2">
+                        <Label htmlFor="lifecycle">Lifecycle Status</Label>
+                        <Select
+                            defaultValue="planning"
+                            onValueChange={(value) => setValue('lifecycle', value)}
+                            disabled={isSubmitting}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select lifecycle status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {PROJECT_METADATA_CONSTANTS.lifecycleStatuses.map((status) => (
+                                    <SelectItem key={status.value} value={status.value}>
+                                        {status.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                            Current development stage of the project
+                        </p>
                     </div>
 
                     {/* Language */}
