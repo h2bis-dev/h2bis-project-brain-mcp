@@ -80,19 +80,6 @@ const ErrorHandlingSchema = z.object({
     })).default([])
 });
 
-const ArchitectureSchema = z.object({
-    style: z.enum(["layered", "clean", "hexagonal", "event-driven"]),
-    patterns: z.array(z.string()).default([])
-});
-
-const TechnologyConstraintsSchema = z.object({
-    backend: z.string().optional(),
-    frontend: z.string().optional(),
-    database: z.string().optional(),
-    messaging: z.string().optional(),
-    auth: z.string().optional()
-});
-
 const ConfigurationSchema = z.object({
     envVars: z.array(z.string()).default([]),
     featureFlags: z.array(z.string()).default([])
@@ -167,9 +154,7 @@ export const UseCaseSchema = z.object({
 
     errorHandling: ErrorHandlingSchema.optional(),
 
-    architecture: ArchitectureSchema.optional(),
-
-    technologyConstraints: TechnologyConstraintsSchema.optional(),
+    architecturePatterns: z.array(z.string()).default([]),
 
     configuration: ConfigurationSchema.optional(),
 
@@ -238,7 +223,6 @@ export type Scope = z.infer<typeof ScopeSchema>;
 export type DomainModel = z.infer<typeof DomainModelSchema>;
 export type Interfaces = z.infer<typeof InterfacesSchema>;
 export type ErrorHandling = z.infer<typeof ErrorHandlingSchema>;
-export type Architecture = z.infer<typeof ArchitectureSchema>;
 
 /* ---------- Factories ---------- */
 

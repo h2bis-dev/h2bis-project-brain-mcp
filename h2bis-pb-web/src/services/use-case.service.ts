@@ -69,17 +69,7 @@ export interface CreateUseCaseRequest {
             expectedBehavior: string;
         }>;
     };
-    architecture?: {
-        style: 'layered' | 'clean' | 'hexagonal' | 'event-driven';
-        patterns: string[];
-    };
-    technologyConstraints?: {
-        backend?: string;
-        frontend?: string;
-        database?: string;
-        messaging?: string;
-        auth?: string;
-    };
+    architecturePatterns?: string[];
     configuration?: {
         envVars: string[];
         featureFlags: string[];

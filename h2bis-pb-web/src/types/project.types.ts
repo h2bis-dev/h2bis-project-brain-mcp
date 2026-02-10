@@ -10,6 +10,43 @@ export interface DevelopedEndpoint {
     lastScanned?: string;
 }
 
+export interface DomainField {
+    name: string;
+    type: string;
+    required: boolean;
+    description: string;
+}
+
+export interface DomainEntity {
+    name: string;
+    description: string;
+    modulePath: string;
+    fields: DomainField[];
+    usedByUseCases: string[];
+    addedAt: Date;
+    lastScanned?: Date;
+}
+
+export interface EnvironmentVariable {
+    name: string;
+    description: string;
+    required: boolean;
+    defaultValue: string;
+    usedByUseCases: string[];
+}
+
+export interface FeatureFlag {
+    name: string;
+    description: string;
+    defaultValue: boolean;
+    usedByUseCases: string[];
+}
+
+export interface ConfigurationCatalog {
+    envVars: EnvironmentVariable[];
+    featureFlags: FeatureFlag[];
+}
+
 export interface Project {
     _id?: string;
     id: string;
@@ -20,6 +57,8 @@ export interface Project {
     owner?: string;
     type?: 'software_development';
     developedEndpoints?: DevelopedEndpoint[];
+    domainCatalog?: DomainEntity[];
+    configurationCatalog?: ConfigurationCatalog;
     members?: any[];
     metadata?: {
         repository?: string;

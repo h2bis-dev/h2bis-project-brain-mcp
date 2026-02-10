@@ -62,12 +62,8 @@ export default function NewUseCasePage() {
     const [interfaceEndpoints, setInterfaceEndpoints] = useState<Array<{ method: string, path: string, request: string, response: string }>>([]);
     const [interfaceEvents, setInterfaceEvents] = useState<string[]>([]);
 
-    // Architecture & Tech
-    const [archStyle, setArchStyle] = useState<'layered' | 'clean' | 'hexagonal' | 'event-driven'>('layered');
+    // Architecture Patterns (use case-specific)
     const [archPatterns, setArchPatterns] = useState<string[]>([]);
-    const [techConstraints, setTechConstraints] = useState<{ backend: string, frontend: string, database: string, messaging: string, auth: string }>({
-        backend: '', frontend: '', database: '', messaging: '', auth: ''
-    });
 
     // Config & Quality
     const [envVars, setEnvVars] = useState<string[]>([]);
@@ -172,12 +168,8 @@ export default function NewUseCasePage() {
             if (generated.interfaces.endpoints) setInterfaceEndpoints(generated.interfaces.endpoints);
             if (generated.interfaces.events) setInterfaceEvents(generated.interfaces.events);
         }
-        if (generated.architecture) {
-            if (generated.architecture.style) setArchStyle(generated.architecture.style);
-            if (generated.architecture.patterns) setArchPatterns(generated.architecture.patterns);
-        }
-        if (generated.technologyConstraints) {
-            setTechConstraints(prev => ({ ...prev, ...generated.technologyConstraints }));
+        if (generated.architecturePatterns) {
+            setArchPatterns(generated.architecturePatterns);
         }
         if (generated.configuration) {
             if (generated.configuration.envVars) setEnvVars(generated.configuration.envVars);
@@ -331,11 +323,7 @@ export default function NewUseCasePage() {
                 endpoints: interfaceEndpoints.filter(e => e.path.trim()),
                 events: interfaceEvents.filter(e => e.trim())
             },
-            architecture: {
-                style: archStyle,
-                patterns: archPatterns.filter(p => p.trim())
-            },
-            technologyConstraints: techConstraints,
+            architecturePatterns: archPatterns.filter(p => p.trim()),
             configuration: {
                 envVars: envVars.filter(v => v.trim()),
                 featureFlags: featureFlags.filter(f => f.trim())
@@ -644,14 +632,36 @@ export default function NewUseCasePage() {
                                     </CardContent>
                                 </Card>
                                 <Card>
-                                    <CardHeader><CardTitle>Technology Constraints</CardTitle></CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2"><Label>Backend</Label><Input value={techConstraints.backend} onChange={(e) => setTechConstraints({ ...techConstraints, backend: e.target.value })} placeholder="e.g. Node.js" /></div>
-                                            <div className="space-y-2"><Label>Frontend</Label><Input value={techConstraints.frontend} onChange={(e) => setTechConstraints({ ...techConstraints, frontend: e.target.value })} placeholder="e.g. React" /></div>
-                                            <div className="space-y-2"><Label>Database</Label><Input value={techConstraints.database} onChange={(e) => setTechConstraints({ ...techConstraints, database: e.target.value })} placeholder="e.g. MongoDB" /></div>
-                                            <div className="space-y-2"><Label>Messaging</Label><Input value={techConstraints.messaging} onChange={(e) => setTechConstraints({ ...techConstraints, messaging: e.target.value })} placeholder="e.g. RabbitMQ" /></div>
-                                        </div>
+                                    <CardHeader>
+                                        <CardTitle>Architecture Patterns</CardTitle>
+                                        <CardDescription>Use case-specific design patterns (tech stack inherited from project)</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                        {archPatterns.map((pattern, i) => (
+                                            <div key={i} className="flex gap-2">
+                                                <Input
+                                                    placeholder="e.g., Repository, Factory, Strategy"
+                                                    value={pattern}
+                                                    onChange={(e) => { const n = [...archPatterns]; n[i] = e.target.value; setArchPatterns(n); }}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => setArchPatterns(archPatterns.filter((_, idx) => idx !== i))}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setArchPatterns([...archPatterns, ''])}
+                                        >
+                                            <Plus className="h-4 w-4 mr-2" /> Add Pattern
+                                        </Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>

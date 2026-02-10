@@ -166,57 +166,14 @@ export const USE_CASE_DEFINITIONS: Record<string, UseCaseFieldDefinition> = {
         type: 'string[]'
     },
 
-    // Architecture
-    'architecture.style': {
-        key: 'architecture.style',
-        label: 'Architecture Style',
-        description: 'Architectural pattern',
-        aiInstruction: 'Style: layered, clean, hexagonal, or event-driven.',
-        defaultValue: 'layered',
-        type: 'enum',
-        options: ['layered', 'clean', 'hexagonal', 'event-driven']
-    },
-    'architecture.patterns': {
-        key: 'architecture.patterns',
-        label: 'Patterns',
+    // Architecture Patterns (use case-specific)
+    'architecturePatterns': {
+        key: 'architecturePatterns',
+        label: 'Architecture Patterns',
         description: 'Design patterns',
-        aiInstruction: 'Design patterns (Repository, Factory, etc.).',
+        aiInstruction: 'Design patterns for this specific use case (Repository, Factory, Strategy, etc.).',
         defaultValue: [],
         type: 'string[]'
-    },
-
-    // Tech Stack
-    'technologyConstraints.backend': {
-        key: 'technologyConstraints.backend',
-        label: 'Backend',
-        description: 'Backend tech',
-        aiInstruction: 'Backend language/framework.',
-        defaultValue: '',
-        type: 'string'
-    },
-    'technologyConstraints.frontend': {
-        key: 'technologyConstraints.frontend',
-        label: 'Frontend',
-        description: 'Frontend tech',
-        aiInstruction: 'Frontend framework/libs.',
-        defaultValue: '',
-        type: 'string'
-    },
-    'technologyConstraints.database': {
-        key: 'technologyConstraints.database',
-        label: 'Database',
-        description: 'Database tech',
-        aiInstruction: 'Database technology.',
-        defaultValue: '',
-        type: 'string'
-    },
-    'technologyConstraints.messaging': {
-        key: 'technologyConstraints.messaging',
-        label: 'Messaging',
-        description: 'Messaging tech',
-        aiInstruction: 'Messaging infrastructure.',
-        defaultValue: '',
-        type: 'string'
     },
 
     // Config

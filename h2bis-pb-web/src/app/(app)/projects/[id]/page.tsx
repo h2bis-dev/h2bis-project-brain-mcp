@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Loader2, FolderOpen, Code2, Shield, Rocket, FileCheck, Link as LinkIcon, Users, Save, ArrowLeft } from "lucide-react";
+import { Loader2, FolderOpen, Code2, Shield, Rocket, FileCheck, Link as LinkIcon, Users, Save, ArrowLeft, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,9 @@ import { projectService } from "@/services/project.service";
 import { TagInput } from "@/components/ui/tag-input";
 import { PROJECT_METADATA_CONSTANTS } from "@/constants/project-metadata.constants";
 import { ROUTES } from "@/lib/constants";
+import { DomainModelTable } from "@/components/project/DomainModelTable";
+import { ConfigurationTable } from "@/components/project/ConfigurationTable";
+import type { Project, DomainEntity, ConfigurationCatalog } from "@/types/project.types";
 
 interface ExternalService {
     name: string;
@@ -67,6 +70,8 @@ interface ProjectFormData {
             };
             documentationStandards?: string[];
         };
+        domainCatalog?: DomainEntity[];
+        configurationCatalog?: ConfigurationCatalog;
     };
 }
 
@@ -100,6 +105,8 @@ export default function ProjectDetailPage() {
     const [developedEndpoints, setDevelopedEndpoints] = useState<any[]>([]);
     const [members, setMembers] = useState<any[]>([]);
     const [hasChanges, setHasChanges] = useState(isNewProject);
+    const [scanningDomain, setScanningDomain] = useState(false);
+    const [projectData, setProjectData] = useState<Project | null>(null);
 
     useEffect(() => {
         if (!isNewProject && projectId !== 'new') {
@@ -225,6 +232,16 @@ export default function ProjectDetailPage() {
         return colors[lifecycle] || colors.planning;
     };
 
+    // Placeholder handler for domain model scanning (backend not implemented yet)
+    const handleScanDomainModels = async () => {
+        setScanningDomain(true);
+        toast({
+            title: "Feature Coming Soon",
+            description: "Domain model scanning will be available when the backend API is implemented.",
+        });
+        setTimeout(() => setScanningDomain(false), 1000);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -272,13 +289,15 @@ export default function ProjectDetailPage() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+                <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
                     <TabsTrigger value="basic">Basic Info</TabsTrigger>
                     <TabsTrigger value="tech">Tech Stack</TabsTrigger>
                     <TabsTrigger value="architecture">Architecture</TabsTrigger>
                     <TabsTrigger value="auth-deploy">Auth & Deploy</TabsTrigger>
                     <TabsTrigger value="standards">Standards</TabsTrigger>
                     <TabsTrigger value="endpoints">API Registry</TabsTrigger>
+                    <TabsTrigger value="domain">Domain Models</TabsTrigger>
+                    <TabsTrigger value="config">Configuration</TabsTrigger>
                     <TabsTrigger value="services">External Services</TabsTrigger>
                     <TabsTrigger value="team">Team</TabsTrigger>
                 </TabsList>
@@ -765,6 +784,71 @@ export default function ProjectDetailPage() {
                             )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                {/* Domain Models Tab */}
+                <TabsContent value="domain" className="space-y-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Domain Model Catalog</CardTitle>
+                                <CardDescription>
+                                    Entities and models discovered in your codebase
+                                </CardDescription>
+                            </div>
+                            <Button
+                                onClick={handleScanDomainModels}
+                                disabled={scanningDomain}
+                                variant="outline"
+                                className="gap-2"
+                            >
+                                {scanningDomain ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="h-4 w-4" />
+                                )}
+                                {scanningDomain ? 'Scanning...' : 'Scan Codebase'}
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            <DomainModelTable models={projectData?.metadata?.domainCatalog} />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Configuration Tab */}
+                <TabsContent value="config" className="space-y-4">
+                    <div className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Environment Variables</CardTitle>
+                                <CardDescription>
+                                    Project-wide environment variables and their usage
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ConfigurationTable
+                                    items={projectData?.metadata?.configurationCatalog?.envVars}
+                                    type="envVar"
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Feature Flags</CardTitle>
+                                <CardDescription>
+                                    Feature flags used across the project
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ConfigurationTable
+                                    items={projectData?.metadata?.configurationCatalog?.featureFlags}
+                                    type="flag"
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
 
                 {/* Team Tab */}
