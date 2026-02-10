@@ -104,9 +104,9 @@ export default function ProjectDetailPage() {
     const [activeTab, setActiveTab] = useState("basic");
     const [developedEndpoints, setDevelopedEndpoints] = useState<any[]>([]);
     const [members, setMembers] = useState<any[]>([]);
-    const [hasChanges, setHasChanges] = useState(isNewProject);
     const [scanningDomain, setScanningDomain] = useState(false);
     const [projectData, setProjectData] = useState<Project | null>(null);
+    const [originalFormData, setOriginalFormData] = useState<ProjectFormData | null>(null);
 
     useEffect(() => {
         if (!isNewProject && projectId !== 'new') {
@@ -120,13 +120,15 @@ export default function ProjectDetailPage() {
         try {
             setLoading(true);
             const data = await projectService.getById(projectId);
-            setFormData({
+            const loadedFormData = {
                 _id: data._id || data.id,
                 name: data.name,
                 description: data.description || '',
                 lifecycle: data.lifecycle || 'planning',
                 metadata: data.metadata || {},
-            });
+            };
+            setFormData(loadedFormData);
+            setOriginalFormData(JSON.parse(JSON.stringify(loadedFormData))); // Deep clone
             setDevelopedEndpoints(data.developedEndpoints || []);
             setMembers(data.members || []);
         } catch (error) {
@@ -155,7 +157,6 @@ export default function ProjectDetailPage() {
             current[keys[keys.length - 1]] = value;
             return updated;
         });
-        setHasChanges(true);
     };
 
     const generateProjectId = (name: string) => {
@@ -175,6 +176,13 @@ export default function ProjectDetailPage() {
 
     const isFormValid = () => {
         return formData._id.length >= 3 && formData.name.length >= 1;
+    };
+
+    // Check if form data has changed from original
+    const hasChanges = () => {
+        if (isNewProject) return true;
+        if (!originalFormData) return false;
+        return JSON.stringify(formData) !== JSON.stringify(originalFormData);
     };
 
     const handleSave = async () => {
@@ -204,7 +212,8 @@ export default function ProjectDetailPage() {
                     title: "Success",
                     description: "Project updated successfully",
                 });
-                setHasChanges(false);
+                // Reload to get fresh data and reset change tracking
+                await loadProject();
             }
         } catch (error: any) {
             console.error("Error saving project:", error);
@@ -320,7 +329,7 @@ export default function ProjectDetailPage() {
                                     value={formData.name}
                                     onChange={(e) => handleNameChange(e.target.value)}
                                 />
-                                {formData.name.length < 1 && hasChanges && (
+                                {formData.name.length < 1 && hasChanges() && (
                                     <p className="text-sm text-destructive">Project name is required</p>
                                 )}
                             </div>
@@ -338,7 +347,7 @@ export default function ProjectDetailPage() {
                                 <p className="text-xs text-muted-foreground">
                                     Lowercase, numbers, and hyphens only. Min 3 characters.
                                 </p>
-                                {formData._id.length < 3 && hasChanges && (
+                                {formData._id.length < 3 && hasChanges() && (
                                     <p className="text-sm text-destructive">ID must be at least 3 characters</p>
                                 )}
                             </div>
@@ -902,13 +911,13 @@ export default function ProjectDetailPage() {
                         {!isFormValid() && (
                             <span className="text-destructive">* Fill required fields to save</span>
                         )}
-                        {hasChanges && isFormValid() && (
+                        {hasChanges() && isFormValid() && (
                             <span>Unsaved changes</span>
                         )}
                     </div>
                     <Button
                         onClick={handleSave}
-                        disabled={!isFormValid() || saving}
+                        disabled={!isFormValid() || saving || !hasChanges()}
                         size="lg"
                     >
                         {saving ? (

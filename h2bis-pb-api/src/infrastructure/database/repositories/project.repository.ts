@@ -129,11 +129,11 @@ export class ProjectRepository {
                 { returnDocument: 'after' }
             );
 
-        if (!result || !result.value) {
+        if (!result) {
             throw new NotFoundError(`Project not found: ${id}`);
         }
 
-        return result.value as unknown as ProjectDocument;
+        return result as unknown as ProjectDocument;
     }
 
     /**

@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema } from '../dtos/project.dto.js';
+import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema, UpdateProjectRequestSchema } from '../dtos/project.dto.js';
 import { getProjectsHandler, getProjectByIdHandler } from '../../application/handlers/project/get-projects.handler.js';
 import { getDashboardStatsHandler } from '../../application/handlers/project/get-dashboard-stats.handler.js';
 import { createProjectHandler } from '../../application/handlers/project/create-project.handler.js';
+import { updateProjectHandler } from '../../application/handlers/project/update-project.handler.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logger } from '../../infrastructure/config/logger.js';
 
@@ -170,6 +171,54 @@ export const projectController = {
             } catch (error) {
                 logger.error(`Error fetching dashboard stats: ${error}`);
                 return res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
+            }
+        }
+    ),
+
+    /**
+     * PUT /api/projects/:projectId
+     * Updates an existing project
+     */
+    updateProject: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const user = (req as any).user;
+                if (!user) {
+                    return res.status(401).json({ error: 'Unauthorized' });
+                }
+
+                const { projectId } = (req as any).params;
+
+                // Validate request body
+                const validationResult = UpdateProjectRequestSchema.safeParse(req.body);
+                if (!validationResult.success) {
+                    return res.status(400).json({ error: 'Invalid request data', details: validationResult.error });
+                }
+
+                logger.info(`Updating project ${projectId} by user ${user.userId}`);
+
+                const updatedProject = await updateProjectHandler.execute(
+                    projectId,
+                    user.userId,
+                    user.roles,
+                    validationResult.data
+                );
+
+                logger.info(`Project updated: ${projectId} by user ${user.userId}`);
+
+                return res.status(200).json({
+                    success: true,
+                    data: updatedProject,
+                });
+            } catch (error) {
+                logger.error(`Error updating project: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                if (error instanceof Error && error.message.includes('Permission denied')) {
+                    return res.status(403).json({ error: 'Permission denied' });
+                }
+                return res.status(500).json({ error: 'Failed to update project' });
             }
         }
     ),

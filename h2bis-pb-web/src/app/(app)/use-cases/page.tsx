@@ -30,7 +30,6 @@ export default function UseCasesPage() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [useCaseToDelete, setUseCaseToDelete] = useState<{ id: string; name: string } | null>(null);
     const [selectedUseCaseId, setSelectedUseCaseId] = useState<string | null>(null);
-    const [isDetailExpanded, setIsDetailExpanded] = useState(false);
 
     // Check if user has delete permission (admin or moderator)
     const canDelete = session?.user?.permissions?.includes('delete:use-case') || false;
@@ -71,15 +70,10 @@ export default function UseCasesPage() {
                 </Link>
             </div>
 
-            {/* Split Pane Content */}
-            <div className={cn(
-                "grid gap-4",
-                selectedUseCaseId && !isDetailExpanded
-                    ? "grid-cols-1 lg:grid-cols-2"  // Split view
-                    : "grid-cols-1"  // Full list or full detail
-            )}>
-                {/* Use Cases List - Hide when detail is expanded */}
-                {!(selectedUseCaseId && isDetailExpanded) && (
+            {/* Content - Show either list OR detail */}
+            <div>
+                {/* Use Cases List - Hide when detail is shown */}
+                {!selectedUseCaseId && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Use Case List</CardTitle>
@@ -146,7 +140,7 @@ export default function UseCasesPage() {
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-muted-foreground mb-2">
+                                                <p className="text-sm text-muted-foreground mb-2 line-clamp-3">
                                                     {useCase.description}
                                                 </p>
                                                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -193,12 +187,7 @@ export default function UseCasesPage() {
                 {selectedUseCaseId && (
                     <UseCaseDetail
                         useCaseId={selectedUseCaseId}
-                        onClose={() => {
-                            setSelectedUseCaseId(null);
-                            setIsDetailExpanded(false);
-                        }}
-                        isExpanded={isDetailExpanded}
-                        onToggleExpand={() => setIsDetailExpanded(!isDetailExpanded)}
+                        onClose={() => setSelectedUseCaseId(null)}
                     />
                 )}
             </div>

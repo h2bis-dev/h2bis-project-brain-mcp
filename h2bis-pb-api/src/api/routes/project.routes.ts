@@ -66,4 +66,16 @@ projectRouter.get(
     projectController.getProjectById
 );
 
+/**
+ * PUT /api/projects/:projectId
+ * Updates an existing project
+ * Permissions: edit:project
+ */
+projectRouter.put(
+    '/:projectId',
+    authenticate,
+    requirePermission('edit:project'),
+    projectController.updateProject
+);
+
 export default projectRouter;
