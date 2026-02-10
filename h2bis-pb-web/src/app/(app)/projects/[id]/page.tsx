@@ -811,7 +811,7 @@ export default function ProjectDetailPage() {
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            <DomainModelTable models={projectData?.metadata?.domainCatalog} />
+                            <DomainModelTable models={projectData?.domainCatalog} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -828,7 +828,7 @@ export default function ProjectDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <ConfigurationTable
-                                    items={projectData?.metadata?.configurationCatalog?.envVars}
+                                    items={projectData?.configurationCatalog?.envVars}
                                     type="envVar"
                                 />
                             </CardContent>
@@ -843,7 +843,7 @@ export default function ProjectDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <ConfigurationTable
-                                    items={projectData?.metadata?.configurationCatalog?.featureFlags}
+                                    items={projectData?.configurationCatalog?.featureFlags}
                                     type="flag"
                                 />
                             </CardContent>
