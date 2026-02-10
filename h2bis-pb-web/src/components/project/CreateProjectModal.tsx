@@ -204,7 +204,7 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
                         <Label htmlFor="lifecycle">Lifecycle Status</Label>
                         <Select
                             defaultValue="planning"
-                            onValueChange={(value) => setValue('lifecycle', value)}
+                            onValueChange={(value) => setValue('lifecycle', value as CreateProjectInput['lifecycle'])}
                             disabled={isSubmitting}
                         >
                             <SelectTrigger>

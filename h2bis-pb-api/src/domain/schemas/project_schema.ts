@@ -43,11 +43,27 @@ const ProjectSchema = new mongoose.Schema(
             default: 'planning'
         },
 
+
         // Developed Endpoints Registry (Auto-populated from use cases)
         developedEndpoints: {
-            type: [String],
+            type: [{
+                useCaseId: { type: String, required: true },
+                endpoint: { type: String, required: true },
+                method: {
+                    type: String,
+                    enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+                    required: true
+                },
+                service: { type: String, required: true },
+                description: { type: String, default: '' },
+                requestSchema: { type: mongoose.Schema.Types.Mixed, default: {} },
+                responseSchema: { type: mongoose.Schema.Types.Mixed, default: {} },
+                addedAt: { type: Date, default: Date.now },
+                lastScanned: { type: Date }
+            }],
             default: []
         },
+
 
         // Software Development Project Metadata
         type: { type: String, enum: ['software_development'], default: 'software_development' },
@@ -94,7 +110,7 @@ const ProjectSchema = new mongoose.Schema(
                     guide: { type: String, default: '' },
                     linter: { type: [String], default: [] }
                 },
-                namingConventions: { type: String, default: '' },
+                namingConventions: { type: [String], default: [] },
                 errorHandling: { type: [String], default: [] },
                 loggingConvention: { type: [String], default: [] }
             },
@@ -140,6 +156,18 @@ export interface ProjectAccessControl {
     allowedRoles: string[];
 }
 
+export interface DevelopedEndpoint {
+    useCaseId: string;
+    endpoint: string;
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    service: string;
+    description: string;
+    requestSchema: any;
+    responseSchema: any;
+    addedAt: Date;
+    lastScanned?: Date;
+}
+
 export interface ProjectDocument {
     _id: string;
     name: string;
@@ -150,7 +178,7 @@ export interface ProjectDocument {
     members: ProjectMember[];
     accessControl: ProjectAccessControl;
     type: 'software_development';
-    developedEndpoints: string[];
+    developedEndpoints: DevelopedEndpoint[];
     metadata: {
         repository: string;
         techStack: string[];
@@ -180,7 +208,7 @@ export interface ProjectDocument {
                 guide: string;
                 linter: string[];
             };
-            namingConventions: string;
+            namingConventions: string[];
             errorHandling: string[];
             loggingConvention: string[];
         };

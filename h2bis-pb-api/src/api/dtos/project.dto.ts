@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+// Schema for endpoint metadata
+export const DevelopedEndpointSchema = z.object({
+    useCaseId: z.string().min(1),
+    endpoint: z.string().min(1),
+    method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
+    service: z.string().min(1),
+    description: z.string().optional().default(''),
+    requestSchema: z.any().optional().default({}),
+    responseSchema: z.any().optional().default({}),
+    addedAt: z.date().optional(),
+    lastScanned: z.date().optional()
+});
+
 export const GetProjectsQuerySchema = z.object({
     status: z.enum(['active', 'archived', 'deleted']).optional(),
     limit: z.string().optional().default('50'),
@@ -44,7 +57,7 @@ export const CreateProjectRequestSchema = z.object({
                 guide: z.string().optional().default(''),
                 linter: z.array(z.string()).optional().default([])
             }).optional(),
-            namingConventions: z.string().optional().default(''),
+            namingConventions: z.array(z.string()).optional().default([]),
             errorHandling: z.array(z.string()).optional().default([]),
             loggingConvention: z.array(z.string()).optional().default([])
         }).optional(),
@@ -98,7 +111,7 @@ export const UpdateProjectRequestSchema = z.object({
                 guide: z.string().optional(),
                 linter: z.array(z.string()).optional()
             }).optional(),
-            namingConventions: z.string().optional(),
+            namingConventions: z.array(z.string()).optional(),
             errorHandling: z.array(z.string()).optional(),
             loggingConvention: z.array(z.string()).optional()
         }).optional(),
@@ -136,6 +149,18 @@ export interface ProjectAccessControlDto {
     allowedRoles: string[];
 }
 
+export interface DevelopedEndpointDto {
+    useCaseId: string;
+    endpoint: string;
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    service: string;
+    description: string;
+    requestSchema: any;
+    responseSchema: any;
+    addedAt: string;
+    lastScanned?: string;
+}
+
 export interface ProjectResponseDto {
     _id: string;
     name: string;
@@ -146,7 +171,7 @@ export interface ProjectResponseDto {
     status: 'active' | 'archived' | 'deleted';
     lifecycle: 'planning' | 'in_development' | 'in_review' | 'in_testing' | 'staging' | 'production' | 'maintenance' | 'archived';
     type: 'software_development';
-    developedEndpoints: string[];
+    developedEndpoints: DevelopedEndpointDto[];
     metadata: {
         repository: string;
         techStack: string[];
@@ -176,7 +201,7 @@ export interface ProjectResponseDto {
                 guide: string;
                 linter: string[];
             };
-            namingConventions: string;
+            namingConventions: string[];
             errorHandling: string[];
             loggingConvention: string[];
         };

@@ -27,7 +27,7 @@ interface ProjectFormData {
     _id: string;
     name: string;
     description: string;
-    lifecycle: string;
+    lifecycle: 'planning' | 'in_development' | 'in_review' | 'in_testing' | 'staging' | 'production' | 'maintenance' | 'archived';
     metadata: {
         repository?: string;
         language?: string;
@@ -60,7 +60,11 @@ interface ProjectFormData {
         qualityGates?: {
             definitionOfDone?: string[];
             codeReviewChecklist?: string[];
-            testingRequirements?: string[];
+            testingRequirements?: {
+                coverage?: number;
+                testTypes?: string[];
+                requiresE2ETests?: boolean;
+            };
             documentationStandards?: string[];
         };
     };
@@ -93,7 +97,7 @@ export default function ProjectDetailPage() {
     const [loading, setLoading] = useState(!isNewProject);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState("basic");
-    const [developedEndpoints, setDevelopedEndpoints] = useState<string[]>([]);
+    const [developedEndpoints, setDevelopedEndpoints] = useState<any[]>([]);
     const [members, setMembers] = useState<any[]>([]);
     const [hasChanges, setHasChanges] = useState(isNewProject);
 
@@ -274,8 +278,8 @@ export default function ProjectDetailPage() {
                     <TabsTrigger value="architecture">Architecture</TabsTrigger>
                     <TabsTrigger value="auth-deploy">Auth & Deploy</TabsTrigger>
                     <TabsTrigger value="standards">Standards</TabsTrigger>
-                    <TabsTrigger value="services">Services</TabsTrigger>
                     <TabsTrigger value="endpoints">API Registry</TabsTrigger>
+                    <TabsTrigger value="services">External Services</TabsTrigger>
                     <TabsTrigger value="team">Team</TabsTrigger>
                 </TabsList>
 
@@ -576,7 +580,9 @@ export default function ProjectDetailPage() {
                             <div className="space-y-2">
                                 <Label>Naming Conventions</Label>
                                 <TagInput
-                                    value={formData.metadata.standards?.namingConventions || []}
+                                    value={Array.isArray(formData.metadata.standards?.namingConventions)
+                                        ? formData.metadata.standards.namingConventions
+                                        : []}
                                     onChange={(value) => updateField('metadata.standards.namingConventions', value)}
                                     placeholder="e.g., camelCase for variables, PascalCase for classes..."
                                 />
@@ -630,8 +636,8 @@ export default function ProjectDetailPage() {
                             <div className="space-y-2">
                                 <Label>Testing Requirements</Label>
                                 <TagInput
-                                    value={formData.metadata.qualityGates?.testingRequirements || []}
-                                    onChange={(value) => updateField('metadata.qualityGates.testingRequirements', value)}
+                                    value={formData.metadata.qualityGates?.testingRequirements?.testTypes || []}
+                                    onChange={(value) => updateField('metadata.qualityGates.testingRequirements.testTypes', value)}
                                     suggestions={PROJECT_METADATA_CONSTANTS.testTypes}
                                     placeholder="Add test types..."
                                 />
@@ -669,21 +675,82 @@ export default function ProjectDetailPage() {
                 {/* API Registry Tab */}
                 <TabsContent value="endpoints" className="space-y-4">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Developed Endpoints</CardTitle>
-                            <CardDescription>
-                                API endpoints automatically registered from use cases
-                            </CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>API Registry</CardTitle>
+                                <CardDescription>
+                                    Developed API endpoints with service metadata
+                                </CardDescription>
+                            </div>
+                            <Button variant="outline" className="gap-2" disabled>
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Scan Codebase (Coming Soon)
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             {developedEndpoints.length > 0 ? (
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {developedEndpoints.map((endpoint, index) => (
                                         <div
                                             key={index}
-                                            className="flex items-center justify-between p-3 border rounded-md"
+                                            className="border rounded-lg p-4 space-y-3"
                                         >
-                                            <code className="text-sm font-mono">{endpoint}</code>
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`px-2 py-1 text-xs font-semibold rounded ${endpoint.method === 'GET' ? 'bg-blue-100 text-blue-700' :
+                                                            endpoint.method === 'POST' ? 'bg-green-100 text-green-700' :
+                                                                endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    endpoint.method === 'PATCH' ? 'bg-purple-100 text-purple-700' :
+                                                                        endpoint.method === 'DELETE' ? 'bg-red-100 text-red-700' :
+                                                                            'bg-gray-100 text-gray-700'
+                                                            }`}>
+                                                            {endpoint.method || 'GET'}
+                                                        </span>
+                                                        <code className="text-sm font-mono font-semibold">
+                                                            {endpoint.endpoint || endpoint}
+                                                        </code>
+                                                    </div>
+                                                    {endpoint.service && (
+                                                        <p className="text-sm text-muted-foreground font-medium">
+                                                            Service: {endpoint.service}
+                                                        </p>
+                                                    )}
+                                                    {endpoint.description && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {endpoint.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {(endpoint.requestSchema || endpoint.responseSchema) && (
+                                                <details className="text-sm">
+                                                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                                                        View Schemas
+                                                    </summary>
+                                                    <div className="mt-2 space-y-2 pl-4">
+                                                        {endpoint.requestSchema && Object.keys(endpoint.requestSchema).length > 0 && (
+                                                            <div>
+                                                                <p className="font-medium text-xs text-muted-foreground mb-1">Request:</p>
+                                                                <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                                                                    {JSON.stringify(endpoint.requestSchema, null, 2)}
+                                                                </pre>
+                                                            </div>
+                                                        )}
+                                                        {endpoint.responseSchema && Object.keys(endpoint.responseSchema).length > 0 && (
+                                                            <div>
+                                                                <p className="font-medium text-xs text-muted-foreground mb-1">Response:</p>
+                                                                <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                                                                    {JSON.stringify(endpoint.responseSchema, null, 2)}
+                                                                </pre>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </details>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

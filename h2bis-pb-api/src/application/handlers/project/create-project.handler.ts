@@ -72,7 +72,7 @@ export class CreateProjectHandler {
                         guide: data.metadata?.standards?.codingStyle?.guide || '',
                         linter: data.metadata?.standards?.codingStyle?.linter || []
                     },
-                    namingConventions: data.metadata?.standards?.namingConventions || '',
+                    namingConventions: data.metadata?.standards?.namingConventions || [],
                     errorHandling: data.metadata?.standards?.errorHandling || [],
                     loggingConvention: data.metadata?.standards?.loggingConvention || []
                 },

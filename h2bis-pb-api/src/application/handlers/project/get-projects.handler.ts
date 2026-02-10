@@ -37,7 +37,17 @@ export class GetProjectsHandler {
             status: project.status,
             lifecycle: project.lifecycle || 'planning',
             type: 'software_development' as const,
-            developedEndpoints: project.developedEndpoints || [],
+            developedEndpoints: (project.developedEndpoints || []).map((ep: any) => ({
+                useCaseId: ep.useCaseId,
+                endpoint: ep.endpoint,
+                method: ep.method,
+                service: ep.service,
+                description: ep.description || '',
+                requestSchema: ep.requestSchema || {},
+                responseSchema: ep.responseSchema || {},
+                addedAt: ep.addedAt instanceof Date ? ep.addedAt.toISOString() : ep.addedAt,
+                lastScanned: ep.lastScanned ? (ep.lastScanned instanceof Date ? ep.lastScanned.toISOString() : ep.lastScanned) : undefined
+            })),
             metadata: {
                 repository: project.metadata?.repository || '',
                 techStack: project.metadata?.techStack || [],
@@ -60,7 +70,7 @@ export class GetProjectsHandler {
                 externalServices: project.metadata?.externalServices || [],
                 standards: project.metadata?.standards || {
                     codingStyle: { guide: '', linter: [] },
-                    namingConventions: '',
+                    namingConventions: [],
                     errorHandling: [],
                     loggingConvention: []
                 },
@@ -122,7 +132,17 @@ export class GetProjectByIdHandler {
             status: project.status,
             lifecycle: project.lifecycle || 'planning',
             type: 'software_development' as const,
-            developedEndpoints: project.developedEndpoints || [],
+            developedEndpoints: (project.developedEndpoints || []).map((ep: any) => ({
+                useCaseId: ep.useCaseId,
+                endpoint: ep.endpoint,
+                method: ep.method,
+                service: ep.service,
+                description: ep.description || '',
+                requestSchema: ep.requestSchema || {},
+                responseSchema: ep.responseSchema || {},
+                addedAt: ep.addedAt instanceof Date ? ep.addedAt.toISOString() : ep.addedAt,
+                lastScanned: ep.lastScanned ? (ep.lastScanned instanceof Date ? ep.lastScanned.toISOString() : ep.lastScanned) : undefined
+            })),
             metadata: {
                 repository: project.metadata?.repository || '',
                 techStack: project.metadata?.techStack || [],
@@ -145,7 +165,7 @@ export class GetProjectByIdHandler {
                 externalServices: project.metadata?.externalServices || [],
                 standards: project.metadata?.standards || {
                     codingStyle: { guide: '', linter: [] },
-                    namingConventions: '',
+                    namingConventions: [],
                     errorHandling: [],
                     loggingConvention: []
                 },

@@ -19,7 +19,16 @@ export const createProjectSchema = z.object({
         .max(500, "Description must be less than 500 characters")
         .optional(),
 
-    lifecycle: z.string().min(1, "Lifecycle status is required"),
+    lifecycle: z.enum([
+        'planning',
+        'in_development',
+        'in_review',
+        'in_testing',
+        'staging',
+        'production',
+        'maintenance',
+        'archived'
+    ]),
 
     metadata: z.object({
         repository: z.string().optional(),
