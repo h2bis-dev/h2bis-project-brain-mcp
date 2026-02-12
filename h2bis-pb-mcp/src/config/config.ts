@@ -6,4 +6,7 @@ export const config = {
   serverName: process.env.SERVER_NAME || 'h2bis-pb-mcp',
   serverVersion: process.env.SERVER_VERSION || '1.0.0',
   apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
+  apiToken: process.env.API_TOKEN || '',
+  apiEmail: process.env.API_EMAIL || '',
+  apiPassword: process.env.API_PASSWORD || '',
 };

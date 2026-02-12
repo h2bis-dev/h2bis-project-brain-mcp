@@ -329,9 +329,6 @@ export default function ProjectDetailPage() {
                                     value={formData.name}
                                     onChange={(e) => handleNameChange(e.target.value)}
                                 />
-                                {formData.name.length < 1 && hasChanges() && (
-                                    <p className="text-sm text-destructive">Project name is required</p>
-                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -347,9 +344,6 @@ export default function ProjectDetailPage() {
                                 <p className="text-xs text-muted-foreground">
                                     Lowercase, numbers, and hyphens only. Min 3 characters.
                                 </p>
-                                {formData._id.length < 3 && hasChanges() && (
-                                    <p className="text-sm text-destructive">ID must be at least 3 characters</p>
-                                )}
                             </div>
 
                             <div className="space-y-2">

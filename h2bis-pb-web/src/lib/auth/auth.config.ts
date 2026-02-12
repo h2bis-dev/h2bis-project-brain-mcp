@@ -1,7 +1,41 @@
 import type { NextAuthOptions } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import axios from 'axios';
 import { API_BASE_URL } from '@/lib/config';
+
+// Access token lifetime in ms (15 min), with 1-min buffer for proactive refresh
+const ACCESS_TOKEN_BUFFER_MS = 14 * 60 * 1000;
+
+/**
+ * Refresh the access token by calling the backend refresh endpoint.
+ * Returns the updated JWT token, or the original token with an error flag on failure.
+ */
+async function refreshAccessToken(token: JWT): Promise<JWT> {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+            refreshToken: token.refreshToken,
+        }, {
+            timeout: 5000,
+        });
+
+        const { accessToken, refreshToken } = response.data;
+
+        return {
+            ...token,
+            accessToken,
+            refreshToken,
+            accessTokenExpires: Date.now() + ACCESS_TOKEN_BUFFER_MS,
+            error: undefined,
+        };
+    } catch (error) {
+        console.error('Token refresh failed in NextAuth JWT callback:', error);
+        return {
+            ...token,
+            error: 'RefreshTokenError',
+        };
+    }
+}
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -71,23 +105,34 @@ export const authOptions: NextAuthOptions = {
     ],
     session: {
         strategy: 'jwt',
-        maxAge: 60 * 60, // 1 hour (matches API access token expiry)
+        maxAge: 7 * 24 * 60 * 60, // 7 days (matches refresh token lifetime)
     },
     pages: {
         signIn: '/login',
     },
     callbacks: {
         async jwt({ token, user }) {
-            // On sign in, store the user info, tokens, and permissions
+            // Initial sign-in: populate token from the user object
             if (user) {
-                token.id = user.id;
-                token.email = user.email;
-                token.role = user.role; // Store role array
-                token.permissions = user.permissions; // Store permissions (Authorization Contract)
-                token.accessToken = user.accessToken; // Store API access token
-                token.refreshToken = user.refreshToken; // Store API refresh token
+                return {
+                    ...token,
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    permissions: user.permissions,
+                    accessToken: user.accessToken,
+                    refreshToken: user.refreshToken,
+                    accessTokenExpires: Date.now() + ACCESS_TOKEN_BUFFER_MS,
+                };
             }
-            return token;
+
+            // Subsequent calls: return token if access token is still fresh
+            if (typeof token.accessTokenExpires === 'number' && Date.now() < token.accessTokenExpires) {
+                return token;
+            }
+
+            // Access token expired or near expiry: refresh it
+            return refreshAccessToken(token);
         },
         async session({ session, token }) {
             // Pass token data to the session for client access
@@ -95,11 +140,12 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.email = token.email as string;
                 session.user.role = token.role as string[];
-                session.user.permissions = token.permissions as string[]; // Permissions for UI access control
+                session.user.permissions = token.permissions as string[];
             }
-            // Add tokens to session for API calls
             session.accessToken = token.accessToken as string;
             session.refreshToken = token.refreshToken as string;
+            // Surface refresh errors to the client
+            session.error = token.error;
 
             return session;
         },

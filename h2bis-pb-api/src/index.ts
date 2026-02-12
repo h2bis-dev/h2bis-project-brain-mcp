@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { config } from './infrastructure/config/config.js';
 import { connectDb, disconnectDb } from './infrastructure/database/connection.js';
 import apiRoutes from './api/routes/index.js';
@@ -8,9 +9,13 @@ import { errorHandler } from './api/middleware/error.middleware.js';
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000', // Frontend URL
+    credentials: true // Allow cookies
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // Parse cookies for refresh token
 
 // API Routes (all under /api prefix)
 app.use('/api', apiRoutes);

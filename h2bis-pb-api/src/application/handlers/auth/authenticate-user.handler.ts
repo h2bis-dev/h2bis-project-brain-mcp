@@ -1,4 +1,5 @@
 import { userRepository } from '../../../infrastructure/database/repositories/user.repository.js';
+import { refreshTokenRepository } from '../../../infrastructure/database/repositories/refresh-token.repository.js';
 import { verifyPassword } from '../../../domain/services/password.service.js';
 import { generateAccessToken, generateRefreshToken } from '../../../domain/services/jwt.service.js';
 import { getUserPermissions } from '../../../domain/services/authorization.service.js';
@@ -40,6 +41,10 @@ export class AuthenticateUserHandler {
             user.role || ['user']
         );
         const refreshToken = generateRefreshToken(user._id.toString());
+
+        // Store refresh token in database (creates a new token family)
+        const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        await refreshTokenRepository.create(refreshToken, user._id.toString(), refreshExpiry);
 
         // Return session data with tokens and permissions
         return {

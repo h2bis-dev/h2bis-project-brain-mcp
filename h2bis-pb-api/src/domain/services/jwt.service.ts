@@ -5,8 +5,8 @@ const { sign, verify } = jwt;
 const JWT_ACCESS_SECRET: string = process.env.JWT_ACCESS_SECRET || 'default-access-secret-change-in-production';
 const JWT_REFRESH_SECRET: string = process.env.JWT_REFRESH_SECRET || 'default-refresh-secret-change-in-production';
 
-const JWT_ACCESS_EXPIRATION = 3600; // 1 hour in seconds
-const JWT_REFRESH_EXPIRATION = 604800; // 7 days in seconds
+const JWT_ACCESS_EXPIRATION = parseInt(process.env.JWT_ACCESS_EXPIRATION || '900', 10); // Default: 15 minutes
+const JWT_REFRESH_EXPIRATION = parseInt(process.env.JWT_REFRESH_EXPIRATION || '604800', 10); // Default: 7 days
 
 /**
  * JWT Token Payload Interface

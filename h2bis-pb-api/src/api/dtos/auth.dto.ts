@@ -35,3 +35,24 @@ export interface LoginResponseDto {
     accessToken: string;
     refreshToken: string;
 }
+
+// ==================== Refresh Token DTOs ====================
+
+export const RefreshRequestDto = z.object({
+    refreshToken: z.string().min(1, 'Refresh token is required')
+});
+
+export type RefreshRequestDto = z.infer<typeof RefreshRequestDto>;
+
+export interface RefreshResponseDto {
+    accessToken: string;
+    refreshToken: string;
+}
+
+// ==================== Logout DTOs ====================
+
+export const LogoutRequestDto = z.object({
+    refreshToken: z.string().optional()
+});
+
+export type LogoutRequestDto = z.infer<typeof LogoutRequestDto>;

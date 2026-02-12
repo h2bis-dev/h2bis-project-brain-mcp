@@ -1,6 +1,6 @@
 import axios from "axios";
 import { API_BASE_URL, API_CONFIG } from "@/lib/config";
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 /**
  * Axios instance configured for h2bis-pb-api
@@ -15,12 +15,21 @@ export const apiClient = axios.create({
 
 /**
  * Request interceptor
- * Automatically adds JWT token from NextAuth session
+ * Automatically adds JWT token from NextAuth session.
+ * Calling getSession() triggers the NextAuth JWT callback,
+ * which proactively refreshes the access token if near expiry.
  */
 apiClient.interceptors.request.use(
     async (config) => {
-        // Get the session to retrieve the access token
         const session = await getSession();
+
+        // If session has a refresh error, sign out immediately
+        if (session?.error === 'RefreshTokenError') {
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                await signOut({ callbackUrl: '/login?session=expired' });
+            }
+            return Promise.reject(new Error('Session expired'));
+        }
 
         if (session?.accessToken) {
             config.headers.Authorization = `Bearer ${session.accessToken}`;
@@ -28,51 +37,88 @@ apiClient.interceptors.request.use(
 
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 /**
  * Response interceptor
- * Global error handling
+ * Safety net for 401 errors - triggers session refresh via NextAuth
+ * and retries the failed request. The primary refresh happens proactively
+ * in the request interceptor via getSession().
  */
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token!);
+        }
+    });
+    failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
     (response) => response,
-    (error) => {
-        // Extract error message
-        const message =
-            error.response?.data?.message ||
-            error.response?.data?.error ||
-            error.message ||
-            "An unexpected error occurred";
+    async (error) => {
+        const originalRequest = error.config;
 
-        // Log full error details for debugging
-        console.error("API Error Details:", JSON.stringify({
-            message: error.message,
-            stack: error.stack,
-            config: {
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            // Skip refresh for auth endpoints
+            const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
+                originalRequest.url?.includes('/auth/register') ||
+                originalRequest.url?.includes('/auth/refresh');
+
+            if (isAuthEndpoint || !originalRequest.headers?.Authorization) {
+                return Promise.reject(error);
+            }
+
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then((token) => {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                    return apiClient(originalRequest);
+                }).catch((err) => Promise.reject(err));
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                // Trigger NextAuth JWT callback to refresh the token server-side
+                const session = await getSession();
+
+                if (session?.error === 'RefreshTokenError' || !session?.accessToken) {
+                    throw new Error('Refresh failed');
+                }
+
+                const newToken = session.accessToken;
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                processQueue(null, newToken);
+                return apiClient(originalRequest);
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                    await signOut({ callbackUrl: '/login?session=expired' });
+                }
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        // Log non-401 errors
+        if (error.response?.status !== 401) {
+            console.error("API Error:", {
                 url: error.config?.url,
                 method: error.config?.method,
-                data: error.config?.data,
-                headers: error.config?.headers
-            },
-            response: {
                 status: error.response?.status,
-                data: error.response?.data,
-                headers: error.response?.headers
-            }
-        }, null, 2));
-
-        console.error("API Error:", {
-            url: error.config?.url,
-            method: error.config?.method,
-            status: error.response?.status,
-            message,
-        });
-
-        // You can add global error handling here
-        // For example, show toast notification
+                message: error.response?.data?.message || error.response?.data?.error || error.message,
+            });
+        }
 
         return Promise.reject(error);
     }

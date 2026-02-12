@@ -7,12 +7,88 @@ import { HttpClient } from '../infrastructure/http-client.js';
  */
 class ApiService {
     private httpClient: HttpClient;
+    private authToken: string = '';
+    private initialized: boolean = false;
 
     constructor() {
         this.httpClient = new HttpClient({
             baseUrl: config.apiBaseUrl,
             headers: { 'Content-Type': 'application/json' },
         });
+        this.initializeAuth();
+    }
+
+    /**
+     * Initialize authentication by loading token from env or logging in
+     */
+    private async initializeAuth(): Promise<void> {
+        try {
+            // Try to use existing token from environment
+            if (config.apiToken) {
+                this.authToken = config.apiToken;
+                this.updateAuthHeader();
+                this.initialized = true;
+                return;
+            }
+
+            // Try to login with credentials if provided
+            if (config.apiEmail && config.apiPassword) {
+                await this.login(config.apiEmail, config.apiPassword);
+                this.initialized = true;
+                return;
+            }
+
+            // If no auth is configured, continue without token
+            this.initialized = true;
+        } catch (error) {
+            console.error('Failed to initialize authentication:', error);
+            this.initialized = true; // Continue even if auth fails
+        }
+    }
+
+    /**
+     * Login to get an access token
+     */
+    private async login(email: string, password: string): Promise<void> {
+        try {
+            const response = await this.httpClient.post('/api/auth/login', {
+                email,
+                password
+            }) as any;
+
+            if (response.accessToken) {
+                this.authToken = response.accessToken;
+                this.updateAuthHeader();
+            }
+        } catch (error) {
+            console.error('Login failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update HTTP client headers with auth token
+     */
+    private updateAuthHeader(): void {
+        if (this.authToken) {
+            // Create new headers with auth token
+            this.httpClient = new HttpClient({
+                baseUrl: config.apiBaseUrl,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.authToken}`
+                },
+            });
+        }
+    }
+
+    /**
+     * Ensure authentication is initialized before making requests
+     */
+    private async ensureAuthenticated(): Promise<void> {
+        if (!this.initialized) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait a bit
+        }
     }
 
     /* ---------- Knowledge Base Operations ---------- */

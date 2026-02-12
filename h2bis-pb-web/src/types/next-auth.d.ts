@@ -25,6 +25,7 @@ declare module 'next-auth' {
         };
         accessToken: string;
         refreshToken: string;
+        error?: string; // 'RefreshTokenError' when token refresh fails
     }
 }
 
@@ -36,5 +37,7 @@ declare module 'next-auth/jwt' {
         permissions: string[]; // Authorization Contract: stored in JWT
         accessToken: string;
         refreshToken: string;
+        accessTokenExpires: number; // Timestamp (ms) when access token expires
+        error?: string; // 'RefreshTokenError' when token refresh fails
     }
 }
