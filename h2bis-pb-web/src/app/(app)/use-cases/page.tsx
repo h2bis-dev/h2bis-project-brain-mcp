@@ -16,13 +16,15 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
-import { Plus, FileText, Loader2, AlertCircle, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, FileText, Loader2, AlertCircle, Trash2, Pencil } from "lucide-react";
 import { useUseCases, useDeleteUseCase } from "@/hooks/useUseCases";
 import { ROUTES } from "@/lib/constants";
 import { UseCaseDetail } from "@/components/use-cases/UseCaseDetail";
 import { cn } from "@/lib/utils";
 
 export default function UseCasesPage() {
+    const router = useRouter();
     const { data: session } = useSession();
     const { data: useCases, isLoading, error } = useUseCases();
     const deleteMutation = useDeleteUseCase();
@@ -163,18 +165,32 @@ export default function UseCasesPage() {
                                                 )}
                                             </div>
 
-                                            {/* Delete Button (Admin/Moderator Only) */}
-                                            {canDelete && (
+                                            {/* Action Buttons */}
+                                            <div className="flex items-center gap-1 ml-4">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="ml-4 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={(e) => handleDeleteClick(e, useCase.key, useCase.name)}
-                                                    disabled={deleteMutation.isPending}
+                                                    className="text-muted-foreground hover:text-foreground"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(ROUTES.USE_CASE_EDIT(useCase.key));
+                                                    }}
+                                                    title="Edit use case"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Pencil className="h-4 w-4" />
                                                 </Button>
-                                            )}
+                                                {canDelete && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={(e) => handleDeleteClick(e, useCase.key, useCase.name)}
+                                                        disabled={deleteMutation.isPending}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

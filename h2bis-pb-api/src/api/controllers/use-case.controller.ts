@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/error.middleware.js';
-import { CreateUseCaseRequestDto, GenerateUseCaseRequestDto } from '../dtos/use-case.dto.js';
+import { CreateUseCaseRequestDto, UpdateUseCaseRequestDto, GenerateUseCaseRequestDto, EnhanceUseCaseRequestDto, UpdateWithAIRequestDto } from '../dtos/use-case.dto.js';
 import { getUseCasesHandler } from '../../application/handlers/use-case/get-use-cases.handler.js';
 import { getUseCaseByIdHandler } from '../../application/handlers/use-case/get-use-case-by-id.handler.js';
 import { createUseCaseHandler } from '../../application/handlers/use-case/create-use-case.handler.js';
+import { updateUseCaseHandler } from '../../application/handlers/use-case/update-use-case.handler.js';
 import { deleteUseCaseHandler } from '../../application/handlers/use-case/delete-use-case.handler.js';
 import { generateUseCaseHandler } from '../../application/handlers/use-case/generate-use-case.handler.js';
+import { enhanceUseCaseHandler } from '../../application/handlers/use-case/enhance-use-case.handler.js';
+import { updateWithAIHandler } from '../../application/handlers/use-case/update-with-ai.handler.js';
 
 /**
  * Get all use cases
@@ -60,6 +63,26 @@ export const createUseCase = asyncHandler(async (req: Request, res: Response) =>
 });
 
 /**
+ * Update an existing use case
+ * PUT /api/use-cases/:id
+ */
+export const updateUseCase = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    // Validate and parse DTO (partial - all fields optional)
+    const dto = UpdateUseCaseRequestDto.parse(req.body);
+
+    // Get user ID from authenticated request
+    const userId = (req as any).user?.userId;
+
+    // Execute handler
+    const result = await updateUseCaseHandler.execute(id, dto, userId);
+
+    // Send response
+    res.status(200).json(result);
+});
+
+/**
  * Generate a use case structure from description (AI)
  * POST /api/use-cases/generate
  */
@@ -69,6 +92,36 @@ export const generateUseCase = asyncHandler(async (req: Request, res: Response) 
 
     // Execute handler
     const result = await generateUseCaseHandler.execute(dto);
+
+    // Send response
+    res.status(200).json(result);
+});
+
+/**
+ * Enhance an existing use case with AI
+ * POST /api/use-cases/enhance
+ */
+export const enhanceUseCase = asyncHandler(async (req: Request, res: Response) => {
+    // Validate request DTO
+    const dto = EnhanceUseCaseRequestDto.parse(req.body);
+
+    // Execute handler
+    const result = await enhanceUseCaseHandler.execute(dto);
+
+    // Send response
+    res.status(200).json(result);
+});
+
+/**
+ * Update a use case with AI (project-context-aware)
+ * POST /api/use-cases/update-with-ai
+ */
+export const updateUseCaseWithAI = asyncHandler(async (req: Request, res: Response) => {
+    // Validate request DTO
+    const dto = UpdateWithAIRequestDto.parse(req.body);
+
+    // Execute handler
+    const result = await updateWithAIHandler.execute(dto);
 
     // Send response
     res.status(200).json(result);

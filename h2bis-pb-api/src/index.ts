@@ -29,13 +29,15 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 // Start server
+let server: ReturnType<typeof app.listen>;
+
 async function startServer() {
     try {
         // Connect to database
         await connectDb();
 
         // Start Express server
-        app.listen(config.port, () => {
+        server = app.listen(config.port, () => {
             console.log(`✅ API server running on port ${config.port}`);
             console.log(`✅ Environment: ${config.nodeEnv}`);
             console.log(`✅ Health check: http://localhost:${config.port}/health`);
@@ -47,17 +49,17 @@ async function startServer() {
 }
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
+async function shutdown() {
     console.log('\n⏹️  Shutting down API server...');
+    if (server) {
+        server.close();
+    }
     await disconnectDb();
     process.exit(0);
-});
+}
 
-process.on('SIGTERM', async () => {
-    console.log('\n⏹️  Shutting down API server...');
-    await disconnectDb();
-    process.exit(0);
-});
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 startServer();
 

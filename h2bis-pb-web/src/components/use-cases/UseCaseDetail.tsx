@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { X, Loader2, AlertCircle } from "lucide-react";
-import { useUseCase } from "@/hooks/useUseCases";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { X, Loader2, AlertCircle, Pencil, Wand2, Sparkles, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useUseCase, useUpdateUseCaseWithAI } from "@/hooks/useUseCases";
+import { useSelectedProject } from "@/hooks/useProject";
+import { projectService } from "@/services/project.service";
+import { generateUseCasePromptInstructions } from "@/lib/use-case-definitions";
+import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { UseCase } from "@/types/use-case.types";
+import type { UpdateWithAIProjectContext } from "@/services/use-case.service";
 
 interface UseCaseDetailProps {
     useCaseId: string;
@@ -17,8 +25,97 @@ interface UseCaseDetailProps {
 }
 
 export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
+    const router = useRouter();
     const { data: useCase, isLoading, error } = useUseCase(useCaseId);
+    const selectedProject = useSelectedProject();
+    const updateWithAIMutation = useUpdateUseCaseWithAI();
     const [activeTab, setActiveTab] = useState("overview");
+
+    // AI Panel state
+    const [aiPanelOpen, setAiPanelOpen] = useState(false);
+    const [aiInstructions, setAiInstructions] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [aiError, setAiError] = useState('');
+    const [aiSuccess, setAiSuccess] = useState('');
+    const [projectContext, setProjectContext] = useState<UpdateWithAIProjectContext | null>(null);
+    const [loadingProject, setLoadingProject] = useState(false);
+
+    // Fetch project context when AI panel opens
+    useEffect(() => {
+        if (aiPanelOpen && selectedProject?.id && !projectContext) {
+            loadProjectContext();
+        }
+    }, [aiPanelOpen, selectedProject?.id]);
+
+    const loadProjectContext = async () => {
+        if (!selectedProject?.id) return;
+        setLoadingProject(true);
+        try {
+            const project = await projectService.getById(selectedProject.id);
+            const ctx: UpdateWithAIProjectContext = {
+                name: project.name,
+                language: project.metadata?.language,
+                framework: project.metadata?.framework,
+                techStack: project.metadata?.techStack,
+                architectureStyle: project.metadata?.architecture?.style,
+                architectureOverview: project.metadata?.architecture?.overview,
+                standards: project.metadata?.standards ? {
+                    codingStyle: project.metadata.standards.codingStyle,
+                    namingConventions: project.metadata.standards.namingConventions,
+                    errorHandling: project.metadata.standards.errorHandling,
+                    loggingConvention: project.metadata.standards.loggingConvention,
+                } : undefined,
+                qualityGates: project.metadata?.qualityGates ? {
+                    definitionOfDone: project.metadata.qualityGates.definitionOfDone,
+                    testTypes: project.metadata.qualityGates.testingRequirements?.testTypes,
+                } : undefined,
+                authStrategy: project.metadata?.authStrategy,
+                domainCatalog: project.metadata?.domainCatalog?.map((e: any) => ({
+                    name: e.name,
+                    description: e.description,
+                    fields: e.fields?.map((f: any) => ({ name: f.name, type: f.type })),
+                })),
+            };
+            setProjectContext(ctx);
+        } catch (err) {
+            console.error('Failed to load project context:', err);
+        } finally {
+            setLoadingProject(false);
+        }
+    };
+
+    const handleUpdateWithAI = async () => {
+        if (!aiInstructions.trim()) {
+            setAiError('Please describe what you want to change');
+            return;
+        }
+
+        setIsUpdating(true);
+        setAiError('');
+        setAiSuccess('');
+
+        try {
+            const systemInstructions = generateUseCasePromptInstructions();
+            const fullInstructions = `${aiInstructions}\n\n${systemInstructions}`;
+
+            const response = await updateWithAIMutation.mutateAsync({
+                useCaseId,
+                instructions: fullInstructions,
+                projectContext: projectContext || undefined,
+            });
+
+            setAiSuccess(`Use case updated successfully! ${response.updatedFields?.length || 0} fields modified.`);
+            setAiInstructions('');
+
+            // Clear success after 5 seconds
+            setTimeout(() => setAiSuccess(''), 5000);
+        } catch (error: any) {
+            console.error('AI Update failed:', error);
+            setAiError(error.message || 'Failed to update use case with AI. Please try again.');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -59,6 +156,25 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <Button
+                        variant={aiPanelOpen ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setAiPanelOpen(!aiPanelOpen)}
+                        title="Update with AI"
+                        className="gap-1.5"
+                    >
+                        <Wand2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">Update with AI</span>
+                        {aiPanelOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.push(ROUTES.USE_CASE_EDIT(useCaseId))}
+                        title="Edit"
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
                         variant="ghost"
                         size="icon"
                         onClick={onClose}
@@ -68,6 +184,87 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     </Button>
                 </div>
             </CardHeader>
+
+            {/* AI Update Panel - Collapsible, visible on all tabs */}
+            {aiPanelOpen && (
+                <div className="mx-4 mb-3">
+                    <div className="border rounded-lg bg-muted/30 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-semibold">Update with AI</span>
+                            {loadingProject && (
+                                <Badge variant="outline" className="text-xs gap-1">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    Loading project context...
+                                </Badge>
+                            )}
+                            {projectContext && !loadingProject && (
+                                <Badge variant="outline" className="text-xs text-green-600 bg-green-500/10 border-green-500/20">
+                                    Project context loaded
+                                </Badge>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="ai-update-instructions" className="text-xs text-muted-foreground">
+                                Describe what you want to change (AI will respect project constraints)
+                            </Label>
+                            <Textarea
+                                id="ai-update-instructions"
+                                placeholder="e.g., Add error handling flows for authentication failures, improve the acceptance criteria, add security considerations for JWT token handling..."
+                                value={aiInstructions}
+                                onChange={(e) => {
+                                    setAiInstructions(e.target.value);
+                                    setAiError('');
+                                }}
+                                rows={3}
+                                className="resize-none text-sm"
+                                disabled={isUpdating}
+                            />
+                        </div>
+
+                        {/* Error Display */}
+                        {aiError && (
+                            <div className="flex items-start gap-2 p-2 rounded-md bg-destructive/10 border border-destructive/20">
+                                <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-destructive">{aiError}</p>
+                            </div>
+                        )}
+
+                        {/* Success Display */}
+                        {aiSuccess && (
+                            <div className="flex items-start gap-2 p-2 rounded-md bg-green-500/10 border border-green-500/20">
+                                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-green-600">{aiSuccess}</p>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">
+                                Changes are saved automatically after AI processing
+                            </p>
+                            <Button
+                                size="sm"
+                                onClick={handleUpdateWithAI}
+                                disabled={isUpdating || !aiInstructions.trim()}
+                                className="gap-1.5"
+                            >
+                                {isUpdating ? (
+                                    <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        Updating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        Update with AI
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Tabbed Content */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -552,7 +749,7 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                                 {useCase.errorHandling.knownErrors.map((error, index) => (
                                     <div key={index} className="border rounded p-2">
                                         <p className="text-sm font-medium">{error.condition}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">→ {error.expectedBehavior}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">{error.expectedBehavior}</p>
                                     </div>
                                 ))}
                             </div>

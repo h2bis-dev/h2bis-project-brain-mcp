@@ -14,14 +14,17 @@ export const CreateUseCaseRequestDto = z.object({
     description: z.string().min(1, 'Description is required'),
 
     status: z.object({
-        lifecycle: z.enum([
-            'idea',
-            'planned',
-            'in_development',
-            'ai_generated',
-            'human_reviewed',
-            'completed'
-        ]).default('idea'),
+        lifecycle: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'idea' : val,
+            z.enum([
+                'idea',
+                'planned',
+                'in_development',
+                'ai_generated',
+                'human_reviewed',
+                'completed'
+            ])
+        ).default('idea'),
         reviewedByHuman: z.boolean().default(false),
         generatedByAI: z.boolean().default(false)
     }).default({
@@ -64,7 +67,10 @@ export const CreateUseCaseRequestDto = z.object({
     }).optional(),
 
     interfaces: z.object({
-        type: z.enum(['REST', 'GraphQL', 'Event', 'UI']),
+        type: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'REST' : val,
+            z.enum(['REST', 'GraphQL', 'Event', 'UI'])
+        ),
         endpoints: z.array(z.object({
             method: z.string(),
             path: z.string(),
@@ -100,20 +106,36 @@ export const CreateUseCaseRequestDto = z.object({
     }).optional(),
 
     quality: z.object({
-        testTypes: z.array(z.enum(['unit', 'integration', 'e2e', 'security'])).default([]),
+        testTypes: z.preprocess(
+            (val) => {
+                if (!Array.isArray(val)) return [];
+                const validTypes = ['unit', 'integration', 'e2e', 'security'];
+                return val.filter(t => validTypes.includes(t));
+            },
+            z.array(z.enum(['unit', 'integration', 'e2e', 'security']))
+        ).default([]),
         performanceCriteria: z.array(z.string()).default([]),
         securityConsiderations: z.array(z.string()).default([])
     }).optional(),
 
     aiDirectives: z.object({
-        generationLevel: z.enum(['skeleton', 'partial', 'full']),
-        overwritePolicy: z.enum(['never', 'ifEmpty', 'always'])
+        generationLevel: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'partial' : val,
+            z.enum(['skeleton', 'partial', 'full'])
+        ),
+        overwritePolicy: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'ifEmpty' : val,
+            z.enum(['never', 'ifEmpty', 'always'])
+        )
     }).optional(),
 
     flows: z.array(z.object({
         name: z.string(),
         steps: z.array(z.string()),
-        type: z.enum(['main', 'alternative', 'error']).default('main')
+        type: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'main' : val,
+            z.enum(['main', 'alternative', 'error'])
+        ).default('main')
     })).default([]),
 
     technicalSurface: z.object({
@@ -123,7 +145,14 @@ export const CreateUseCaseRequestDto = z.object({
             collections: z.array(z.object({
                 name: z.string(),
                 purpose: z.string(),
-                operations: z.array(z.enum(['CREATE', 'READ', 'UPDATE', 'DELETE']))
+                operations: z.preprocess(
+                    (val) => {
+                        if (!Array.isArray(val)) return [];
+                        const validOps = ['CREATE', 'READ', 'UPDATE', 'DELETE'];
+                        return val.filter(op => validOps.includes(op));
+                    },
+                    z.array(z.enum(['CREATE', 'READ', 'UPDATE', 'DELETE']))
+                )
             })).default([])
         }),
         frontend: z.object({
@@ -134,7 +163,10 @@ export const CreateUseCaseRequestDto = z.object({
     }),
 
     relationships: z.array(z.object({
-        type: z.enum(['depends_on', 'extends', 'implements', 'conflicts_with', 'related_to']),
+        type: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'related_to' : val,
+            z.enum(['depends_on', 'extends', 'implements', 'conflicts_with', 'related_to'])
+        ),
         targetType: z.string(),
         targetKey: z.string(),
         reason: z.string().optional()
@@ -149,7 +181,10 @@ export const CreateUseCaseRequestDto = z.object({
     normative: z.boolean().default(false),
 
     aiMetadata: z.object({
-        estimatedComplexity: z.enum(['low', 'medium', 'high']).default('medium'),
+        estimatedComplexity: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'medium' : val,
+            z.enum(['low', 'medium', 'high'])
+        ),
         implementationRisk: z.array(z.string()).default([]),
         suggestedOrder: z.number().optional(),
         testStrategy: z.array(z.string()).default([]),
@@ -331,6 +366,23 @@ export interface CreateUseCaseResponseDto {
     validationReport?: any;
 }
 
+/**
+ * Update Use Case Request DTO
+ * All fields optional for partial update (same shape as Create but .partial())
+ */
+export const UpdateUseCaseRequestDto = CreateUseCaseRequestDto.partial().omit({ projectId: true, type: true, key: true });
+
+export type UpdateUseCaseRequestDto = z.infer<typeof UpdateUseCaseRequestDto>;
+
+/**
+ * Update Use Case Response DTO
+ */
+export interface UpdateUseCaseResponseDto {
+    id: string;
+    key: string;
+    message: string;
+}
+
 export const GenerateUseCaseRequestDto = z.object({
     description: z.string().min(1, 'Description is required'),
     existingData: z.record(z.any()).optional()
@@ -338,10 +390,79 @@ export const GenerateUseCaseRequestDto = z.object({
 
 export type GenerateUseCaseRequestDto = z.infer<typeof GenerateUseCaseRequestDto>;
 
+/**
+ * Enhance Use Case Request DTO
+ * Takes existing use case ID + enhancement instructions
+ */
+export const EnhanceUseCaseRequestDto = z.object({
+    useCaseId: z.string().min(1, 'Use Case ID is required'),
+    instructions: z.string().min(1, 'Enhancement instructions are required'),
+    fieldsToEnhance: z.array(z.string()).optional()
+});
+
+export type EnhanceUseCaseRequestDto = z.infer<typeof EnhanceUseCaseRequestDto>;
+
 import type { UseCase } from '../../domain/schemas/use_case_schema.js';
 
 export interface GenerateUseCaseResponseDto {
     useCase: Partial<UseCase>;
     generatedFields: string[];
+    confidence: number;
+}
+
+export interface EnhanceUseCaseResponseDto {
+    useCase: Partial<UseCase>;
+    enhancedFields: string[];
+    confidence: number;
+}
+
+/**
+ * Update Use Case with AI Request DTO
+ * Takes use case ID, instructions, and project context for conflict-free AI updates
+ */
+export const UpdateWithAIRequestDto = z.object({
+    useCaseId: z.string().min(1, 'Use Case ID is required'),
+    instructions: z.string().min(1, 'Update instructions are required'),
+    projectContext: z.object({
+        name: z.string().optional(),
+        language: z.string().optional(),
+        framework: z.string().optional(),
+        techStack: z.array(z.string()).optional(),
+        architectureStyle: z.string().optional(),
+        architectureOverview: z.string().optional(),
+        standards: z.object({
+            codingStyle: z.object({
+                guide: z.string().optional(),
+                linter: z.array(z.string()).optional(),
+            }).optional(),
+            namingConventions: z.array(z.string()).optional(),
+            errorHandling: z.array(z.string()).optional(),
+            loggingConvention: z.array(z.string()).optional(),
+        }).optional(),
+        qualityGates: z.object({
+            definitionOfDone: z.array(z.string()).optional(),
+            testTypes: z.array(z.string()).optional(),
+        }).optional(),
+        authStrategy: z.object({
+            approach: z.string().optional(),
+            implementation: z.array(z.string()).optional(),
+        }).optional(),
+        domainCatalog: z.array(z.object({
+            name: z.string(),
+            description: z.string().optional(),
+            fields: z.array(z.object({
+                name: z.string(),
+                type: z.string(),
+            })).optional(),
+        })).optional(),
+    }).optional(),
+    fieldsToUpdate: z.array(z.string()).optional(),
+});
+
+export type UpdateWithAIRequestDto = z.infer<typeof UpdateWithAIRequestDto>;
+
+export interface UpdateWithAIResponseDto {
+    useCase: Partial<UseCase>;
+    updatedFields: string[];
     confidence: number;
 }

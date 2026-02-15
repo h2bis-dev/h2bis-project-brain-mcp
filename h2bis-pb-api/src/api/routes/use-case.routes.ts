@@ -21,6 +21,15 @@ router.post('/mcp/create', useCaseController.createUseCase);
 // DELETE /api/use-cases/mcp/delete/:id - Delete use case (for MCP)
 router.delete('/mcp/delete/:id', useCaseController.deleteUseCase);
 
+// PUT /api/use-cases/mcp/update/:id - Update use case (for MCP)
+router.put('/mcp/update/:id', useCaseController.updateUseCase);
+
+// POST /api/use-cases/mcp/enhance - Enhance use case with AI (for MCP)
+router.post('/mcp/enhance', useCaseController.enhanceUseCase);
+
+// POST /api/use-cases/mcp/update-with-ai - Update use case with AI (for MCP)
+router.post('/mcp/update-with-ai', useCaseController.updateUseCaseWithAI);
+
 // ========== AUTHENTICATED ENDPOINTS ==========
 
 // All use case routes require authentication
@@ -37,8 +46,22 @@ router.post('/', authenticate, useCaseController.createUseCase);
 // POST /api/use-cases/generate - Generate use case from description (AI)
 router.post('/generate', authenticate, useCaseController.generateUseCase);
 
+// POST /api/use-cases/enhance - Enhance use case with AI
+router.post('/enhance', authenticate, useCaseController.enhanceUseCase);
+
+// POST /api/use-cases/update-with-ai - Update use case with AI (project-context-aware)
+router.post('/update-with-ai', authenticate, useCaseController.updateUseCaseWithAI);
+
 // GET /api/use-cases/:id - Get a single use case by ID
 router.get('/:id', authenticate, useCaseController.getUseCaseById);
+
+// PUT /api/use-cases/:id - Update a use case
+router.put(
+    '/:id',
+    authenticate,
+    requirePermission(PERMISSIONS.USE_CASE.EDIT),
+    useCaseController.updateUseCase
+);
 
 // DELETE /api/use-cases/:id - Delete a use case (admin/moderator only)
 router.delete(

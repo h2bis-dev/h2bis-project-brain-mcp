@@ -58,6 +58,8 @@ export const API_ENDPOINTS = {
         UPDATE: (id: string) => `/api/use-cases/${id}`,
         DELETE: (id: string) => `/api/use-cases/${id}`,
         GENERATE: '/api/use-cases/generate',
+        ENHANCE: '/api/use-cases/enhance',
+        UPDATE_WITH_AI: '/api/use-cases/update-with-ai',
     },
     CAPABILITIES: {
         LIST: '/api/capabilities',

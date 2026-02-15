@@ -116,6 +116,28 @@ export interface CreateUseCaseResponse {
     message: string;
 }
 
+export type UpdateUseCaseRequest = Partial<Omit<CreateUseCaseRequest, 'key' | 'technicalSurface'>> & {
+    technicalSurface?: CreateUseCaseRequest['technicalSurface'];
+};
+
+export interface UpdateUseCaseResponse {
+    id: string;
+    key: string;
+    message: string;
+}
+
+export interface EnhanceUseCaseRequest {
+    useCaseId: string;
+    instructions: string;
+    fieldsToEnhance?: string[];
+}
+
+export interface EnhanceUseCaseResponse {
+    useCase: Partial<CreateUseCaseRequest>;
+    enhancedFields: string[];
+    confidence: number;
+}
+
 /**
  * Use Case Service
  * Handles all use case-related API calls
@@ -158,6 +180,14 @@ export const useCaseService = {
     },
 
     /**
+     * Update an existing use case
+     */
+    update: async (id: string, data: UpdateUseCaseRequest): Promise<UpdateUseCaseResponse> => {
+        const response = await apiClient.put(API_ENDPOINTS.USE_CASES.UPDATE(id), data);
+        return response.data;
+    },
+
+    /**
      * Delete a use case (admin/moderator only)
      */
     delete: async (id: string): Promise<{ success: boolean; message: string }> => {
@@ -171,7 +201,24 @@ export const useCaseService = {
     generate: async (data: GenerateUseCaseRequest): Promise<GenerateUseCaseResponse> => {
         const response = await apiClient.post(API_ENDPOINTS.USE_CASES.GENERATE, data);
         return response.data;
-    }
+    },
+
+    /**
+     * Enhance an existing use case with AI
+     */
+    enhance: async (data: EnhanceUseCaseRequest): Promise<EnhanceUseCaseResponse> => {
+        const response = await apiClient.post(API_ENDPOINTS.USE_CASES.ENHANCE, data);
+        return response.data;
+    },
+
+    /**
+     * Generate AI-updated use case data using project context
+     * Returns updated data for preview — does NOT save to DB
+     */
+    updateWithAI: async (data: UpdateWithAIRequest): Promise<UpdateWithAIResponse> => {
+        const response = await apiClient.post(API_ENDPOINTS.USE_CASES.UPDATE_WITH_AI, data);
+        return response.data;
+    },
 };
 
 export interface GenerateUseCaseRequest {
@@ -182,5 +229,49 @@ export interface GenerateUseCaseRequest {
 export interface GenerateUseCaseResponse {
     useCase: Partial<CreateUseCaseRequest>;
     generatedFields: string[];
+    confidence: number;
+}
+
+export interface UpdateWithAIProjectContext {
+    name?: string;
+    language?: string;
+    framework?: string;
+    techStack?: string[];
+    architectureStyle?: string;
+    architectureOverview?: string;
+    standards?: {
+        codingStyle?: {
+            guide?: string;
+            linter?: string[];
+        };
+        namingConventions?: string[];
+        errorHandling?: string[];
+        loggingConvention?: string[];
+    };
+    qualityGates?: {
+        definitionOfDone?: string[];
+        testTypes?: string[];
+    };
+    authStrategy?: {
+        approach?: string;
+        implementation?: string[];
+    };
+    domainCatalog?: Array<{
+        name: string;
+        description?: string;
+        fields?: Array<{ name: string; type: string }>;
+    }>;
+}
+
+export interface UpdateWithAIRequest {
+    useCaseId: string;
+    instructions: string;
+    projectContext?: UpdateWithAIProjectContext;
+    fieldsToUpdate?: string[];
+}
+
+export interface UpdateWithAIResponse {
+    useCase: Partial<CreateUseCaseRequest>;
+    updatedFields: string[];
     confidence: number;
 }
