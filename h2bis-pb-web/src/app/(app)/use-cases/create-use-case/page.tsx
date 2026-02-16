@@ -362,9 +362,26 @@ export default function NewUseCasePage() {
             {createMutation.isError && (
                 <Card className="border-destructive max-w-7xl">
                     <CardContent className="pt-6">
-                        <p className="text-destructive text-sm">
-                            {createMutation.error.message || 'Failed to create use case'}
-                        </p>
+                        <div className="flex gap-3">
+                            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                            <div className="space-y-2 flex-1">
+                                <p className="text-destructive font-semibold">
+                                    Failed to create use case
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {createMutation.error.message || 'An unexpected error occurred'}
+                                </p>
+                                {createMutation.error.message?.includes('already exists') && (
+                                    <div className="mt-3 p-3 bg-muted rounded-md">
+                                        <p className="text-sm font-medium mb-2">💡 Suggestions:</p>
+                                        <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                                            <li>Modify the "Key" field below to make it unique (e.g., add a version number or timestamp)</li>
+                                            <li>Or go back to the use cases list and update the existing use case instead</li>
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             )}

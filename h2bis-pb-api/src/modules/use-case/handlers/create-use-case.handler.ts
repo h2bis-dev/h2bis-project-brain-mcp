@@ -2,6 +2,7 @@ import { useCaseRepository } from '../repositories/use-case.repository.js';
 import type { CreateUseCaseRequestDto, CreateUseCaseResponseDto } from '../use-case.dto.js';
 import { UseCaseSchema, type UseCase, createUseCase } from '../../../core/schemas/use_case_schema.js';
 import { generateCapabilityFromHandlerHandler } from '../../capability/handlers/generate-capability.handler.js';
+import { ConflictError } from '../../../core/errors/app.error.js';
 
 /**
  * Create Use Case Handler
@@ -14,7 +15,7 @@ export class CreateUseCaseHandler {
         const existing = await useCaseRepository.findByKey(dto.key);
         if (existing) {
             console.error(`[CreateUseCaseHandler] Use case with key '${dto.key}' already exists`);
-            throw new Error(`Use case with key '${dto.key}' already exists`);
+            throw new ConflictError(`Use case with key '${dto.key}' already exists. Please use a different key or update the existing use case.`);
         }
 
         // Build use case object
