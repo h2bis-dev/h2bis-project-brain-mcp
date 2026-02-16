@@ -65,6 +65,44 @@ export interface Project {
         techStack?: string[];
         language?: string;
         framework?: string;
+        architecture?: {
+            overview?: string;  // String, not array - matches API
+            style?: string;     // String, not array - matches API
+            directoryStructure?: string;
+            stateManagement?: string[];
+        };
+        authStrategy?: {
+            approach?: string;         // String, not array - matches API
+            implementation?: string[]; // Array, not string - matches API
+        };
+        deployment?: {
+            environment?: string;  // String, not array - matches API
+            cicd?: string[];
+        };
+        externalServices?: Array<{
+            name: string;
+            purpose?: string;
+            apiDocs?: string;
+        }>;
+        standards?: {
+            codingStyle?: {
+                guide?: string;
+                linter?: string[];
+            };
+            namingConventions?: string[];
+            errorHandling?: string[];
+            loggingConvention?: string[];
+        };
+        qualityGates?: {
+            definitionOfDone?: string[];
+            codeReviewChecklist?: string[];
+            testingRequirements?: {
+                coverage?: number;
+                testTypes?: string[];
+                requiresE2ETests?: boolean;
+            };
+            documentationStandards?: string;
+        };
     };
     stats?: {
         useCaseCount?: number;

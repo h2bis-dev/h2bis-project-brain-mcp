@@ -112,6 +112,7 @@ apiClient.interceptors.response.use(
 
         // Log non-401 errors
         if (error.response?.status !== 401) {
+            // eslint-disable-next-line no-console
             console.error("API Error:", {
                 url: error.config?.url,
                 method: error.config?.method,
