@@ -22,12 +22,12 @@ export type {
 } from './agents/surgical-fix/surgical-fix.agent.js';
 
 // Export services
-export { LLMService } from './services/llm/llm.service.js';
-export { CacheService } from './services/cache/cache.service.js';
+export { LLMService } from './core/services/llm/llm.service.js';
+export { CacheService } from './core/services/cache/cache.service.js';
 
 // Export utilities
-export { logger } from './utils/logger.js';
-export { validateIntentExtraction } from './utils/validators.js';
+export { logger } from './core/utils/logger.js';
+export { validateIntentExtraction } from './core/utils/validators.js';
 
 // New Agents
 export { UseCaseGenerationAgent } from './agents/use-case-generation/use-case-generation.agent.js';

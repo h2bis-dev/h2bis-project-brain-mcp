@@ -1,5 +1,5 @@
 // import { createCapabilityIndexes } from './utils/create-indexes.js';
-import { connectDb, disconnectDb } from './infrastructure/database/connection.js';
+import { connectDb, disconnectDb } from './core/database/connection.js';
 
 /**
  * Initialize database indexes

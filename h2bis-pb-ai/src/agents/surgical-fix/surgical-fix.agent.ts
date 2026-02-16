@@ -1,5 +1,5 @@
-import { LLMService } from '../../services/llm/llm.service.js';
-import { logger } from '../../utils/logger.js';
+import { LLMService } from '../../core/services/llm/llm.service.js';
+import { logger } from '../../core/utils/logger.js';
 import { ValidationIssue } from '../transformation-validation/transformation-validation.agent.js';
 import { SURGICAL_FIX_SYSTEM_PROMPT } from './prompts/surgical-fix-prompt.js';
 

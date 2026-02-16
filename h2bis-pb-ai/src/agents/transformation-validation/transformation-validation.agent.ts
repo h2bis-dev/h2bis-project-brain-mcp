@@ -1,6 +1,6 @@
-import { LLMService } from '../../services/llm/llm.service.js';
-import { logger } from '../../utils/logger.js';
-import { config } from '../../config/config.js';
+import { LLMService } from '../../core/services/llm/llm.service.js';
+import { logger } from '../../core/utils/logger.js';
+import { config } from '../../core/config/config.js';
 import { TRANSFORMATION_VALIDATION_SYSTEM_PROMPT } from './prompts/validation-prompt.js';
 
 /**

@@ -1,12 +1,12 @@
-import { insertDocument, insertDocumentSchema } from "./insertDocument.js";
-import { findDocument, findDocumentSchema } from "./findDocument.js";
-import { updateDocument, updateDocumentSchema } from "./updateDocument.js";
-import { deleteDocument, deleteDocumentSchema } from "./deleteDocument.js";
-import { listCollections, listCollectionsSchema } from "./listCollections.js";
-import { listProjects, listProjectsSchema } from "./listProjects.js";
-import { getCapabilityDependencies, getCapabilityDependenciesSchema } from "./getCapabilityDependencies.js";
-import { analyzeCapabilityImpact, analyzeCapabilityImpactSchema } from "./analyzeCapabilityImpact.js";
-import { getImplementationOrder, getImplementationOrderSchema } from "./getImplementationOrder.js";
+import { insertDocument, insertDocumentSchema } from "../modules/knowledge/tools/insertDocument.js";
+import { findDocument, findDocumentSchema } from "../modules/knowledge/tools/findDocument.js";
+import { updateDocument, updateDocumentSchema } from "../modules/knowledge/tools/updateDocument.js";
+import { deleteDocument, deleteDocumentSchema } from "../modules/knowledge/tools/deleteDocument.js";
+import { listCollections, listCollectionsSchema } from "../modules/knowledge/tools/listCollections.js";
+import { listProjects, listProjectsSchema } from "../modules/project/tools/listProjects.js";
+import { getCapabilityDependencies, getCapabilityDependenciesSchema } from "../modules/capability/tools/getCapabilityDependencies.js";
+import { analyzeCapabilityImpact, analyzeCapabilityImpactSchema } from "../modules/capability/tools/analyzeCapabilityImpact.js";
+import { getImplementationOrder, getImplementationOrderSchema } from "../modules/capability/tools/getImplementationOrder.js";
 
 export const tools = [
   {

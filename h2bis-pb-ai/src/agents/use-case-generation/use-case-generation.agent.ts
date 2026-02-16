@@ -1,8 +1,8 @@
-import { LLMService } from '../../services/llm/llm.service.js';
+import { LLMService } from '../../core/services/llm/llm.service.js';
 import type { UseCaseGenerationInput, UseCaseGenerationResult } from './types/use-case-generation.types.js';
 import { USE_CASE_GENERATION_SYSTEM_PROMPT } from './prompts/system-prompt.js';
 import { createUserPrompt } from './prompts/user-prompt.template.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../core/utils/logger.js';
 import type { UseCase } from '../../agents/intent-extraction/types/intent-analysis.types.js';
 
 export class UseCaseGenerationAgent {

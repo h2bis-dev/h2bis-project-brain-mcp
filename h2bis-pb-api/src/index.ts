@@ -1,10 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { config } from './infrastructure/config/config.js';
-import { connectDb, disconnectDb } from './infrastructure/database/connection.js';
-import apiRoutes from './api/routes/index.js';
-import { errorHandler } from './api/middleware/error.middleware.js';
+import { config } from './core/config/config.js';
+import { connectDb, disconnectDb } from './core/database/connection.js';
+import apiRoutes from './routes.js';
+import { errorHandler } from './core/middleware/error.middleware.js';
 
 const app = express();
 

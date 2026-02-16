@@ -1,12 +1,12 @@
-import { LLMService } from '../../services/llm/llm.service.js';
-import { CacheService } from '../../services/cache/cache.service.js';
+import { LLMService } from '../../core/services/llm/llm.service.js';
+import { CacheService } from '../../core/services/cache/cache.service.js';
 import { IntentAnalysis, UseCase, ValidationResult } from './types/intent-analysis.types.js';
 import { INTENT_EXTRACTION_SYSTEM_PROMPT, INTENT_EXTRACTION_STRICT_SYSTEM_PROMPT } from './prompts/system-prompt.js';
 import { createUserPrompt } from './prompts/user-prompt.template.js';
-import { validateIntentExtraction } from '../../utils/validators.js';
-import { logger } from '../../utils/logger.js';
-import { config } from '../../config/config.js';
-import { PROMPT_VERSION } from '../../config/prompts.config.js';
+import { validateIntentExtraction } from '../../core/utils/validators.js';
+import { logger } from '../../core/utils/logger.js';
+import { config } from '../../core/config/config.js';
+import { PROMPT_VERSION } from '../../core/config/prompts.config.js';
 
 export class IntentExtractionAgent {
     private llmService: LLMService;
