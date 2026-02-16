@@ -2,7 +2,7 @@ import type { NextAuthOptions } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import axios from 'axios';
-import { API_BASE_URL } from '@/lib/config';
+import { API_BASE_URL, NEXTAUTH_SECRET } from '@/lib/config';
 
 // Access token lifetime in ms (15 min), with 1-min buffer for proactive refresh
 const ACCESS_TOKEN_BUFFER_MS = 14 * 60 * 1000;
@@ -38,6 +38,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 }
 
 export const authOptions: NextAuthOptions = {
+    secret: NEXTAUTH_SECRET || 'development-secret-change-in-production',
     providers: [
         CredentialsProvider({
             name: 'Credentials',
