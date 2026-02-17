@@ -298,6 +298,40 @@ class ApiService {
     async getImplementationOrder(nodeIds: string[]): Promise<{ order: any[] }> {
         return this.httpClient.post('/api/capabilities/order', { nodeIds });
     }
+
+    /* ---------- Generic HTTP Methods ---------- */
+
+    /**
+     * Generic GET request
+     */
+    async get<T = any>(endpoint: string): Promise<T> {
+        await this.ensureAuthenticated();
+        return this.httpClient.get(endpoint);
+    }
+
+    /**
+     * Generic POST request
+     */
+    async post<T = any>(endpoint: string, data: any): Promise<T> {
+        await this.ensureAuthenticated();
+        return this.httpClient.post(endpoint, data);
+    }
+
+    /**
+     * Generic PUT request
+     */
+    async put<T = any>(endpoint: string, data: any): Promise<T> {
+        await this.ensureAuthenticated();
+        return this.httpClient.put(endpoint, data);
+    }
+
+    /**
+     * Generic DELETE request
+     */
+    async delete<T = any>(endpoint: string): Promise<T> {
+        await this.ensureAuthenticated();
+        return this.httpClient.delete(endpoint);
+    }
 }
 
 export const apiService = new ApiService();

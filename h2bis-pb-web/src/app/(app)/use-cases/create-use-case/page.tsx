@@ -294,8 +294,10 @@ export default function NewUseCasePage() {
             return;
         }
 
-        // Build request
+        // Build request with all required and optional fields
         const request: CreateUseCaseRequest = {
+            projectId: selectedProject.id,
+            type: 'use_case',
             key: key.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
             name,
             description,
@@ -305,6 +307,7 @@ export default function NewUseCasePage() {
                 backend: {
                     repos: backendRepos.filter(r => r.trim()),
                     endpoints: endpoints.filter(e => e.trim()),
+                    collections: [] // Default empty - can be added to UI later
                 },
                 frontend: {
                     repos: frontendRepos.filter(r => r.trim()),
@@ -314,6 +317,7 @@ export default function NewUseCasePage() {
             },
             acceptanceCriteria: acceptanceCriteria.filter(ac => ac.trim()),
             tags,
+            normative: false, // Default to false - can be added to UI later
             aiMetadata: {
                 estimatedComplexity: complexity
             },
@@ -345,6 +349,9 @@ export default function NewUseCasePage() {
                 endpoints: interfaceEndpoints.filter(e => e.path.trim()),
                 events: interfaceEvents.filter(e => e.trim())
             },
+            errorHandling: {
+                knownErrors: [] // Default empty - can be added to UI later
+            },
             architecturePatterns: archPatterns.filter(p => p.trim()),
             configuration: {
                 envVars: envVars.filter(v => v.trim()),
@@ -354,7 +361,10 @@ export default function NewUseCasePage() {
                 testTypes,
                 performanceCriteria: perfCriteria.filter(c => c.trim()),
                 securityConsiderations: secConsiderations.filter(c => c.trim())
-            }
+            },
+            flows: [], // Default empty - can be added to UI later
+            relationships: [], // Default empty - can be added to UI later
+            implementationRisk: [] // Default empty - can be added to UI later
         };
 
         createMutation.mutate(request);

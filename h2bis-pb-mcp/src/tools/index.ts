@@ -4,6 +4,9 @@ import { updateDocument, updateDocumentSchema } from "../modules/knowledge/tools
 import { deleteDocument, deleteDocumentSchema } from "../modules/knowledge/tools/deleteDocument.js";
 import { listCollections, listCollectionsSchema } from "../modules/knowledge/tools/listCollections.js";
 import { listProjects, listProjectsSchema } from "../modules/project/tools/listProjects.js";
+import { getProjectById, getProjectByIdSchema } from "../modules/project/tools/getProjectById.js";
+import { createProject, createProjectSchema } from "../modules/project/tools/createProject.js";
+import { updateProject, updateProjectSchema } from "../modules/project/tools/updateProject.js";
 import { getCapabilityDependencies, getCapabilityDependenciesSchema } from "../modules/capability/tools/getCapabilityDependencies.js";
 import { analyzeCapabilityImpact, analyzeCapabilityImpactSchema } from "../modules/capability/tools/analyzeCapabilityImpact.js";
 import { getImplementationOrder, getImplementationOrderSchema } from "../modules/capability/tools/getImplementationOrder.js";
@@ -39,11 +42,30 @@ export const tools = [
     schema: listCollectionsSchema,
     handler: listCollections,
   },
+  // Project CRUD Tools
   {
     name: "listProjects",
-    description: "List all projects from the MongoDB database",
+    description: "List all projects with optional filtering by status and pagination support",
     schema: listProjectsSchema,
     handler: listProjects,
+  },
+  {
+    name: "getProjectById",
+    description: "Get a specific project by ID with complete details including metadata, stats, and endpoints",
+    schema: getProjectByIdSchema,
+    handler: getProjectById,
+  },
+  {
+    name: "createProject",
+    description: "Create a new software development project with metadata, tech stack, architecture details, and quality gates",
+    schema: createProjectSchema,
+    handler: createProject,
+  },
+  {
+    name: "updateProject",
+    description: "Update an existing project's details, metadata, lifecycle stage, or access control settings",
+    schema: updateProjectSchema,
+    handler: updateProject,
   },
   // Capability Graph Tools
   {

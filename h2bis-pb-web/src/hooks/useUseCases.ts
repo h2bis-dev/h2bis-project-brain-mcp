@@ -62,7 +62,7 @@ export function useCreateUseCase() {
             if (!selectedProject?.id) {
                 throw new Error('No project selected. Please select a project before creating a use case.');
             }
-            return useCaseService.create(data, selectedProject.id);
+            return useCaseService.create(data);
         },
         onSuccess: () => {
             // Invalidate use cases list to refetch
