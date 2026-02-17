@@ -18,14 +18,12 @@ export const projectController = {
     /**
      * POST /api/projects
      * Creates a new software development project
+     * Also used for MCP endpoint - creates project without user if no auth
      */
     createProject: asyncHandler(
         async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
             try {
                 const user = (req as any).user;
-                if (!user) {
-                    return res.status(401).json({ error: 'Unauthorized' });
-                }
 
                 // Validate request body
                 const validationResult = CreateProjectRequestSchema.safeParse(req.body);
@@ -33,6 +31,32 @@ export const projectController = {
                     return res.status(400).json({ error: 'Invalid request data', details: validationResult.error });
                 }
 
+                // For MCP endpoints (no auth), create project with system owner
+                if (!user) {
+                    const { Project } = await import('./project_schema.js');
+                    const projectData = {
+                        ...validationResult.data,
+                        owner: 'system-mcp',
+                        members: [{
+                            userId: 'system-mcp',
+                            role: 'owner',
+                            addedAt: new Date()
+                        }],
+                        status: 'active',
+                        type: 'software_development',
+                        stats: {
+                            useCaseCount: 0,
+                            capabilityCount: 0,
+                            completionPercentage: 0
+                        }
+                    };
+                    
+                    const project = await Project.create(projectData);
+                    
+                    return res.status(201).json(project);
+                }
+
+                // For authenticated requests
                 logger.info(`Creating project for user ${user.userId}`);
 
                 const project = await createProjectHandler.execute(
@@ -60,15 +84,30 @@ export const projectController = {
     /**
      * GET /api/projects
      * Retrieves all projects accessible to the current user based on RBAC
+     * Also used for MCP endpoint - returns all projects if no user authenticated
      */
     getProjects: asyncHandler(
         async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
             try {
                 const user = (req as any).user;
+                
+                // For MCP endpoints (no auth), return all projects
                 if (!user) {
-                    return res.status(401).json({ error: 'Unauthorized' });
+                    const { Project } = await import('./project_schema.js');
+                    const projects = await Project.find({ status: 'active' }).lean();
+                    
+                    return res.status(200).json({
+                        success: true,
+                        data: {
+                            projects: projects,
+                            total: projects.length,
+                            limit: projects.length,
+                            offset: 0
+                        }
+                    });
                 }
 
+                // For authenticated requests, use RBAC
                 // Validate query parameters
                 const queryParams = GetProjectsQuerySchema.safeParse(req.query);
                 if (!queryParams.success) {
@@ -107,17 +146,27 @@ export const projectController = {
     /**
      * GET /api/projects/:projectId
      * Retrieves a specific project with user's access details
+     * Also used for MCP endpoint - returns project without access checks if no user
      */
     getProjectById: asyncHandler(
         async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
             try {
                 const user = (req as any).user;
-                if (!user) {
-                    return res.status(401).json({ error: 'Unauthorized' });
-                }
-
                 const { projectId } = req.params;
 
+                // For MCP endpoints (no auth), return project directly
+                if (!user) {
+                    const { Project } = await import('./project_schema.js');
+                    const project = await Project.findById(projectId).lean();
+                    
+                    if (!project) {
+                        return res.status(404).json({ error: 'Project not found' });
+                    }
+                    
+                    return res.status(200).json(project);
+                }
+
+                // For authenticated requests, use RBAC
                 logger.info(`Fetching project ${projectId} for user ${user.userId}`);
 
                 const response: GetProjectByIdResponseDto = await getProjectByIdHandler.execute(

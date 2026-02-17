@@ -11,9 +11,12 @@ export async function listProjects(args?: z.infer<typeof listProjectsSchema>) {
     try {
         // Use the dedicated MCP endpoint to list projects
         const endpoint = '/api/projects/mcp/list';
+        console.error('DEBUG: Calling API endpoint:', endpoint);
         const result = await apiService.get<any>(endpoint);
+        console.error('DEBUG: API result:', JSON.stringify(result, null, 2));
 
         if (!result || !result.data || !result.data.projects) {
+            console.error('DEBUG: Result structure check failed', { hasResult: !!result, hasData: !!result?.data, hasProjects: !!result?.data?.projects });
             return {
                 content: [
                     {

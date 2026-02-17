@@ -131,8 +131,33 @@ class ApiService {
             const endpoint = this.getEndpointForCollection(collectionName, 'list');
             const results = await this.httpClient.get(endpoint) as any;
 
-            // Return first matching document or null
-            const items = Array.isArray(results) ? results : (results.data || []);
+            // Handle different response structures
+            let items: any[] = [];
+            if (Array.isArray(results)) {
+                items = results;
+            } else if (results?.data) {
+                // Handle nested data structure (e.g., { data: { projects: [...] } })
+                if (Array.isArray(results.data)) {
+                    items = results.data;
+                } else if (Array.isArray(results.data.projects)) {
+                    items = results.data.projects;
+                } else if (Array.isArray(results.data.useCases)) {
+                    items = results.data.useCases;
+                } else if (Array.isArray(results.data.capabilities)) {
+                    items = results.data.capabilities;
+                }
+            }
+
+            // Ensure items is an array before calling find
+            if (!Array.isArray(items)) {
+                items = [];
+            }
+
+            // If filter is empty, return all items; otherwise return first matching document
+            if (Object.keys(filter).length === 0) {
+                return { document: items };
+            }
+
             const document = items.find((item: any) =>
                 Object.keys(filter).every(key => item[key] === filter[key])
             ) || null;

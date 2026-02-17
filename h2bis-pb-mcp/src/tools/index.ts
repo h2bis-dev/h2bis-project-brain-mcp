@@ -4,6 +4,7 @@ import { updateDocument, updateDocumentSchema } from "../modules/knowledge/tools
 import { deleteDocument, deleteDocumentSchema } from "../modules/knowledge/tools/deleteDocument.js";
 import { listCollections, listCollectionsSchema } from "../modules/knowledge/tools/listCollections.js";
 import { listProjects, listProjectsSchema } from "../modules/project/tools/listProjects.js";
+import { getProjectList, getProjectListSchema } from "../modules/project/tools/getProjectList.js";
 import { getProjectById, getProjectByIdSchema } from "../modules/project/tools/getProjectById.js";
 import { createProject, createProjectSchema } from "../modules/project/tools/createProject.js";
 import { updateProject, updateProjectSchema } from "../modules/project/tools/updateProject.js";
@@ -43,6 +44,12 @@ export const tools = [
     handler: listCollections,
   },
   // Project CRUD Tools
+  {
+    name: "getProjectList",
+    description: "Get a lightweight list of all projects showing only ID and name - use this first to find a project, then use getProjectById for full details",
+    schema: getProjectListSchema,
+    handler: getProjectList,
+  },
   {
     name: "listProjects",
     description: "List all projects with optional filtering by status and pagination support",
