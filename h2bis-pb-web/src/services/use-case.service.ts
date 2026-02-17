@@ -63,12 +63,6 @@ export interface CreateUseCaseRequest {
         }>;
         events: string[];
     };
-    errorHandling?: {
-        knownErrors: Array<{
-            condition: string;
-            expectedBehavior: string;
-        }>;
-    };
     architecturePatterns?: string[];
     configuration?: {
         envVars: string[];
@@ -79,28 +73,8 @@ export interface CreateUseCaseRequest {
         performanceCriteria: string[];
         securityConsiderations: string[];
     };
-    aiDirectives?: {
-        generationLevel: 'skeleton' | 'partial' | 'full';
-        overwritePolicy: 'never' | 'ifEmpty' | 'always';
-    };
     acceptanceCriteria?: string[];
-    flows?: Array<{
-        name: string;
-        steps: string[];
-        type: 'main' | 'alternative' | 'error';
-    }>;
-    relationships?: Array<{
-        type: string;
-        targetType: string;
-        targetKey: string;
-        reason?: string;
-    }>;
-    implementationRisk?: Array<{
-        rule: string;
-        normative: boolean;
-    }>;
     tags?: string[];
-    normative?: boolean;
     aiMetadata?: {
         estimatedComplexity: 'low' | 'medium' | 'high';
         implementationRisk?: string[];
@@ -174,7 +148,10 @@ export const useCaseService = {
      * Create a new use case
      */
     create: async (data: CreateUseCaseRequest, projectId?: string): Promise<CreateUseCaseResponse> => {
-        const payload = projectId ? { ...data, projectId } : data;
+        if (!projectId) {
+            throw new Error('Project ID is required to create a use case. Please select a project first.');
+        }
+        const payload = { ...data, projectId };
         const response = await apiClient.post(API_ENDPOINTS.USE_CASES.CREATE, payload);
         return response.data;
     },
