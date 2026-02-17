@@ -87,18 +87,7 @@ export const CreateUseCaseRequestDto = z.object({
         })).default([])
     }).optional(),
 
-    architecture: z.object({
-        style: z.enum(['layered', 'clean', 'hexagonal', 'event-driven']),
-        patterns: z.array(z.string()).default([])
-    }).optional(),
-
-    technologyConstraints: z.object({
-        backend: z.string().optional(),
-        frontend: z.string().optional(),
-        database: z.string().optional(),
-        messaging: z.string().optional(),
-        auth: z.string().optional()
-    }).optional(),
+    architecturePatterns: z.array(z.string()).default([]),
 
     configuration: z.object({
         envVars: z.array(z.string()).default([]),

@@ -17,10 +17,12 @@ import { ArrowLeft, Plus, X, Loader2, Sparkles, AlertCircle, Zap, Trash2 } from 
 import { useCreateUseCase } from '@/hooks/useUseCases';
 import { useCaseService, type CreateUseCaseRequest } from '@/services/use-case.service';
 import { generateUseCasePromptInstructions } from '@/lib/use-case-definitions';
+import { useSelectedProject } from '@/hooks/useProject';
 
 export default function NewUseCasePage() {
     const router = useRouter();
     const createMutation = useCreateUseCase();
+    const selectedProject = useSelectedProject();
 
     // Form state
     const [key, setKey] = useState('');
@@ -161,7 +163,15 @@ export default function NewUseCasePage() {
             update('scope', setScope, generated.scope);
         }
         if (generated.domainModel?.entities) {
-            setDomainEntities(generated.domainModel.entities);
+            // Normalize entities to ensure all fields have constraints array
+            const normalizedEntities = generated.domainModel.entities.map((entity: any) => ({
+                ...entity,
+                fields: (entity.fields || []).map((field: any) => ({
+                    ...field,
+                    constraints: Array.isArray(field.constraints) ? field.constraints : []
+                }))
+            }));
+            setDomainEntities(normalizedEntities);
         }
         if (generated.interfaces) {
             if (generated.interfaces.type) setInterfaceType(generated.interfaces.type);
@@ -208,7 +218,10 @@ export default function NewUseCasePage() {
 
         } catch (error: any) {
             console.error('AI Generation failed:', error);
-            setGenerationError(error.message || 'Failed to generate use case. Please try again.');
+            const errorMsg = error.response?.data?.message 
+                || error.message 
+                || 'Failed to generate use case. AI service may be unavailable. Try filling the form manually.';
+            setGenerationError(errorMsg);
         } finally {
             setIsGenerating(false);
         }
@@ -255,7 +268,10 @@ export default function NewUseCasePage() {
 
         } catch (error: any) {
             console.error('AI Generation failed:', error);
-            setGenerationError(error.message || 'Failed to generate use case. Please try again.');
+            const errorMsg = error.response?.data?.message 
+                || error.message 
+                || 'Failed to generate use case. AI service may be unavailable. Try filling the form manually.';
+            setGenerationError(errorMsg);
         } finally {
             setIsGenerating(false);
         }
@@ -271,6 +287,12 @@ export default function NewUseCasePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate project selection
+        if (!selectedProject) {
+            console.error('No project selected');
+            return;
+        }
 
         // Build request
         const request: CreateUseCaseRequest = {
@@ -380,6 +402,25 @@ export default function NewUseCasePage() {
                                         </ul>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* No Project Selected Warning */}
+            {!selectedProject && (
+                <Card className="border-yellow-500 max-w-7xl">
+                    <CardContent className="pt-6">
+                        <div className="flex gap-3">
+                            <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+                            <div className="space-y-2 flex-1">
+                                <p className="text-yellow-700 font-semibold">
+                                    No project selected
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    Please select a project from the project selector in the header before creating a use case.
+                                </p>
                             </div>
                         </div>
                     </CardContent>
@@ -596,7 +637,7 @@ export default function NewUseCasePage() {
                                                                 <div className="col-span-4"><Input placeholder="Name" value={field.name} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].name = e.target.value; setDomainEntities(n); }} /></div>
                                                                 <div className="col-span-3"><Input placeholder="Type" value={field.type} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].type = e.target.value; setDomainEntities(n); }} /></div>
                                                                 <div className="col-span-1 flex items-center"><Checkbox checked={field.required} onCheckedChange={(c) => { const n = [...domainEntities]; n[i].fields[fi].required = !!c; setDomainEntities(n); }} /> <span className="ml-1 text-xs">Req</span></div>
-                                                                <div className="col-span-3"><Input placeholder="Constraint" value={field.constraints[0] || ''} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].constraints[0] = e.target.value; setDomainEntities(n); }} /></div>
+                                                                <div className="col-span-3"><Input placeholder="Constraint" value={field.constraints?.[0] || ''} onChange={(e) => { const n = [...domainEntities]; if (!n[i].fields[fi].constraints) n[i].fields[fi].constraints = []; n[i].fields[fi].constraints[0] = e.target.value; setDomainEntities(n); }} /></div>
                                                                 <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => { const n = [...domainEntities]; n[i].fields = n[i].fields.filter((_, fidx) => fidx !== fi); setDomainEntities(n); }}><X className="h-3 w-3" /></Button></div>
                                                             </div>
                                                         ))}
@@ -717,7 +758,10 @@ export default function NewUseCasePage() {
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={createMutation.isPending}>
+                            <Button 
+                                type="submit" 
+                                disabled={createMutation.isPending || !selectedProject}
+                            >
                                 {createMutation.isPending && (
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                 )}

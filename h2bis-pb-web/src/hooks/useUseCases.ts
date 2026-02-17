@@ -58,7 +58,12 @@ export function useCreateUseCase() {
     const selectedProject = useSelectedProject();
 
     return useMutation<CreateUseCaseResponse, Error, CreateUseCaseRequest>({
-        mutationFn: (data) => useCaseService.create(data, selectedProject?.id),
+        mutationFn: (data) => {
+            if (!selectedProject?.id) {
+                throw new Error('No project selected. Please select a project before creating a use case.');
+            }
+            return useCaseService.create(data, selectedProject.id);
+        },
         onSuccess: () => {
             // Invalidate use cases list to refetch
             queryClient.invalidateQueries({ queryKey: ['use-cases', selectedProject?.id] });

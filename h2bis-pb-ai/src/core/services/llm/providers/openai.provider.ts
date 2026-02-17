@@ -11,7 +11,7 @@ export class OpenAIProvider {
     async chat(messages: ChatMessage[], options: LLMOptions = {}): Promise<LLMResponse> {
         const {
             temperature = 1,
-            maxTokens = 12000,
+            maxTokens = 4000,
             model = 'gpt-4-turbo',
             responseFormat = { type: 'json_object' }
         } = options;
