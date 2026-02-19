@@ -31,8 +31,8 @@ export const projectController = {
                     return res.status(400).json({ error: 'Invalid request data', details: validationResult.error });
                 }
 
-                // For MCP endpoints (no auth), create project with system owner
-                if (!user) {
+                // For MCP agent requests (API Key auth) or unauthenticated, create project with system owner
+                if (!user || user.isAgent) {
                     const { Project } = await import('./project_schema.js');
                     const projectData = {
                         ...validationResult.data,
@@ -91,8 +91,8 @@ export const projectController = {
             try {
                 const user = (req as any).user;
                 
-                // For MCP endpoints (no auth), return all projects
-                if (!user) {
+                // For MCP agent requests (API Key auth) or unauthenticated, return all active projects
+                if (!user || user.isAgent) {
                     const { Project } = await import('./project_schema.js');
                     const projects = await Project.find({ status: 'active' }).lean();
                     
@@ -154,8 +154,8 @@ export const projectController = {
                 const user = (req as any).user;
                 const { projectId } = req.params;
 
-                // For MCP endpoints (no auth), return project directly
-                if (!user) {
+                // For MCP agent requests (API Key auth) or unauthenticated, return project directly
+                if (!user || user.isAgent) {
                     const { Project } = await import('./project_schema.js');
                     const project = await Project.findById(projectId).lean();
                     

@@ -4,11 +4,17 @@ import { HttpClient } from '../infrastructure/http-client.js';
 /**
  * API Service for h2bis-pb-api
  * Routes to use-case, project, and capability endpoints based on collection name
+ * 
+ * Authentication Priority:
+ * 1. API Key (X-API-Key header) - preferred for agents
+ * 2. JWT Token (from environment)
+ * 3. JWT Login (email/password)
  */
 class ApiService {
     private httpClient: HttpClient;
     private authToken: string = '';
     private initialized: boolean = false;
+    private authMethod: 'api-key' | 'jwt' | 'none' = 'none';
 
     constructor() {
         this.httpClient = new HttpClient({
@@ -19,26 +25,47 @@ class ApiService {
     }
 
     /**
-     * Initialize authentication by loading token from env or logging in
+     * Initialize authentication
+     * Priority: API Key > JWT Token > JWT Login > No Auth
      */
     private async initializeAuth(): Promise<void> {
         try {
-            // Try to use existing token from environment
+            // Priority 1: API Key (preferred for agents)
+            if (config.apiKey) {
+                this.httpClient = new HttpClient({
+                    baseUrl: config.apiBaseUrl,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': config.apiKey,
+                    },
+                });
+                this.authMethod = 'api-key';
+                this.initialized = true;
+                console.error('🔑 Using API Key authentication');
+                return;
+            }
+
+            // Priority 2: Existing JWT token from environment
             if (config.apiToken) {
                 this.authToken = config.apiToken;
                 this.updateAuthHeader();
+                this.authMethod = 'jwt';
                 this.initialized = true;
+                console.error('🔐 Using JWT token from environment');
                 return;
             }
 
-            // Try to login with credentials if provided
+            // Priority 3: Login with credentials
             if (config.apiEmail && config.apiPassword) {
                 await this.login(config.apiEmail, config.apiPassword);
+                this.authMethod = 'jwt';
                 this.initialized = true;
+                console.error('🔐 Using JWT authentication (logged in)');
                 return;
             }
 
-            // If no auth is configured, continue without token
+            // No auth configured
+            console.error('⚠️ No authentication configured - some endpoints may fail');
             this.initialized = true;
         } catch (error) {
             console.error('Failed to initialize authentication:', error);
@@ -47,7 +74,7 @@ class ApiService {
     }
 
     /**
-     * Login to get an access token
+     * Login to get an access token (legacy JWT flow)
      */
     private async login(email: string, password: string): Promise<void> {
         try {
@@ -67,11 +94,10 @@ class ApiService {
     }
 
     /**
-     * Update HTTP client headers with auth token
+     * Update HTTP client headers with JWT auth token
      */
     private updateAuthHeader(): void {
         if (this.authToken) {
-            // Create new headers with auth token
             this.httpClient = new HttpClient({
                 baseUrl: config.apiBaseUrl,
                 headers: {
@@ -131,33 +157,15 @@ class ApiService {
             const endpoint = this.getEndpointForCollection(collectionName, 'list');
             const results = await this.httpClient.get(endpoint) as any;
 
-            // Handle different response structures
-            let items: any[] = [];
-            if (Array.isArray(results)) {
-                items = results;
-            } else if (results?.data) {
-                // Handle nested data structure (e.g., { data: { projects: [...] } })
-                if (Array.isArray(results.data)) {
-                    items = results.data;
-                } else if (Array.isArray(results.data.projects)) {
-                    items = results.data.projects;
-                } else if (Array.isArray(results.data.useCases)) {
-                    items = results.data.useCases;
-                } else if (Array.isArray(results.data.capabilities)) {
-                    items = results.data.capabilities;
-                }
-            }
+            // Extract items array from various response structures
+            let items: any[] = this.extractItemsFromResponse(results, collectionName);
 
-            // Ensure items is an array before calling find
-            if (!Array.isArray(items)) {
-                items = [];
-            }
-
-            // If filter is empty, return all items; otherwise return first matching document
+            // If filter is empty, return all items
             if (Object.keys(filter).length === 0) {
                 return { document: items };
             }
 
+            // Find matching document
             const document = items.find((item: any) =>
                 Object.keys(filter).every(key => item[key] === filter[key])
             ) || null;
@@ -227,6 +235,49 @@ class ApiService {
     }
 
     /* ---------- Helper Methods ---------- */
+
+    /**
+     * Extract items array from various API response structures
+     * Handles nested data like { data: { projects: [...] } }
+     */
+    private extractItemsFromResponse(results: any, collectionName: string): any[] {
+        // If results is already an array, return it
+        if (Array.isArray(results)) {
+            return results;
+        }
+
+        // Handle nested data structure
+        if (results?.data) {
+            // Direct array in data
+            if (Array.isArray(results.data)) {
+                return results.data;
+            }
+
+            // Collection-specific arrays
+            const normalized = collectionName.toLowerCase().replace(/s$/, '');
+            switch (normalized) {
+                case 'project':
+                    if (Array.isArray(results.data.projects)) {
+                        return results.data.projects;
+                    }
+                    break;
+                case 'use_case':
+                    if (Array.isArray(results.data.useCases)) {
+                        return results.data.useCases;
+                    }
+                    break;
+                case 'capabilitie':
+                case 'capability':
+                    if (Array.isArray(results.data.capabilities)) {
+                        return results.data.capabilities;
+                    }
+                    break;
+            }
+        }
+
+        // Fallback to empty array
+        return [];
+    }
 
     /**
      * Get the appropriate API endpoint based on collection name and operation

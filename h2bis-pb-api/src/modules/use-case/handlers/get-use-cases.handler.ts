@@ -16,6 +16,7 @@ export class GetUseCasesHandler {
         return useCases.map(uc => ({
             id: uc._id?.toString() || uc.key,
             key: uc.key,
+            projectId: uc.projectId,
             name: uc.name,
             description: uc.description,
             status: {

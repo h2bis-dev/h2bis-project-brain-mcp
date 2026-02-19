@@ -218,17 +218,56 @@ Debug Permissions:
 
 ## Available Permissions
 
-Permission            | Admin | Moderator | User
-─────────────────────|───────|───────────|──────
-view:dashboard       |   ✓   |     ✓     |  ✓
-view:use-case        |   ✓   |     ✓     |  ✓
-create:use-case      |   ✓   |     ✓     |  ✓
-edit:use-case        |   ✓   |     ✓     |  ✓
-delete:use-case      |   ✓   |     ✓     |  ✗
-view:capability      |   ✓   |     ✓     |  ✓
-manage:capability    |   ✓   |     ✓     |  ✗
-manage:users         |   ✓   |     ✗     |  ✗
-access:develop       |   ✓   |     ✗     |  ✗
+Permission            | Admin | Moderator | User | Agent
+─────────────────────|───────|───────────|──────|───────
+view:dashboard       |   ✓   |     ✓     |  ✓   |  ✓
+view:projects        |   ✓   |     ✓     |  ✓   |  ✓
+create:project       |   ✓   |     ✓     |  ✓   |  ✓
+edit:project         |   ✓   |     ✓     |  ✓   |  ✓
+delete:project       |   ✓   |     ✗     |  ✗   |  ✗
+view:use-case        |   ✓   |     ✓     |  ✓   |  ✓
+create:use-case      |   ✓   |     ✓     |  ✓   |  ✓
+edit:use-case        |   ✓   |     ✓     |  ✓   |  ✓
+delete:use-case      |   ✓   |     ✓     |  ✗   |  ✗
+view:capability      |   ✓   |     ✓     |  ✓   |  ✓
+manage:capability    |   ✓   |     ✓     |  ✗   |  ✗
+manage:users         |   ✓   |     ✗     |  ✗   |  ✗
+access:develop       |   ✓   |     ✗     |  ✗   |  ✗
+
+Note: Agent role is for MCP/automated access. It has no delete or user 
+management permissions for safety reasons. Use API Keys for agent auth.
+
+═══════════════════════════════════════════════════════════════════
+
+## Agent (MCP) Authentication
+
+Agents authenticate using API Keys instead of JWT tokens.
+
+### Create API Key (Admin Only)
+```bash
+curl -X POST http://localhost:4000/api/auth/api-keys \
+  -H "Authorization: Bearer <admin-jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "<service-account-id>",
+    "name": "MCP Agent - Development",
+    "scopes": ["read", "write"],
+    "description": "For Claude Desktop access"
+  }'
+```
+
+### Configure MCP
+```bash
+# In h2bis-pb-mcp/.env
+API_BASE_URL=http://localhost:4000
+API_KEY=h2b_agent_xxxxxxxxxxxxxxxxxxxxx
+```
+
+### API Key Scopes
+- `read` - Can read data
+- `write` - Can create/update data
+- `delete` - Can delete data
+- `admin` - All operations
 
 ═══════════════════════════════════════════════════════════════════
 

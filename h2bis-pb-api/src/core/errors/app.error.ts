@@ -49,6 +49,16 @@ export class UnauthorizedError extends AppError {
 }
 
 /**
+ * 403 Forbidden
+ */
+export class ForbiddenError extends AppError {
+    constructor(message: string = 'Forbidden') {
+        super(message, 403);
+        this.name = 'ForbiddenError';
+    }
+}
+
+/**
  * 409 Conflict
  */
 export class ConflictError extends AppError {

@@ -61,25 +61,36 @@ export async function updateProject(args: z.infer<typeof updateProjectSchema>) {
     try {
         const { projectId, ...updateData } = args;
         
-        // Use the updateDocument tool to update the project
-        const result = await apiService.updateDocument('projects', { _id: projectId }, updateData);
+        // Use direct API call to update the project
+        const endpoint = `/api/projects/${projectId}`;
+        const result = await apiService.put<any>(endpoint, updateData);
 
-        if (result.modifiedCount === 0) {
+        if (!result) {
             return {
                 content: [
                     {
                         type: "text",
-                        text: `Failed to update project "${projectId}" or no changes were made`,
+                        text: `Failed to update project "${projectId}"`,
                     },
                 ],
             };
         }
 
+        // Format the updated project response
+        const updatedProject = {
+            id: result._id || projectId,
+            name: result.name,
+            description: result.description || '',
+            status: result.status,
+            lifecycle: result.lifecycle,
+            updatedAt: result.updatedAt
+        };
+
         return {
             content: [
                 {
                     type: "text",
-                    text: `Project "${projectId}" updated successfully.\n\nUpdated fields: ${Object.keys(updateData).join(', ')}`,
+                    text: `Project "${projectId}" updated successfully.\n\nUpdated fields: ${Object.keys(updateData).join(', ')}\n\n${JSON.stringify(updatedProject, null, 2)}`,
                 },
             ],
         };

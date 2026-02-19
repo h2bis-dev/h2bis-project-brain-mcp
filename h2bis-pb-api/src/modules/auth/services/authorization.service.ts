@@ -114,6 +114,22 @@ const ROLE_PERMISSION_MAP: Record<string, string[]> = {
         PERMISSIONS.SYSTEM.ACCESS_DEVELOP,
         PERMISSIONS.SYSTEM.MANAGE_SETTINGS,
     ],
+    
+    // Agent role for MCP/automated access
+    // More restricted than admin - no user management
+    agent: [
+        PERMISSIONS.DASHBOARD.VIEW,
+        PERMISSIONS.PROJECT.VIEW,
+        PERMISSIONS.PROJECT.CREATE,
+        PERMISSIONS.PROJECT.EDIT,
+        PERMISSIONS.USE_CASE.VIEW,
+        PERMISSIONS.USE_CASE.CREATE,
+        PERMISSIONS.USE_CASE.EDIT,
+        // Note: No DELETE permission for safety
+        PERMISSIONS.CAPABILITY.VIEW,
+        // Note: No user management permissions
+        // Note: No system-level permissions
+    ],
 };
 
 // ============================================

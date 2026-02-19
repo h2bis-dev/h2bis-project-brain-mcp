@@ -6,7 +6,7 @@ export const RegisterRequestDto = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     name: z.string().min(1, 'Name is required'),
-    role: z.array(z.enum(['user', 'admin'])).min(1, 'Role is required')
+    role: z.array(z.enum(['user', 'admin', 'agent'])).min(1, 'Role is required')
 });
 
 export type RegisterRequestDto = z.infer<typeof RegisterRequestDto>;
@@ -56,3 +56,45 @@ export const LogoutRequestDto = z.object({
 });
 
 export type LogoutRequestDto = z.infer<typeof LogoutRequestDto>;
+
+// ==================== API Key DTOs ====================
+
+export const CreateApiKeyRequestDto = z.object({
+    userId: z.string().min(1, 'User ID is required'),
+    name: z.string().min(3, 'Name must be at least 3 characters').max(100),
+    scopes: z.array(z.enum(['read', 'write', 'delete', 'admin'])).min(1, 'At least one scope is required'),
+    expiresInDays: z.number().int().positive().optional(), // Optional expiration in days
+    description: z.string().max(500).optional(),
+});
+
+export type CreateApiKeyRequestDto = z.infer<typeof CreateApiKeyRequestDto>;
+
+export interface CreateApiKeyResponseDto {
+    key: string;      // Plaintext key (shown only once!)
+    keyId: string;
+    keyPrefix: string;
+    name: string;
+    scopes: string[];
+    expiresAt: string | null;
+    message: string;  // Warning about key visibility
+}
+
+export interface ApiKeyListItemDto {
+    id: string;
+    keyPrefix: string;
+    name: string;
+    scopes: string[];
+    userId: string;
+    userEmail?: string;
+    userName?: string;
+    expiresAt: string | null;
+    lastUsedAt: string | null;
+    isActive: boolean;
+    createdAt: string;
+    createdBy?: string;
+}
+
+export interface ListApiKeysResponseDto {
+    keys: ApiKeyListItemDto[];
+    total: number;
+}

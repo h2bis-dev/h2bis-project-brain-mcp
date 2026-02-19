@@ -5,16 +5,18 @@ import { requirePermission } from '../../core/middleware/permission.middleware.j
 
 const projectRouter = Router();
 
-// ========== PUBLIC MCP ENDPOINTS (No Auth) ==========
+// ========== AGENT MCP ENDPOINTS (API Key Auth) ==========
+// These endpoints are secured with API Key authentication (X-API-Key header).
+// Used by MCP tools for machine-to-machine communication.
 
 // GET /api/projects/mcp/list - List all projects (for MCP)
-projectRouter.get('/mcp/list', projectController.getProjects);
+projectRouter.get('/mcp/list', authenticate, projectController.getProjects);
 
 // GET /api/projects/mcp/find/:projectId - Find project by ID (for MCP)
-projectRouter.get('/mcp/find/:projectId', projectController.getProjectById);
+projectRouter.get('/mcp/find/:projectId', authenticate, projectController.getProjectById);
 
 // POST /api/projects/mcp/create - Create project (for MCP)
-projectRouter.post('/mcp/create', projectController.createProject);
+projectRouter.post('/mcp/create', authenticate, projectController.createProject);
 
 // ========== AUTHENTICATED ENDPOINTS ==========
 

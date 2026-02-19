@@ -195,6 +195,7 @@ export type CreateUseCaseRequestDto = z.infer<typeof CreateUseCaseRequestDto>;
 export interface UseCaseResponseDto {
     id: string;
     key: string;
+    projectId?: string;
     name: string;
     description: string;
     status: {
@@ -217,6 +218,7 @@ export interface UseCaseResponseDto {
 export interface UseCaseDetailResponseDto {
     id: string;
     key: string;
+    projectId?: string;
     name: string;
     description: string;
     status: {
