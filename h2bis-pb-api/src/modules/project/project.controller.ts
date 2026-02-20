@@ -4,6 +4,7 @@ import { getProjectsHandler, getProjectByIdHandler } from './handlers/get-projec
 import { getDashboardStatsHandler } from './handlers/get-dashboard-stats.handler.js';
 import { createProjectHandler } from './handlers/create-project.handler.js';
 import { updateProjectHandler } from './handlers/update-project.handler.js';
+import { deleteProjectHandler } from './handlers/delete-project.handler.js';
 import { asyncHandler } from '../../core/middleware/async-handler.js';
 import { logger } from '../../core/config/logger.js';
 
@@ -220,6 +221,46 @@ export const projectController = {
             } catch (error) {
                 logger.error(`Error fetching dashboard stats: ${error}`);
                 return res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
+            }
+        }
+    ),
+
+    /**
+     * DELETE /api/projects/:projectId
+     * Soft-deletes a project (admin only, planning lifecycle only)
+     */
+    deleteProject: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const user = (req as any).user;
+                if (!user) {
+                    return res.status(401).json({ error: 'Unauthorized' });
+                }
+
+                const { projectId } = req.params;
+
+                logger.info(`Deleting project ${projectId} by user ${user.userId}`);
+
+                await deleteProjectHandler.execute(projectId, user.userId, user.roles);
+
+                logger.info(`Project deleted: ${projectId} by user ${user.userId}`);
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Project deleted successfully',
+                });
+            } catch (error) {
+                logger.error(`Error deleting project: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                if (error instanceof Error && error.message.includes('Permission denied')) {
+                    return res.status(403).json({ error: 'Permission denied' });
+                }
+                if (error instanceof Error && error.message.includes("lifecycle stage")) {
+                    return res.status(422).json({ error: error.message });
+                }
+                return res.status(500).json({ error: 'Failed to delete project' });
             }
         }
     ),

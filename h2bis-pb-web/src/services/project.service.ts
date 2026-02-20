@@ -176,4 +176,12 @@ export const projectService = {
             id: project._id || project.id,
         };
     },
+
+    /**
+     * Delete a project (admin only, planning lifecycle only)
+     * Performs a soft-delete on the backend.
+     */
+    async delete(id: string): Promise<void> {
+        await apiClient.delete(`${API_ENDPOINTS.PROJECTS.LIST}/${id}`);
+    },
 };

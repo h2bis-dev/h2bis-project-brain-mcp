@@ -80,4 +80,16 @@ projectRouter.put(
     projectController.updateProject
 );
 
+/**
+ * DELETE /api/projects/:projectId
+ * Soft-deletes a project that is in 'planning' lifecycle stage
+ * Permissions: delete:project (admin only)
+ */
+projectRouter.delete(
+    '/:projectId',
+    authenticate,
+    requirePermission('delete:project'),
+    projectController.deleteProject
+);
+
 export default projectRouter;

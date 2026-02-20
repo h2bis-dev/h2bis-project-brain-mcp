@@ -68,6 +68,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         await loadProjects();
     };
 
+    const deleteProject = async (id: string) => {
+        await projectService.delete(id);
+        // Clear selected project if it was the one deleted
+        if (selectedProject?.id === id) {
+            setSelectedProject(null);
+            localStorage.removeItem('selectedProjectId');
+        }
+        await loadProjects();
+    };
+
     const value: ProjectContextType = {
         selectedProject,
         projects,
@@ -75,6 +85,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         selectProject,
         setDefaultProject,
         refreshProjects,
+        deleteProject,
     };
 
     return (

@@ -120,4 +120,5 @@ export interface ProjectContextType {
     selectProject: (project: Project) => void;
     setDefaultProject: (project: Project) => void;
     refreshProjects: () => Promise<void>;
+    deleteProject: (id: string) => Promise<void>;
 }

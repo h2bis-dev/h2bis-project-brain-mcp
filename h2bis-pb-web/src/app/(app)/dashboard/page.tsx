@@ -1,33 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { getDashboardStats, type DashboardProject } from '@/services/dashboard.service';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutDashboard, Loader2, AlertCircle } from 'lucide-react';
+import { useProject } from '@/contexts/ProjectContext';
 
 export default function DashboardPage() {
+    const { data: session } = useSession();
+    const { deleteProject } = useProject();
     const [projects, setProjects] = useState<DashboardProject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function fetchDashboardData() {
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await getDashboardStats();
-                setProjects(data);
-            } catch (err) {
-                console.error('Error fetching dashboard data:', err);
-                setError('Failed to load dashboard data. Please try again.');
-            } finally {
-                setLoading(false);
-            }
-        }
+    const canDeleteProject = session?.user?.permissions?.includes('delete:project') ?? false;
 
-        fetchDashboardData();
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await getDashboardStats();
+            setProjects(data);
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+            setError('Failed to load dashboard data. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    const handleDeleteProject = async (id: string) => {
+        await deleteProject(id);
+        await fetchDashboardData();
+    };
 
     return (
         <div className="space-y-8">
@@ -87,6 +98,8 @@ export default function DashboardPage() {
                                     description={project.description}
                                     useCaseCount={project.useCaseCount}
                                     lifecycle={project.lifecycle}
+                                    canDelete={canDeleteProject}
+                                    onDelete={handleDeleteProject}
                                 />
                             ))}
                         </div>
@@ -96,3 +109,4 @@ export default function DashboardPage() {
         </div>
     );
 }
+
