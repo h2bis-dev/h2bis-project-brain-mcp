@@ -1,6 +1,13 @@
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-dotenv.config();
+// Resolve .env relative to this file's location, not cwd.
+// This ensures the correct .env is loaded regardless of which directory
+// the process is spawned from (e.g. VS Code user-level MCP spawn config).
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, '../../../.env') });
 
 export const config = {
   serverName: process.env.SERVER_NAME || 'h2bis-pb-mcp',

@@ -1,20 +1,19 @@
 {
+    // All runtime config (API_KEY, API_BASE_URL, DB_NAME, etc.) is owned by h2bis-pb-mcp/.env
+    // These entries only specify how to spawn the process.
     "mcp.servers": {
         "h2bis-pb-mcp": {
             "command": "node",
             "args": [
-                "c:/My_work/RnD/project_brain_prototype_node/h2bis-pb/h2bis-pb-mcp/dist/index.js"
-            ],
-            "env": {
-                "NODE_ENV": "development"
-            }
+                "c:/My_work/RnD/h2bis-pb/h2bis-pb-mcp/dist/index.js"
+            ]
         }
     },
     "antigravity.mcp.servers": {
         "h2bis-pb-mcp": {
             "command": "node",
             "args": [
-                "c:/My_work/RnD/project_brain_prototype_node/h2bis-pb/h2bis-pb-mcp/dist/index.js"
+                "c:/My_work/RnD/h2bis-pb/h2bis-pb-mcp/dist/index.js"
             ]
         }
     }

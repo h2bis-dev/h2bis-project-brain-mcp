@@ -16,9 +16,6 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "env": {
-                "NODE_ENV": "development"
-            },
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/h2bis-pb-api/dist/**/*.js"
@@ -43,9 +40,6 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "env": {
-                "NODE_ENV": "development"
-            },
             "serverReadyAction": {
                 "pattern": "- Local:.+(https?://.+)",
                 "uriFormat": "%s",
@@ -67,9 +61,6 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "env": {
-                "NODE_ENV": "development"
-            },
             "serverReadyAction": {
                 "pattern": "- Local:.+(https?://.+)",
                 "uriFormat": "%s",
@@ -91,9 +82,6 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "env": {
-                "NODE_ENV": "development"
-            },
             "serverReadyAction": {
                 "pattern": "- Local:.+(https?://.+)",
                 "uriFormat": "%s",
