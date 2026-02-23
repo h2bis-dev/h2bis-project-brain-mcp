@@ -4,6 +4,14 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import axios from 'axios';
 import { API_BASE_URL, NEXTAUTH_SECRET } from '@/lib/config';
 
+// SERVER_API_URL is for server-side calls (NextAuth authorize, token refresh).
+// In Docker, process.env.API_URL = "http://h2bis-pb-api:4000" (internal service name).
+// On a local dev machine with no Docker, it falls back to API_BASE_URL (localhost:4000).
+// NEXT_PUBLIC_API_URL cannot be used here: it is baked into the client bundle at build
+// time and resolves to "http://localhost:4000" — which is unreachable from inside a
+// container where localhost refers to the web container itself, not the API container.
+const SERVER_API_URL = process.env.API_URL || API_BASE_URL;
+
 // Access token lifetime in ms (15 min), with 1-min buffer for proactive refresh
 const ACCESS_TOKEN_BUFFER_MS = 14 * 60 * 1000;
 
@@ -13,7 +21,7 @@ const ACCESS_TOKEN_BUFFER_MS = 14 * 60 * 1000;
  */
 async function refreshAccessToken(token: JWT): Promise<JWT> {
     try {
-        const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+        const response = await axios.post(`${SERVER_API_URL}/api/auth/refresh`, {
             refreshToken: token.refreshToken,
         }, {
             timeout: 5000,
@@ -58,7 +66,7 @@ export const authOptions: NextAuthOptions = {
                 for (let attempt = 1; attempt <= maxRetries; attempt++) {
                     try {
                         // Call your API to authenticate with email
-                        const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+                        const response = await axios.post(`${SERVER_API_URL}/api/auth/login`, {
                             email: credentials.username, // username field contains email
                             password: credentials.password,
                         }, {

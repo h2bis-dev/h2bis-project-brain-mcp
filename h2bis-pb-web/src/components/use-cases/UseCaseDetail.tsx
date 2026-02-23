@@ -70,7 +70,8 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     testTypes: project.metadata.qualityGates.testingRequirements?.testTypes,
                 } : undefined,
                 authStrategy: project.metadata?.authStrategy,
-                domainCatalog: project.metadata?.domainCatalog?.map((e: any) => ({
+                // domainCatalog is a top-level Project field, not inside metadata
+                domainCatalog: project.domainCatalog?.map((e: any) => ({
                     name: e.name,
                     description: e.description,
                     fields: e.fields?.map((f: any) => ({ name: f.name, type: f.type })),

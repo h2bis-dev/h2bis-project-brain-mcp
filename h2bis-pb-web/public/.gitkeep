@@ -1,0 +1,3 @@
+# This file ensures the public/ directory is tracked by git and exists
+# during Docker builds. Next.js serves static assets from here (favicon,
+# images, etc.). Add your assets here as needed.

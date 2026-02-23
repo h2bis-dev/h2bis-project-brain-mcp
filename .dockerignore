@@ -1,0 +1,40 @@
+# Root-level .dockerignore
+# Applied when build context is the workspace root (used by h2bis-pb-api build).
+# Prevents local build artifacts, secrets, and tooling from being sent to
+# the Docker daemon — speeds up builds and avoids leaking .env files.
+
+# Version control
+.git
+.gitignore
+
+# Local build outputs (Docker rebuilds these inside the image)
+**/node_modules
+**/dist
+**/.next
+
+# Secrets — never copy .env files into an image
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs
+**/*.log
+**/npm-debug.log*
+
+# OS artifacts
+**/.DS_Store
+**/Thumbs.db
+
+# Editor config
+.vscode
+.idea
+
+# Test output
+**/coverage
+**/.nyc_output
+
+# Docker files themselves (not needed inside the image)
+docker-compose.yml
+docker-compose*.yml
+**/Dockerfile*
+**/.dockerignore

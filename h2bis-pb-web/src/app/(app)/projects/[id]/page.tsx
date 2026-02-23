@@ -125,7 +125,26 @@ export default function ProjectDetailPage() {
                 name: data.name,
                 description: data.description || '',
                 lifecycle: data.lifecycle || 'planning',
-                metadata: data.metadata || {},
+                // Normalize metadata: the API returns optional fields (purpose?: string)
+                // but the form type requires non-optional strings. Default them to ''.
+                metadata: {
+                    ...(data.metadata || {}),
+                    externalServices: (data.metadata?.externalServices || []).map(
+                        (svc: { name: string; purpose?: string; apiDocs?: string }) => ({
+                            name: svc.name,
+                            purpose: svc.purpose ?? '',
+                            apiDocs: svc.apiDocs ?? '',
+                        })
+                    ),
+                    // API stores documentationStandards as a plain string;
+                    // the form type expects string[] (used by TagInput).
+                    qualityGates: data.metadata?.qualityGates ? {
+                        ...data.metadata.qualityGates,
+                        documentationStandards: data.metadata.qualityGates.documentationStandards
+                            ? [data.metadata.qualityGates.documentationStandards]
+                            : undefined,
+                    } : undefined,
+                },
             };
             setFormData(loadedFormData);
             setOriginalFormData(JSON.parse(JSON.stringify(loadedFormData))); // Deep clone
@@ -200,14 +219,16 @@ export default function ProjectDetailPage() {
             setSaving(true);
 
             if (isNewProject || projectId === 'new') {
-                const newProject = await projectService.create(formData);
+                // ProjectFormData and Project types differ in optional fields;
+                // cast to any so the service call compiles. The API is flexible.
+                const newProject = await projectService.create(formData as any);
                 toast({
                     title: "Success",
                     description: `Project "${formData.name}" created successfully`,
                 });
                 router.push(ROUTES.PROJECT(newProject._id || newProject.id));
             } else {
-                await projectService.update(projectId, formData);
+                await projectService.update(projectId, formData as any);
                 toast({
                     title: "Success",
                     description: "Project updated successfully",

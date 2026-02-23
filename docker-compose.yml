@@ -1,0 +1,110 @@
+# ============================================================
+# docker-compose.yml
+# Root of the h2bis-pb monorepo
+#
+# Usage:
+#   docker compose up --build        # build images and start all services
+#   docker compose up -d --build     # same but detached (runs in background)
+#   docker compose down              # stop and remove containers
+#   docker compose down -v           # also delete the mongo-data volume
+#   docker compose logs -f h2bis-pb-api  # stream logs for one service
+#
+# Service communication:
+#   Containers talk to each other using SERVICE NAMES as hostnames,
+#   not "localhost". e.g. Web reaches the API at h2bis-pb-api:4000.
+#   To reach a service on the Windows HOST (e.g. MongoDB), use the
+#   special hostname host.docker.internal instead of localhost.
+# ============================================================
+
+services:
+
+  # ── REST API ───────────────────────────────────────────────────────────────
+  # Build context is the WORKSPACE ROOT (not ./h2bis-pb-api) because the API
+  # depends on h2bis-pb-ai via a file: path — the Dockerfile needs both directories.
+  h2bis-pb-api:
+    build:
+      context: .                            # ← workspace root, not ./h2bis-pb-api
+      dockerfile: h2bis-pb-api/Dockerfile
+    container_name: h2bis-pb-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # host.docker.internal resolves to the Windows host from inside a container
+      MONGODB_URI: mongodb://host.docker.internal:27017/
+      DB_NAME: use_case_db    # h2bis-project-brain
+      # JWT_ACCESS_SECRET and JWT_REFRESH_SECRET come from .env.production
+    networks:
+      - h2bis-pb-network
+
+  # ── Next.js Frontend ───────────────────────────────────────────────────────
+  h2bis-pb-web:
+    build:
+      context: ./h2bis-pb-web
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_ vars are baked into the JS bundle at build time.
+        # The browser loads the page from localhost:3000 and makes API
+        # calls to localhost:4000 (the host-exposed port), NOT the
+        # internal service name — the browser is not inside Docker.
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+    container_name: h2bis-pb-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Server-side API calls (Next.js route handlers / server components)
+      # use the internal Docker service name — these run inside the container.
+      API_URL: http://h2bis-pb-api:4000
+      NEXTAUTH_URL: http://localhost:3000
+      # NEXTAUTH_SECRET comes from .env.production
+    depends_on:
+      - h2bis-pb-api
+    networks:
+      - h2bis-pb-network
+
+  # ── MCP Server ─────────────────────────────────────────────────────────────
+  # The MCP server uses stdio transport — it is NOT an HTTP service with a port.
+  # In local development, AI clients (Copilot, Claude) continue to spawn it
+  # directly as a child process (via .vscode/mcp.json) — no container needed.
+  #
+  # This service is included here so the containerised environment mirrors
+  # what will run in Kubernetes (where it will eventually use HTTP/SSE transport).
+  # For now it runs as a long-lived process that talks to the API internally.
+  h2bis-pb-mcp:
+    build:
+      context: ./h2bis-pb-mcp
+      dockerfile: Dockerfile
+    container_name: h2bis-pb-mcp
+    restart: unless-stopped
+    # stdin_open keeps stdin attached so the stdio MCP transport doesn't see
+    # an immediate EOF and exit. Without this, the server starts, stdin closes
+    # instantly (no client connected), the process exits, and Docker restarts it
+    # in an infinite loop.
+    stdin_open: true
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      # Internal service name — MCP reaches the API through the Docker network
+      API_BASE_URL: http://h2bis-pb-api:4000
+      # API_KEY comes from .env.production (generate via POST /api/auth/api-keys)
+    depends_on:
+      - h2bis-pb-api
+    networks:
+      - h2bis-pb-network
+
+# ── Networks ───────────────────────────────────────────────────────────────
+networks:
+  h2bis-pb-network:
+    driver: bridge
+    # All services on this network can reach each other by service name.
+    # From outside (your browser, Compass, Postman), access via localhost:<port>.
