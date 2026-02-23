@@ -3,7 +3,7 @@
 ## Server Information
 - **Name**: h2bis-pb-mcp
 - **Version**: 1.0.0
-- **Database**: MongoDB (use_case_db)
+- **Database**: MongoDB (h2bis-project-brain)
 - **Connection**: mongodb://localhost:27017/
 
 ## Quick Start
@@ -111,7 +111,7 @@ src/
 
 ```bash
 MONGODB_URI=mongodb://localhost:27017/
-DB_NAME=use_case_db
+DB_NAME=h2bis-project-brain
 SERVER_NAME=h2bis-pb-mcp
 SERVER_VERSION=1.0.0
 ```

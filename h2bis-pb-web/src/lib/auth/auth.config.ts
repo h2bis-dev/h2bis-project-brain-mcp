@@ -132,7 +132,13 @@ export const authOptions: NextAuthOptions = {
                     accessToken: user.accessToken,
                     refreshToken: user.refreshToken,
                     accessTokenExpires: Date.now() + ACCESS_TOKEN_BUFFER_MS,
+                    error: undefined,
                 };
+            }
+
+            // Already in error state — stop retrying, force client to re-authenticate
+            if (token.error === 'RefreshTokenError') {
+                return token;
             }
 
             // Subsequent calls: return token if access token is still fresh

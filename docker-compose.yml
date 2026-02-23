@@ -35,8 +35,8 @@ services:
       NODE_ENV: production
       PORT: 4000
       # host.docker.internal resolves to the Windows host from inside a container
-      MONGODB_URI: mongodb://host.docker.internal:27017/
-      DB_NAME: use_case_db    # h2bis-project-brain
+      MONGODB_URI: mongodb+srv://h2bis_app_user_dev:hWOeNENJ9l5YVtkN@h2bis-dev.ge3apn5.mongodb.net/
+      DB_NAME: h2bis-project-brain
       # JWT_ACCESS_SECRET and JWT_REFRESH_SECRET come from .env.production
     networks:
       - h2bis-pb-network

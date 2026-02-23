@@ -31,7 +31,7 @@ h2bis-pb-mcp
     ↓ HTTP REST (API_BASE_URL = http://localhost:4000)
 h2bis-pb-api
     ↓
-MongoDB (use_case_db)
+MongoDB (h2bis-project-brain)
 ```
 
 **The MCP server never connects to MongoDB directly.** All data access goes through
@@ -42,7 +42,7 @@ the REST API. The API owns the database connection and enforces auth/validation.
 ## Database
 
 - **Engine**: MongoDB
-- **Database name**: `use_case_db`
+- **Database name**: `h2bis-project-brain`
 - **Connection**: `mongodb://localhost:27017/` (local, default port)
 - **Managed by**: `h2bis-pb-api` exclusively
 

@@ -18,6 +18,11 @@ export default withAuth(
                     return true;
                 }
 
+                // Token exists but is in error state — force re-authentication
+                if (token?.error === 'RefreshTokenError') {
+                    return false;
+                }
+
                 // Protected routes require authentication
                 return !!token;
             },
