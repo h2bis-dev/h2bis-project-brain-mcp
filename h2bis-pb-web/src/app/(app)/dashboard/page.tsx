@@ -64,7 +64,7 @@ export default function DashboardPage() {
             )}
 
             {/* Error State */}
-            {error && !loading && (
+            {/* {error && !loading && (
                 <Card className="border-destructive">
                     <CardHeader>
                         <div className="flex items-center gap-2">
@@ -74,20 +74,25 @@ export default function DashboardPage() {
                         <CardDescription>{error}</CardDescription>
                     </CardHeader>
                 </Card>
-            )}
+            )} */}
 
             {/* Projects Grid */}
             {!loading && !error && (
                 <>
                     {projects.length === 0 ? (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>No Projects Yet</CardTitle>
-                                <CardDescription>
-                                    Get started by creating your first project
-                                </CardDescription>
-                            </CardHeader>
-                        </Card>
+                        <div className="flex items-center justify-center min-h-[60vh]">
+                            <Card className="max-w-md">
+                                <CardHeader>
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle className="h-5 w-5 text-yellow-500" />
+                                        <CardTitle>No Projects Yet</CardTitle>
+                                    </div>
+                                    <CardDescription>
+                                        Get started by creating your first project
+                                    </CardDescription>
+                                </CardHeader>
+                            </Card>
+                        </div>
                     ) : (
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {projects.map((project) => (

@@ -37,7 +37,7 @@ const navigation = [
         name: "Project",
         href: ROUTES.PROJECTS,
         icon: FolderKanban,
-        requiresProject: false,
+        requiresProject: true,
     },
     {
         name: "Use Cases",
