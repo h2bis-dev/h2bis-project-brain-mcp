@@ -127,74 +127,57 @@ class ApiService {
         collectionName: string,
         document: Record<string, any>
     ): Promise<{ insertedId: string; capabilityGenerated?: boolean; capabilityId?: string }> {
-        const endpoint = this.getEndpointForCollection(collectionName, 'create');
-        const result = await this.httpClient.post(endpoint, document) as any;
+        const endpoint = '/api/project-brain-system/mcp/insert';
+        const result = await this.httpClient.post(endpoint, { collectionName, document }) as any;
 
         // Normalize response to match expected format
         return {
-            insertedId: result.id || result._id || result.key || 'unknown',
-            ...result
+            insertedId: result.data?.documentId || result.id || result._id || result.key || 'unknown',
+            ...result.data
         };
     }
 
     /**
      * Find a document in a collection
-     * Routes to appropriate endpoint based on collection name
+     * Uses unified project brain system endpoint
      */
     async findDocument(
         collectionName: string,
         filter: Record<string, any> = {}
     ): Promise<{ document: any }> {
-        const id = filter._id || filter.id || filter.key;
+        const endpoint = '/api/project-brain-system/mcp/find';
+        const result = await this.httpClient.post(endpoint, { collectionName, filter, limit: 100 }) as any;
 
-        if (id) {
-            // Find by ID
-            const endpoint = this.getEndpointForCollection(collectionName, 'find', id);
-            const document = await this.httpClient.get(endpoint);
-            return { document };
+        // Return documents array or single document
+        const documents = result.data?.documents || [];
+        
+        // If filter is empty or multiple docs, return all
+        if (documents.length === 0) {
+            return { document: null };
+        } else if (documents.length === 1) {
+            return { document: documents[0] };
         } else {
-            // List all (fallback)
-            const endpoint = this.getEndpointForCollection(collectionName, 'list');
-            const results = await this.httpClient.get(endpoint) as any;
-
-            // Extract items array from various response structures
-            let items: any[] = this.extractItemsFromResponse(results, collectionName);
-
-            // If filter is empty, return all items
-            if (Object.keys(filter).length === 0) {
-                return { document: items };
-            }
-
-            // Find matching document
-            const document = items.find((item: any) =>
-                Object.keys(filter).every(key => item[key] === filter[key])
-            ) || null;
-
-            return { document };
+            return { document: documents };
         }
     }
 
     /**
      * Update a document in a collection
-     * Routes to appropriate endpoint based on collection name
+     * Uses unified project brain system endpoint
      */
     async updateDocument(
         collectionName: string,
         filter: Record<string, any>,
         update: Record<string, any>
     ): Promise<{ matchedCount: number; modifiedCount: number }> {
-        const id = filter._id || filter.id || filter.key;
-
-        if (!id) {
-            return { matchedCount: 0, modifiedCount: 0 };
-        }
-
-        const endpoint = this.getEndpointForCollection(collectionName, 'update', id);
-        const updateData = update.$set || update;
+        const endpoint = '/api/project-brain-system/mcp/update';
 
         try {
-            await this.httpClient.put(endpoint, updateData);
-            return { matchedCount: 1, modifiedCount: 1 };
+            const result = await this.httpClient.put(endpoint, { collectionName, filter, update }) as any;
+            return { 
+                matchedCount: 1, 
+                modifiedCount: result.data?.modifiedCount || 1 
+            };
         } catch (error) {
             return { matchedCount: 0, modifiedCount: 0 };
         }
@@ -202,23 +185,17 @@ class ApiService {
 
     /**
      * Delete a document from a collection
-     * Routes to appropriate endpoint based on collection name
+     * Uses unified project brain system endpoint
      */
     async deleteDocument(
         collectionName: string,
         filter: Record<string, any>
     ): Promise<{ deletedCount: number }> {
-        const id = filter._id || filter.id || filter.key;
-
-        if (!id) {
-            return { deletedCount: 0 };
-        }
-
-        const endpoint = this.getEndpointForCollection(collectionName, 'delete', id);
+        const endpoint = '/api/project-brain-system/mcp/delete';
 
         try {
-            await this.httpClient.delete(endpoint);
-            return { deletedCount: 1 };
+            const result = await this.httpClient.delete(endpoint, { collectionName, filter }) as any;
+            return { deletedCount: result.data?.deletedCount || 1 };
         } catch (error) {
             return { deletedCount: 0 };
         }
@@ -229,8 +206,9 @@ class ApiService {
      * Returns the supported collection names
      */
     async listCollections(): Promise<{ collections: string[] }> {
+        const result = await this.get<any>('/api/project-brain-system/mcp/collections');
         return {
-            collections: ['use_cases', 'projects', 'capabilities']
+            collections: result.data.collections
         };
     }
 
