@@ -1,9 +1,13 @@
 {
-  "_comment": "MCP server config for Claude Code CLI and Claude Desktop. VS Code Copilot uses .vscode/mcp.json instead. All runtime config (API_KEY, API_BASE_URL, etc.) is owned by h2bis-pb-mcp/.env — do not duplicate here.",
+  "_comment": "MCP server config for Claude Code CLI and Claude Desktop. VS Code Copilot uses .vscode/mcp.json. For global install change command to 'h2bis-mcp' and remove args.",
   "mcpServers": {
     "h2bis-pb-mcp": {
       "command": "node",
-      "args": ["c:/My_work/RnD/h2bis-pb/h2bis-pb-mcp/dist/index.js"]
+      "args": ["c:/My_work/RnD/h2bis-pb/h2bis-pb-mcp/dist/index.js"],
+      "env": {
+        "API_BASE_URL": "http://localhost:4000",
+        "API_KEY": "h2b_agent_33SG957L6UkdOzvL7lg9BRWMMopWzDB2KgOSveOLp6A"
+      }
     }
   }
 }
