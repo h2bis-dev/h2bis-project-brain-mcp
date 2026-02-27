@@ -53,10 +53,6 @@ export const CreateProjectRequestSchema = z.object({
             apiDocs: z.string().optional().default('')
         })).optional().default([]),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional().default(''),
-                linter: z.array(z.string()).optional().default([])
-            }).optional(),
             namingConventions: z.array(z.string()).optional().default([]),
             errorHandling: z.array(z.string()).optional().default([]),
             loggingConvention: z.array(z.string()).optional().default([])
@@ -69,7 +65,7 @@ export const CreateProjectRequestSchema = z.object({
                 testTypes: z.array(z.string()).optional().default([]),
                 requiresE2ETests: z.boolean().optional().default(false)
             }).optional(),
-            documentationStandards: z.string().optional().default('')
+            documentationStandards: z.array(z.string()).optional().default([])
         }).optional()
     }).optional(),
 });
@@ -107,10 +103,6 @@ export const UpdateProjectRequestSchema = z.object({
             apiDocs: z.string().optional()
         })).optional(),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional(),
-                linter: z.array(z.string()).optional()
-            }).optional(),
             namingConventions: z.array(z.string()).optional(),
             errorHandling: z.array(z.string()).optional(),
             loggingConvention: z.array(z.string()).optional()
@@ -123,7 +115,7 @@ export const UpdateProjectRequestSchema = z.object({
                 testTypes: z.array(z.string()).optional(),
                 requiresE2ETests: z.boolean().optional()
             }).optional(),
-            documentationStandards: z.string().optional()
+            documentationStandards: z.array(z.string()).optional()
         }).optional()
     }).optional(),
 });
@@ -197,10 +189,6 @@ export interface ProjectResponseDto {
             apiDocs: string;
         }>;
         standards: {
-            codingStyle: {
-                guide: string;
-                linter: string[];
-            };
             namingConventions: string[];
             errorHandling: string[];
             loggingConvention: string[];
@@ -213,7 +201,7 @@ export interface ProjectResponseDto {
                 testTypes: string[];
                 requiresE2ETests: boolean;
             };
-            documentationStandards: string;
+            documentationStandards: string[];
         };
     };
     stats: {

@@ -81,10 +81,6 @@ export class UpdateProjectHandler {
                     apiDocs: s.apiDocs ?? ''
                 })) : existingProject.metadata.externalServices) as Array<{ name: string; purpose: string; apiDocs: string; }>,
                 standards: {
-                    codingStyle: {
-                        guide: updateData.metadata?.standards?.codingStyle?.guide ?? existingProject.metadata.standards.codingStyle.guide,
-                        linter: updateData.metadata?.standards?.codingStyle?.linter ?? existingProject.metadata.standards.codingStyle.linter
-                    },
                     namingConventions: updateData.metadata?.standards?.namingConventions ?? existingProject.metadata.standards.namingConventions,
                     errorHandling: updateData.metadata?.standards?.errorHandling ?? existingProject.metadata.standards.errorHandling,
                     loggingConvention: updateData.metadata?.standards?.loggingConvention ?? existingProject.metadata.standards.loggingConvention

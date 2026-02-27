@@ -247,10 +247,6 @@ export interface UpdateWithAIProjectContext {
     architectureStyle?: string;
     architectureOverview?: string;
     standards?: {
-        codingStyle?: {
-            guide?: string;
-            linter?: string[];
-        };
         namingConventions?: string[];
         errorHandling?: string[];
         loggingConvention?: string[];

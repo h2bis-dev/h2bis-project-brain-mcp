@@ -116,10 +116,6 @@ export const projectService = {
 
             if (data.metadata.standards) {
                 metadata.standards = {
-                    codingStyle: {
-                        guide: data.metadata.standards.codingStyle?.guide || '',
-                        linter: data.metadata.standards.codingStyle?.linter || [],
-                    },
                     // Convert string to array or keep array
                     namingConventions: Array.isArray(data.metadata.standards.namingConventions)
                         ? data.metadata.standards.namingConventions

@@ -106,10 +106,6 @@ const ProjectSchema = new mongoose.Schema(
 
             // Standards & Conventions
             standards: {
-                codingStyle: {
-                    guide: { type: String, default: '' },
-                    linter: { type: [String], default: [] }
-                },
                 namingConventions: { type: [String], default: [] },
                 errorHandling: { type: [String], default: [] },
                 loggingConvention: { type: [String], default: [] }
@@ -124,7 +120,7 @@ const ProjectSchema = new mongoose.Schema(
                     testTypes: { type: [String], default: [] },
                     requiresE2ETests: { type: Boolean, default: false }
                 },
-                documentationStandards: { type: String, default: '' }
+                documentationStandards: { type: [String], default: [] }
             }
         },
 
@@ -204,10 +200,6 @@ export interface ProjectDocument {
             apiDocs: string;
         }>;
         standards: {
-            codingStyle: {
-                guide: string;
-                linter: string[];
-            };
             namingConventions: string[];
             errorHandling: string[];
             loggingConvention: string[];
@@ -220,7 +212,7 @@ export interface ProjectDocument {
                 testTypes: string[];
                 requiresE2ETests: boolean;
             };
-            documentationStandards: string;
+            documentationStandards: string[];
         };
     };
     stats: {
@@ -231,3 +223,97 @@ export interface ProjectDocument {
     createdAt: Date;
     updatedAt: Date;
 }
+
+/* ---------- Factory Functions ---------- */
+
+export type CreateProjectProps = {
+    _id: string;
+    name: string;
+    owner: string;
+    description?: string;
+    status?: 'active' | 'archived' | 'deleted';
+    lifecycle?: 'planning' | 'in_development' | 'in_review' | 'in_testing' | 'staging' | 'production' | 'maintenance' | 'archived';
+    members?: ProjectMember[];
+    accessControl?: ProjectAccessControl;
+    developedEndpoints?: DevelopedEndpoint[];
+    metadata?: any; // Accept flexible metadata structure from DTOs
+    stats?: {
+        useCaseCount: number;
+        capabilityCount: number;
+        completionPercentage: number;
+    };
+};
+
+/**
+ * Factory function to create a standardized Project object
+ * Centralizes default logic and eliminates verbose manual mapping
+ * Note: Timestamps are set manually because repository uses raw MongoDB, not Mongoose
+ */
+export const createProject = (props: CreateProjectProps): ProjectDocument => {
+    const now = new Date();
+    
+    return {
+        _id: props._id,
+        name: props.name,
+        description: props.description ?? '',
+        status: props.status ?? 'active',
+        lifecycle: props.lifecycle ?? 'planning',
+        owner: props.owner,
+        members: props.members ?? [
+            {
+                userId: props.owner,
+                role: 'owner',
+                addedAt: now
+            }
+        ],
+        accessControl: props.accessControl ?? {
+            allowAdmins: true,
+            allowedRoles: ['user', 'moderator', 'admin']
+        },
+        type: 'software_development',
+        developedEndpoints: props.developedEndpoints ?? [],
+        metadata: {
+            repository: props.metadata?.repository ?? '',
+            techStack: props.metadata?.techStack ?? [],
+            language: props.metadata?.language ?? '',
+            framework: props.metadata?.framework ?? '',
+            architecture: {
+                overview: props.metadata?.architecture?.overview ?? '',
+                style: props.metadata?.architecture?.style ?? '',
+                directoryStructure: props.metadata?.architecture?.directoryStructure ?? '',
+                stateManagement: props.metadata?.architecture?.stateManagement ?? []
+            },
+            authStrategy: {
+                approach: props.metadata?.authStrategy?.approach ?? '',
+                implementation: props.metadata?.authStrategy?.implementation ?? []
+            },
+            deployment: {
+                environment: props.metadata?.deployment?.environment ?? '',
+                cicd: props.metadata?.deployment?.cicd ?? []
+            },
+            externalServices: props.metadata?.externalServices ?? [],
+            standards: {
+                namingConventions: props.metadata?.standards?.namingConventions ?? [],
+                errorHandling: props.metadata?.standards?.errorHandling ?? [],
+                loggingConvention: props.metadata?.standards?.loggingConvention ?? []
+            },
+            qualityGates: {
+                definitionOfDone: props.metadata?.qualityGates?.definitionOfDone ?? [],
+                codeReviewChecklist: props.metadata?.qualityGates?.codeReviewChecklist ?? [],
+                testingRequirements: {
+                    coverage: props.metadata?.qualityGates?.testingRequirements?.coverage ?? 0,
+                    testTypes: props.metadata?.qualityGates?.testingRequirements?.testTypes ?? [],
+                    requiresE2ETests: props.metadata?.qualityGates?.testingRequirements?.requiresE2ETests ?? false
+                },
+                documentationStandards: props.metadata?.qualityGates?.documentationStandards ?? []
+            }
+        },
+        stats: props.stats ?? {
+            useCaseCount: 0,
+            capabilityCount: 0,
+            completionPercentage: 0
+        },
+        createdAt: now,
+        updatedAt: now
+    };
+};

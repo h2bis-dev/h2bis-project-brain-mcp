@@ -60,7 +60,6 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                 architectureStyle: project.metadata?.architecture?.style,
                 architectureOverview: project.metadata?.architecture?.overview,
                 standards: project.metadata?.standards ? {
-                    codingStyle: project.metadata.standards.codingStyle,
                     namingConventions: project.metadata.standards.namingConventions,
                     errorHandling: project.metadata.standards.errorHandling,
                     loggingConvention: project.metadata.standards.loggingConvention,

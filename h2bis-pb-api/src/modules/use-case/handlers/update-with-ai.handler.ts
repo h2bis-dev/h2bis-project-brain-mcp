@@ -40,7 +40,6 @@ export class UpdateWithAIHandler {
             if (ctx.architectureOverview) constraints.push(`Architecture Overview: ${ctx.architectureOverview}`);
 
             if (ctx.standards) {
-                if (ctx.standards.codingStyle?.guide) constraints.push(`Coding Style Guide: ${ctx.standards.codingStyle.guide}`);
                 if (ctx.standards.namingConventions?.length) constraints.push(`Naming Conventions: ${ctx.standards.namingConventions.join(', ')}`);
                 if (ctx.standards.errorHandling?.length) constraints.push(`Error Handling Patterns: ${ctx.standards.errorHandling.join(', ')}`);
             }

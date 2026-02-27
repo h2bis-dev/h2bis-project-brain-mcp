@@ -52,10 +52,6 @@ interface ProjectFormData {
         };
         externalServices?: ExternalService[];
         standards?: {
-            codingStyle?: {
-                guide?: string;
-                linter?: string[];
-            };
             namingConventions?: string[];
             errorHandling?: string[];
             loggingConvention?: string[];
@@ -92,9 +88,7 @@ export default function ProjectDetailPage() {
             architecture: {},
             authStrategy: {},
             deployment: {},
-            standards: {
-                codingStyle: {},
-            },
+            standards: {},
             qualityGates: {},
         },
     });
@@ -136,14 +130,7 @@ export default function ProjectDetailPage() {
                             apiDocs: svc.apiDocs ?? '',
                         })
                     ),
-                    // API stores documentationStandards as a plain string;
-                    // the form type expects string[] (used by TagInput).
-                    qualityGates: data.metadata?.qualityGates ? {
-                        ...data.metadata.qualityGates,
-                        documentationStandards: data.metadata.qualityGates.documentationStandards
-                            ? [data.metadata.qualityGates.documentationStandards]
-                            : undefined,
-                    } : undefined,
+                    qualityGates: data.metadata?.qualityGates,
                 },
             };
             setFormData(loadedFormData);
@@ -601,25 +588,6 @@ export default function ProjectDetailPage() {
                             <CardTitle>Coding Standards</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Style Guide</Label>
-                                <Input
-                                    placeholder="e.g., Airbnb JavaScript Style Guide"
-                                    value={formData.metadata.standards?.codingStyle?.guide || ''}
-                                    onChange={(e) => updateField('metadata.standards.codingStyle.guide', e.target.value)}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Linters & Formatters</Label>
-                                <TagInput
-                                    value={formData.metadata.standards?.codingStyle?.linter || []}
-                                    onChange={(value) => updateField('metadata.standards.codingStyle.linter', value)}
-                                    suggestions={PROJECT_METADATA_CONSTANTS.linters}
-                                    placeholder="Add linters..."
-                                />
-                            </div>
-
                             <div className="space-y-2">
                                 <Label>Naming Conventions</Label>
                                 <TagInput

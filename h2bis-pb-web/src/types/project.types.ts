@@ -85,10 +85,6 @@ export interface Project {
             apiDocs?: string;
         }>;
         standards?: {
-            codingStyle?: {
-                guide?: string;
-                linter?: string[];
-            };
             namingConventions?: string[];
             errorHandling?: string[];
             loggingConvention?: string[];
@@ -101,7 +97,7 @@ export interface Project {
                 testTypes?: string[];
                 requiresE2ETests?: boolean;
             };
-            documentationStandards?: string;
+            documentationStandards?: string[];
         };
     };
     stats?: {

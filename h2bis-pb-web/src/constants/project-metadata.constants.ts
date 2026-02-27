@@ -142,25 +142,6 @@ export const PROJECT_METADATA_CONSTANTS = {
         'Bitbucket Pipelines',
     ],
 
-    // Coding style guide (dropdown)
-    codingStyleGuide: [
-        'Airbnb',
-        'Google',
-        'Standard',
-        'Custom',
-        'None',
-    ],
-
-    // Linters tags
-    linters: [
-        'ESLint',
-        'Prettier',
-        'TSLint',
-        'Biome',
-        'StandardJS',
-        'Stylelint',
-    ],
-
     // Error handling patterns tags
     errorHandlingPatterns: [
         'Try-Catch',

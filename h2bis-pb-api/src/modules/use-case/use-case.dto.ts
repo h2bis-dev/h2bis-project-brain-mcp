@@ -422,10 +422,6 @@ export const UpdateWithAIRequestDto = z.object({
         architectureStyle: z.string().optional(),
         architectureOverview: z.string().optional(),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional(),
-                linter: z.array(z.string()).optional(),
-            }).optional(),
             namingConventions: z.array(z.string()).optional(),
             errorHandling: z.array(z.string()).optional(),
             loggingConvention: z.array(z.string()).optional(),

@@ -69,7 +69,6 @@ export class GetProjectsHandler {
                 },
                 externalServices: project.metadata?.externalServices || [],
                 standards: project.metadata?.standards || {
-                    codingStyle: { guide: '', linter: [] },
                     namingConventions: [],
                     errorHandling: [],
                     loggingConvention: []
@@ -82,7 +81,7 @@ export class GetProjectsHandler {
                         testTypes: [],
                         requiresE2ETests: false
                     },
-                    documentationStandards: ''
+                    documentationStandards: []
                 }
             },
             stats: project.stats || {
@@ -164,7 +163,6 @@ export class GetProjectByIdHandler {
                 },
                 externalServices: project.metadata?.externalServices || [],
                 standards: project.metadata?.standards || {
-                    codingStyle: { guide: '', linter: [] },
                     namingConventions: [],
                     errorHandling: [],
                     loggingConvention: []
@@ -177,7 +175,7 @@ export class GetProjectByIdHandler {
                         testTypes: [],
                         requiresE2ETests: false
                     },
-                    documentationStandards: ''
+                    documentationStandards: []
                 }
             },
             stats: project.stats || {

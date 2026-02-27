@@ -55,10 +55,6 @@ export const createProjectSchema = z.object({
             apiDocs: z.string().optional(),
         })).optional(),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional(),
-                linter: z.array(z.string()).optional(),
-            }).optional(),
             namingConventions: z.array(z.string()).optional(),
             errorHandling: z.array(z.string()).optional(),
             loggingConvention: z.array(z.string()).optional(),
@@ -71,7 +67,7 @@ export const createProjectSchema = z.object({
                 testTypes: z.array(z.string()).optional(),
                 requiresE2ETests: z.boolean().optional(),
             }).optional(),
-            documentationStandards: z.string().optional(),
+            documentationStandards: z.array(z.string()).optional(),
         }).optional(),
     }).optional(),
 });
