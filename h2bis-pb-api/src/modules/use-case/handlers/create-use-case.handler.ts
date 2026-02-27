@@ -21,13 +21,21 @@ export class CreateUseCaseHandler {
         // Build use case object
         const useCase = createUseCase(dto, userId);
 
+        const handlerResult = UseCaseSchema.safeParse(dto);
+        if (!handlerResult.success) {
+            return {
+                id: '',
+                key: dto.key,
+                message: 'Use case creation failed due to validation',
+                capabilityGenerated: false
+            };
+        }
+
         // Create the use case
         const id = await useCaseRepository.create(useCase);
 
         // // AUTO-GENERATE CAPABILITY
         console.log('🔍 Checking for capability auto-generation for use case:', useCase.key);
-
-        const handlerResult = UseCaseSchema.safeParse(useCase);
 
         if (handlerResult.success) {
             /* CAPABILITY GENERATION - UNCOMMENT TO ENABLE
@@ -75,7 +83,6 @@ export class CreateUseCaseHandler {
                 capabilityGenerated: false
             };
         } else {
-            console.warn('⚠️ Handler validation failed:', handlerResult.error.errors);
             return {
                 id,
                 key: dto.key,
