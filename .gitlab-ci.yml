@@ -106,8 +106,10 @@ build-h2bis-pb-web:
 build-h2bis-pb-api:
   <<: *build_template
   script:
+    # context must be the monorepo root — the Dockerfile copies h2bis-pb-ai
+    # as a local file dependency during the build
     - /kaniko/executor
-      --context $CI_PROJECT_DIR/h2bis-pb-api
+      --context $CI_PROJECT_DIR
       --dockerfile $CI_PROJECT_DIR/h2bis-pb-api/Dockerfile
       --destination $REGISTRY/h2bis-pb-api:$CI_COMMIT_SHA
       --cache=true
