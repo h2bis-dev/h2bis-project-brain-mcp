@@ -1,0 +1,76 @@
+# ==========================================
+# H2BIS ProjectBrain - Helm Values
+# ==========================================
+
+global:
+  imagePullPolicy: IfNotPresent
+  nodeEnv: production
+
+# ----- API Service (h2bis-pb-api) -----
+api:
+  image:
+    repository: ""
+    tag: latest
+  replicas: 1
+  port: 4000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    MONGODB_URI: ""
+    DB_NAME: "use_case_db"
+    JWT_ACCESS_SECRET: ""
+    JWT_REFRESH_SECRET: ""
+    CORS_ALLOWED_ORIGINS: ""
+    LOG_LEVEL: "info"
+
+# ----- Web Service (h2bis-pb-web) -----
+web:
+  image:
+    repository: ""
+    tag: latest
+  replicas: 1
+  port: 3000
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  env:
+    NEXT_PUBLIC_API_URL: ""
+
+# ----- AI Agent Pipeline (h2bis-pb-ai) -----
+ai:
+  image:
+    repository: ""
+    tag: latest
+  replicas: 1
+  port: 5000
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  env:
+    API_BASE_URL: ""
+    OPENAI_API_KEY: ""
+    OPENAI_MODEL: "gpt-4o"
+    LOG_LEVEL: "info"
+
+# ----- Ingress -----
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+
+secret:
+  apiIngressHost: ""
+  webIngressHost: ""

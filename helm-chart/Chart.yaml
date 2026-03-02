@@ -1,0 +1,7 @@
+apiVersion: v2
+name: h2bis-pb
+appVersion: "1.0.0"
+version: 0.1.0
+description: A Helm chart for H2BIS ProjectBrain Platform
+maintainers:
+  - name: H2BIS Team
