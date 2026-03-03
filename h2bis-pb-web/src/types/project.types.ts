@@ -10,21 +10,26 @@ export interface DevelopedEndpoint {
     lastScanned?: string;
 }
 
+export type DomainModelLayer = 'data' | 'dto' | 'domain' | 'response' | 'request' | 'event' | 'other';
+
 export interface DomainField {
     name: string;
     type: string;
     required: boolean;
-    description: string;
+    description?: string;
+    defaultValue?: string;
+    constraints: string[];
 }
 
 export interface DomainEntity {
     name: string;
-    description: string;
-    modulePath: string;
+    description?: string;
+    layer?: DomainModelLayer;
     fields: DomainField[];
     usedByUseCases: string[];
-    addedAt: Date;
-    lastScanned?: Date;
+    addedBy?: string;
+    addedAt?: string;
+    updatedAt?: string;
 }
 
 export interface Project {

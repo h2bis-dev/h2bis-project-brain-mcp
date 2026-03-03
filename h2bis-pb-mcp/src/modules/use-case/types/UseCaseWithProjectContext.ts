@@ -47,8 +47,14 @@ export interface ProjectArchitecture {
     stateManagement: string[];
 }
 
-/** mirrors metadata.standards — no codingStyle; exactly what the API exposes */
+export interface ProjectCodingStyle {
+    guide: string;
+    linter: string[];
+}
+
+/** mirrors metadata.standards with codingStyle */
 export interface ProjectStandards {
+    codingStyle: ProjectCodingStyle;
     namingConventions: string[];
     errorHandling: string[];
     loggingConvention: string[];
@@ -81,6 +87,30 @@ export interface ProjectExternalService {
     name: string;
     purpose: string;
     apiDocs: string;
+}
+
+// ── Domain Catalog ────────────────────────────────────────────────────────────────
+
+export type DomainModelLayer = 'data' | 'dto' | 'domain' | 'response' | 'request' | 'event' | 'other';
+
+export interface ProjectDomainModelField {
+    name: string;
+    type: string;
+    required: boolean;
+    description?: string;
+    defaultValue?: string;
+    constraints: string[];
+}
+
+export interface ProjectDomainModel {
+    name: string;
+    description?: string;
+    layer?: DomainModelLayer;
+    fields: ProjectDomainModelField[];
+    usedByUseCases: string[];
+    addedBy?: string;
+    addedAt?: string;
+    updatedAt?: string;
 }
 
 export interface ProjectMetadata {
@@ -122,6 +152,9 @@ export interface ProjectContext {
 
     // All developed endpoints registered against this project
     developedEndpoints: DevelopedEndpoint[];
+
+    // Domain catalog (data models)
+    domainCatalog: ProjectDomainModel[];
 
     // Development metadata (architecture, stack, standards, etc.)
     metadata: ProjectMetadata;
@@ -194,19 +227,6 @@ export interface UseCaseKnownError {
 
 export interface UseCaseErrorHandling {
     knownErrors: UseCaseKnownError[];
-}
-
-export interface UseCaseArchitecture {
-    style: 'layered' | 'clean' | 'hexagonal' | 'event-driven';
-    patterns: string[];
-}
-
-export interface UseCaseTechnologyConstraints {
-    backend?: string;
-    frontend?: string;
-    database?: string;
-    messaging?: string;
-    auth?: string;
 }
 
 export interface UseCaseConfiguration {
@@ -304,8 +324,6 @@ export interface UseCaseData {
     domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
-    architecture?: UseCaseArchitecture;
-    technologyConstraints?: UseCaseTechnologyConstraints;
     configuration?: UseCaseConfiguration;
     quality?: UseCaseQuality;
     aiDirectives?: UseCaseAIDirectives;

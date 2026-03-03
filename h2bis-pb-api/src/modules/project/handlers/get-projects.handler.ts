@@ -89,6 +89,23 @@ export class GetProjectsHandler {
                 capabilityCount: 0,
                 completionPercentage: 0
             },
+            domainCatalog: (project.domainCatalog || []).map((m: any) => ({
+                name:           m.name,
+                description:    m.description,
+                layer:          m.layer,
+                fields:         (m.fields || []).map((f: any) => ({
+                    name:         f.name,
+                    type:         f.type,
+                    required:     f.required ?? false,
+                    description:  f.description,
+                    defaultValue: f.defaultValue,
+                    constraints:  f.constraints || [],
+                })),
+                usedByUseCases: m.usedByUseCases || [],
+                addedBy:        m.addedBy,
+                addedAt:        m.addedAt instanceof Date ? m.addedAt.toISOString() : m.addedAt,
+                updatedAt:      m.updatedAt instanceof Date ? m.updatedAt.toISOString() : m.updatedAt,
+            })),
             createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
             updatedAt: project.updatedAt?.toISOString() || new Date().toISOString(),
         }));
@@ -183,6 +200,23 @@ export class GetProjectByIdHandler {
                 capabilityCount: 0,
                 completionPercentage: 0
             },
+            domainCatalog: (project.domainCatalog || []).map((m: any) => ({
+                name:           m.name,
+                description:    m.description,
+                layer:          m.layer,
+                fields:         (m.fields || []).map((f: any) => ({
+                    name:         f.name,
+                    type:         f.type,
+                    required:     f.required ?? false,
+                    description:  f.description,
+                    defaultValue: f.defaultValue,
+                    constraints:  f.constraints || [],
+                })),
+                usedByUseCases: m.usedByUseCases || [],
+                addedBy:        m.addedBy,
+                addedAt:        m.addedAt instanceof Date ? m.addedAt.toISOString() : m.addedAt,
+                updatedAt:      m.updatedAt instanceof Date ? m.updatedAt.toISOString() : m.updatedAt,
+            })),
             createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
             updatedAt: project.updatedAt?.toISOString() || new Date().toISOString(),
             userRole,

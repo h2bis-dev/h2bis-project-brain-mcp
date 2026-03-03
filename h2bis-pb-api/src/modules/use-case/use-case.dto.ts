@@ -269,17 +269,6 @@ export interface UseCaseDetailResponseDto {
             expectedBehavior: string;
         }>;
     };
-    architecture?: {
-        style: 'layered' | 'clean' | 'hexagonal' | 'event-driven';
-        patterns: string[];
-    };
-    technologyConstraints?: {
-        backend?: string;
-        frontend?: string;
-        database?: string;
-        messaging?: string;
-        auth?: string;
-    };
     configuration?: {
         envVars: string[];
         featureFlags: string[];
@@ -324,6 +313,7 @@ export interface UseCaseDetailResponseDto {
         rule: string;
         normative: boolean;
     }>;
+    architecturePatterns: string[];
     tags: string[];
     normative: boolean;
     aiMetadata?: {

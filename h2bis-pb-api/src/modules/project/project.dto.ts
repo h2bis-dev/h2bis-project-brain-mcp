@@ -13,6 +13,28 @@ export const DevelopedEndpointSchema = z.object({
     lastScanned: z.date().optional()
 });
 
+// Schema for a single field inside a domain model
+export const DomainModelFieldSchema = z.object({
+    name:         z.string().min(1),
+    type:         z.string().min(1), // free-form: 'string', 'number', 'Date', 'string[]', custom class, etc.
+    required:     z.boolean().optional().default(false),
+    description:  z.string().optional().default(''),
+    defaultValue: z.string().optional().default(''),
+    constraints:  z.array(z.string()).optional().default([]),
+});
+
+// Schema for a domain model entry
+export const DomainModelEntrySchema = z.object({
+    name:            z.string().min(1),
+    description:     z.string().optional().default(''),
+    layer:           z.enum(['data', 'dto', 'domain', 'response', 'request', 'event', 'other']).optional().default('domain'),
+    fields:          z.array(DomainModelFieldSchema).optional().default([]),
+    usedByUseCases:  z.array(z.string()).optional().default([]),
+    addedBy:         z.string().optional().default(''),
+    addedAt:         z.date().optional(),
+    updatedAt:       z.date().optional(),
+});
+
 export const GetProjectsQuerySchema = z.object({
     status: z.enum(['active', 'archived', 'deleted']).optional(),
     limit: z.string().optional().default('50'),
@@ -68,6 +90,7 @@ export const CreateProjectRequestSchema = z.object({
             documentationStandards: z.array(z.string()).optional().default([])
         }).optional()
     }).optional(),
+    domainCatalog: z.array(DomainModelEntrySchema).optional().default([]),
 });
 
 export const UpdateProjectRequestSchema = z.object({
@@ -118,6 +141,7 @@ export const UpdateProjectRequestSchema = z.object({
             documentationStandards: z.array(z.string()).optional()
         }).optional()
     }).optional(),
+    domainCatalog: z.array(DomainModelEntrySchema).optional(),
 });
 
 export const AddProjectMemberRequestSchema = z.object({
@@ -153,6 +177,26 @@ export interface DevelopedEndpointDto {
     lastScanned?: string;
 }
 
+export interface DomainModelFieldDto {
+    name: string;
+    type: string;
+    required: boolean;
+    description?: string;
+    defaultValue?: string;
+    constraints: string[];
+}
+
+export interface DomainModelDto {
+    name: string;
+    description?: string;
+    layer?: 'data' | 'dto' | 'domain' | 'response' | 'request' | 'event' | 'other';
+    fields: DomainModelFieldDto[];
+    usedByUseCases: string[];
+    addedBy?: string;
+    addedAt?: string;
+    updatedAt?: string;
+}
+
 export interface ProjectResponseDto {
     _id: string;
     name: string;
@@ -164,6 +208,7 @@ export interface ProjectResponseDto {
     lifecycle: 'planning' | 'in_development' | 'in_review' | 'in_testing' | 'staging' | 'production' | 'maintenance' | 'archived';
     type: 'software_development';
     developedEndpoints: DevelopedEndpointDto[];
+    domainCatalog: DomainModelDto[];
     metadata: {
         repository: string;
         techStack: string[];

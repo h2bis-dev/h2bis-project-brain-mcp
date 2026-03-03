@@ -1,6 +1,6 @@
 import { projectRepository } from '../repositories/project.repository.js';
 import { hasPermission } from '../../auth/services/authorization.service.js';
-import type { ProjectDocument, ProjectMember } from '../project_schema.js';
+import type { ProjectDocument, ProjectMember, DomainModel } from '../project_schema.js';
 
 /**
  * Project Service
@@ -164,6 +164,51 @@ export class ProjectService {
      */
     async getDashboardStats(userId: string, userRoles: string[]): Promise<Array<ProjectDocument & { useCaseCount: number }>> {
         return await projectRepository.getDashboardStats(userId, userRoles);
+    }
+
+    // ─── Domain Catalog ─────────────────────────────────────────────────
+
+    /**
+     * Retrieve a project's domain model catalog.
+     */
+    async getDomainCatalog(projectId: string): Promise<DomainModel[]> {
+        return projectRepository.getDomainCatalog(projectId);
+    }
+
+    /**
+     * Add or replace a domain model in the project's catalog.
+     * Uniqueness is determined by model name (case-sensitive).
+     * `addedBy` defaults to 'system-mcp' when not provided.
+     */
+    async upsertDomainModel(
+        projectId: string,
+        model: DomainModel,
+        addedBy = 'system-mcp'
+    ): Promise<void> {
+        const existing = await projectRepository.getDomainCatalog(projectId);
+        const idx = existing.findIndex((m) => m.name === model.name);
+
+        const entry: DomainModel = {
+            ...model,
+            addedBy: model.addedBy ?? addedBy,
+            addedAt: model.addedAt ?? (idx === -1 ? new Date() : existing[idx].addedAt),
+            updatedAt: new Date(),
+        };
+
+        if (idx === -1) {
+            existing.push(entry);
+        } else {
+            existing[idx] = entry;
+        }
+
+        await projectRepository.upsertDomainModel(projectId, existing);
+    }
+
+    /**
+     * Remove a domain model from the catalog by name.
+     */
+    async removeDomainModel(projectId: string, modelName: string): Promise<void> {
+        await projectRepository.removeDomainModel(projectId, modelName);
     }
 }
 

@@ -1,5 +1,5 @@
 import { getDb } from '../../../core/database/connection.js';
-import type { ProjectDocument } from '../project_schema.js';
+import type { ProjectDocument, DomainModel } from '../project_schema.js';
 import { NotFoundError } from '../../../core/errors/app.error.js';
 import type { Filter } from 'mongodb';
 
@@ -302,6 +302,66 @@ export class ProjectRepository {
             );
 
         return (project?.developedEndpoints as string[]) || [];
+    }
+
+    // ─── Domain Catalog ───────────────────────────────────────────────────────
+
+    /**
+     * Get the domain model catalog for a project.
+     */
+    async getDomainCatalog(projectId: string): Promise<DomainModel[]> {
+        const db = await getDb();
+        const project = await db.collection(this.collectionName)
+            .findOne(
+                { _id: projectId, status: { $ne: 'deleted' } } as Filter<any>,
+                { projection: { domainCatalog: 1 } }
+            );
+
+        if (!project) throw new NotFoundError(`Project not found: ${projectId}`);
+        return (project.domainCatalog as DomainModel[]) || [];
+    }
+
+    /**
+     * Upsert a domain model inside a project's domainCatalog array.
+     * If a model with the same name already exists it is replaced; otherwise it is appended.
+     */
+    async upsertDomainModel(projectId: string, domainCatalog: DomainModel[]): Promise<void> {
+        const db = await getDb();
+        const result = await db.collection(this.collectionName)
+            .updateOne(
+                { _id: projectId, status: { $ne: 'deleted' } } as Filter<any>,
+                {
+                    $set: {
+                        domainCatalog,
+                        updatedAt: new Date()
+                    }
+                }
+            );
+
+        if (result.matchedCount === 0) {
+            throw new NotFoundError(`Project not found: ${projectId}`);
+        }
+    }
+
+    /**
+     * Remove a domain model from a project's domainCatalog by name.
+     */
+    async removeDomainModel(projectId: string, modelName: string): Promise<void> {
+        const db = await getDb();
+        const result = await db.collection(this.collectionName)
+            .updateOne(
+                { _id: projectId, status: { $ne: 'deleted' } } as Filter<any>,
+                {
+                    $pull: {
+                        domainCatalog: { name: modelName }
+                    } as any,
+                    $set: { updatedAt: new Date() }
+                }
+            );
+
+        if (result.matchedCount === 0) {
+            throw new NotFoundError(`Project not found: ${projectId}`);
+        }
     }
 }
 

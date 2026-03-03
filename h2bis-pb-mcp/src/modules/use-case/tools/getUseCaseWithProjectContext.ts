@@ -77,23 +77,6 @@ function mapUseCase(raw: Record<string, any>): UseCaseData {
             ? { knownErrors: raw.errorHandling.knownErrors ?? [] }
             : undefined,
 
-        architecture: raw.architecture
-            ? {
-                style:    raw.architecture.style    ?? 'layered',
-                patterns: raw.architecture.patterns ?? [],
-              }
-            : undefined,
-
-        technologyConstraints: raw.technologyConstraints
-            ? {
-                backend:  raw.technologyConstraints.backend,
-                frontend: raw.technologyConstraints.frontend,
-                database: raw.technologyConstraints.database,
-                messaging: raw.technologyConstraints.messaging,
-                auth:     raw.technologyConstraints.auth,
-              }
-            : undefined,
-
         configuration: raw.configuration
             ? {
                 envVars:      raw.configuration.envVars      ?? [],
@@ -238,6 +221,10 @@ function mapProjectContext(raw: Record<string, any>): ProjectContext {
             })),
 
             standards: {
+                codingStyle: {
+                    guide:  std.codingStyle?.guide  ?? '',
+                    linter: std.codingStyle?.linter ?? [],
+                },
                 namingConventions: std.namingConventions ?? [],
                 errorHandling:     std.errorHandling     ?? [],
                 loggingConvention: std.loggingConvention ?? [],
@@ -254,6 +241,25 @@ function mapProjectContext(raw: Record<string, any>): ProjectContext {
                 },
             },
         },
+
+        // Domain catalog (moved to top level)
+        domainCatalog: (raw.domainCatalog ?? []).map((m: any) => ({
+                name:           m.name           ?? '',
+                description:    m.description,
+                layer:          m.layer,
+                fields:         (m.fields ?? []).map((f: any) => ({
+                    name:         f.name         ?? '',
+                    type:         f.type         ?? 'string',
+                    required:     f.required     ?? false,
+                    description:  f.description,
+                    defaultValue: f.defaultValue,
+                    constraints:  f.constraints  ?? [],
+                })),
+                usedByUseCases: m.usedByUseCases ?? [],
+                addedBy:        m.addedBy,
+                addedAt:        m.addedAt,
+                updatedAt:      m.updatedAt,
+            })),
 
         // Statistics
         stats: {

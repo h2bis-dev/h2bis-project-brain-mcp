@@ -12,6 +12,8 @@ import { getCapabilityDependencies, getCapabilityDependenciesSchema } from "../m
 import { analyzeCapabilityImpact, analyzeCapabilityImpactSchema } from "../modules/capability/tools/analyzeCapabilityImpact.js";
 import { getImplementationOrder, getImplementationOrderSchema } from "../modules/capability/tools/getImplementationOrder.js";
 import { getUseCaseWithProjectContext, getUseCaseWithProjectContextSchema } from "../modules/use-case/tools/getUseCaseWithProjectContext.js";
+import { upsertProjectDomainModel, upsertProjectDomainModelSchema } from "../modules/project/tools/upsertProjectDomainModel.js";
+import { removeProjectDomainModel, removeProjectDomainModelSchema } from "../modules/project/tools/removeProjectDomainModel.js";
 
 export const tools = [
   {
@@ -74,6 +76,26 @@ export const tools = [
     description: "Update an existing project's details, metadata, lifecycle stage, or access control settings",
     schema: updateProjectSchema,
     handler: updateProject,
+  },
+  {
+    name: "upsertProjectDomainModel",
+    description:
+      "Add or replace a domain model (class/interface/DTO) in a project's domain catalog. " +
+      "Call this whenever you create or significantly change a TypeScript interface, class, Mongoose schema, " +
+      "Zod schema, or DTO while implementing a feature. " +
+      "Provide every field with its type, required flag, constraints, and the architectural layer " +
+      "(data | dto | domain | response | request | event | other). " +
+      "The model is upserted by name — re-calling with the same name updates it.",
+    schema: upsertProjectDomainModelSchema,
+    handler: upsertProjectDomainModel,
+  },
+  {
+    name: "removeProjectDomainModel",
+    description:
+      "Remove a domain model from a project's domain catalog by name. " +
+      "Use this when a model is deleted or renamed during refactoring.",
+    schema: removeProjectDomainModelSchema,
+    handler: removeProjectDomainModel,
   },
   // Use Case Tools
   {

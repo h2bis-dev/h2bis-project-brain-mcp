@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema, UpdateProjectRequestSchema } from './project.dto.js';
+import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema, UpdateProjectRequestSchema, DomainModelEntrySchema } from './project.dto.js';
 import { getProjectsHandler, getProjectByIdHandler } from './handlers/get-projects.handler.js';
 import { getDashboardStatsHandler } from './handlers/get-dashboard-stats.handler.js';
 import { createProjectHandler } from './handlers/create-project.handler.js';
 import { updateProjectHandler } from './handlers/update-project.handler.js';
 import { deleteProjectHandler } from './handlers/delete-project.handler.js';
+import { projectService } from './services/project.service.js';
 import { asyncHandler } from '../../core/middleware/async-handler.js';
 import { logger } from '../../core/config/logger.js';
 
@@ -309,6 +310,77 @@ export const projectController = {
                     return res.status(403).json({ error: 'Permission denied' });
                 }
                 return res.status(500).json({ error: 'Failed to update project' });
+            }
+        }
+    ),
+
+    /**
+     * GET /api/projects/mcp/domain-catalog/:projectId
+     * Returns the full domain model catalog for a project.
+     */
+    getDomainCatalog: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const { projectId } = (req as any).params;
+                const catalog = await projectService.getDomainCatalog(projectId);
+                return res.status(200).json({ success: true, data: catalog });
+            } catch (error) {
+                logger.error(`Error fetching domain catalog: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                return res.status(500).json({ error: 'Failed to fetch domain catalog' });
+            }
+        }
+    ),
+
+    /**
+     * PUT /api/projects/mcp/domain-catalog/:projectId
+     * Upsert a domain model into the project catalog.
+     * Body: DomainModelEntrySchema payload
+     */
+    upsertDomainModel: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const { projectId } = (req as any).params;
+                const parsed = DomainModelEntrySchema.safeParse(req.body);
+                if (!parsed.success) {
+                    return res.status(400).json({ error: 'Invalid domain model data', details: parsed.error });
+                }
+
+                const addedBy =
+                    (req as any).user?.userId ??
+                    (req as any).agent?.agentId ??
+                    'system-mcp';
+
+                await projectService.upsertDomainModel(projectId, parsed.data as any, addedBy);
+                return res.status(200).json({ success: true, message: `Domain model '${parsed.data.name}' upserted.` });
+            } catch (error) {
+                logger.error(`Error upserting domain model: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                return res.status(500).json({ error: 'Failed to upsert domain model' });
+            }
+        }
+    ),
+
+    /**
+     * DELETE /api/projects/mcp/domain-catalog/:projectId/:modelName
+     * Remove a domain model by name from the project catalog.
+     */
+    removeDomainModel: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const { projectId, modelName } = (req as any).params;
+                await projectService.removeDomainModel(projectId, modelName);
+                return res.status(200).json({ success: true, message: `Domain model '${modelName}' removed.` });
+            } catch (error) {
+                logger.error(`Error removing domain model: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                return res.status(500).json({ error: 'Failed to remove domain model' });
             }
         }
     ),

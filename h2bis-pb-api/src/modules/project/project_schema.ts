@@ -124,6 +124,45 @@ const ProjectSchema = new mongoose.Schema(
             }
         },
 
+        // Domain Model Catalog
+        // Maintained by MCP agents when features are developed.
+        // Serves as a shared catalog of data-layer, DTO, domain, and other object models
+        // to prevent redundant model definitions across use cases.
+        domainCatalog: {
+            type: [{
+                // Model identity
+                name: { type: String, required: true },            // e.g. "User", "OrderDto"
+                description: { type: String, default: '' },
+                layer: {
+                    type: String,
+                    enum: ['data', 'dto', 'domain', 'response', 'request', 'event', 'other'],
+                    default: 'domain'
+                },
+
+                // Fields — each can have any supported primitive or composite type
+                fields: {
+                    type: [{
+                        name:         { type: String, required: true },
+                        type:         { type: String, required: true }, // free-form: 'string', 'number', 'boolean', 'Date', 'string[]', 'ObjectId', etc.
+                        required:     { type: Boolean, default: false },
+                        description:  { type: String, default: '' },
+                        defaultValue: { type: String, default: '' },
+                        constraints:  { type: [String], default: [] }  // e.g. ['unique', 'min:0', 'max:255']
+                    }],
+                    default: []
+                },
+
+                // Traceability
+                usedByUseCases: { type: [String], default: [] }, // use case keys that reference this model
+
+                // Audit
+                addedBy:   { type: String, default: '' },
+                addedAt:   { type: Date, default: Date.now },
+                updatedAt: { type: Date, default: Date.now }
+            }],
+            default: []
+        },
+
         // Project Statistics
         stats: {
             useCaseCount: { type: Number, default: 0 },
@@ -164,6 +203,35 @@ export interface DevelopedEndpoint {
     lastScanned?: Date;
 }
 
+// ── Domain Catalog types ────────────────────────────────────────────────────
+
+export type DomainModelLayer = 'data' | 'dto' | 'domain' | 'response' | 'request' | 'event' | 'other';
+
+export interface DomainModelField {
+    name: string;
+    /** Free-form type string: 'string', 'number', 'boolean', 'Date', 'string[]', 'ObjectId', custom class name, etc. */
+    type: string;
+    required: boolean;
+    description?: string;
+    defaultValue?: string;
+    /** Constraint hints, e.g. ['unique', 'min:0', 'max:255'] */
+    constraints: string[];
+}
+
+export interface DomainModel {
+    name: string;
+    description?: string;
+    layer?: DomainModelLayer;
+    fields: DomainModelField[];
+    /** Keys of use cases that reference this model */
+    usedByUseCases: string[];
+    addedBy?: string;
+    addedAt?: Date;
+    updatedAt?: Date;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface ProjectDocument {
     _id: string;
     name: string;
@@ -175,6 +243,7 @@ export interface ProjectDocument {
     accessControl: ProjectAccessControl;
     type: 'software_development';
     developedEndpoints: DevelopedEndpoint[];
+    domainCatalog: DomainModel[];
     metadata: {
         repository: string;
         techStack: string[];
@@ -236,6 +305,7 @@ export type CreateProjectProps = {
     members?: ProjectMember[];
     accessControl?: ProjectAccessControl;
     developedEndpoints?: DevelopedEndpoint[];
+    domainCatalog?: DomainModel[];
     metadata?: any; // Accept flexible metadata structure from DTOs
     stats?: {
         useCaseCount: number;
@@ -272,6 +342,7 @@ export const createProject = (props: CreateProjectProps): ProjectDocument => {
         },
         type: 'software_development',
         developedEndpoints: props.developedEndpoints ?? [],
+        domainCatalog: props.domainCatalog ?? [],
         metadata: {
             repository: props.metadata?.repository ?? '',
             techStack: props.metadata?.techStack ?? [],

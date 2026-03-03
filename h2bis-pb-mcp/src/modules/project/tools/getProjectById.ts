@@ -41,6 +41,9 @@ export async function getProjectById(args: z.infer<typeof getProjectByIdSchema>)
             // Endpoints
             developedEndpoints: result.developedEndpoints || [],
             
+            // Domain Catalog
+            domainCatalog: result.domainCatalog || [],
+            
             // Metadata
             metadata: result.metadata || {},
             
