@@ -11,6 +11,7 @@ import { updateProject, updateProjectSchema } from "../modules/project/tools/upd
 import { getCapabilityDependencies, getCapabilityDependenciesSchema } from "../modules/capability/tools/getCapabilityDependencies.js";
 import { analyzeCapabilityImpact, analyzeCapabilityImpactSchema } from "../modules/capability/tools/analyzeCapabilityImpact.js";
 import { getImplementationOrder, getImplementationOrderSchema } from "../modules/capability/tools/getImplementationOrder.js";
+import { getUseCaseWithProjectContext, getUseCaseWithProjectContextSchema } from "../modules/use-case/tools/getUseCaseWithProjectContext.js";
 
 export const tools = [
   {
@@ -73,6 +74,18 @@ export const tools = [
     description: "Update an existing project's details, metadata, lifecycle stage, or access control settings",
     schema: updateProjectSchema,
     handler: updateProject,
+  },
+  // Use Case Tools
+  {
+    name: "getUseCaseWithProjectContext",
+    description:
+      "Retrieve a use case together with the full development context of its owning project " +
+      "(architecture, tech stack, repository, coding standards, auth strategy, quality gates, " +
+      "deployment, external services, developed endpoints, and stats). " +
+      "Use this tool whenever an AI agent needs to implement a software feature from a use case, " +
+      "so it can align the implementation with the project's architecture and conventions.",
+    schema: getUseCaseWithProjectContextSchema,
+    handler: getUseCaseWithProjectContext,
   },
   // Capability Graph Tools
   {

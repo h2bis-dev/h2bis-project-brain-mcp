@@ -27,26 +27,6 @@ export interface DomainEntity {
     lastScanned?: Date;
 }
 
-export interface EnvironmentVariable {
-    name: string;
-    description: string;
-    required: boolean;
-    defaultValue: string;
-    usedByUseCases: string[];
-}
-
-export interface FeatureFlag {
-    name: string;
-    description: string;
-    defaultValue: boolean;
-    usedByUseCases: string[];
-}
-
-export interface ConfigurationCatalog {
-    envVars: EnvironmentVariable[];
-    featureFlags: FeatureFlag[];
-}
-
 export interface Project {
     _id?: string;
     id: string;
@@ -58,7 +38,6 @@ export interface Project {
     type?: 'software_development';
     developedEndpoints?: DevelopedEndpoint[];
     domainCatalog?: DomainEntity[];
-    configurationCatalog?: ConfigurationCatalog;
     members?: any[];
     metadata?: {
         repository?: string;

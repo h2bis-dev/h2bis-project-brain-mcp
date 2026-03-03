@@ -17,8 +17,7 @@ import { TagInput } from "@/components/ui/tag-input";
 import { PROJECT_METADATA_CONSTANTS } from "@/constants/project-metadata.constants";
 import { ROUTES } from "@/lib/constants";
 import { DomainModelTable } from "@/components/project/DomainModelTable";
-import { ConfigurationTable } from "@/components/project/ConfigurationTable";
-import type { Project, DomainEntity, ConfigurationCatalog } from "@/types/project.types";
+import type { Project, DomainEntity } from "@/types/project.types";
 
 interface ExternalService {
     name: string;
@@ -67,7 +66,6 @@ interface ProjectFormData {
             documentationStandards?: string[];
         };
         domainCatalog?: DomainEntity[];
-        configurationCatalog?: ConfigurationCatalog;
     };
 }
 
@@ -306,7 +304,7 @@ export default function ProjectDetailPage() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
+                <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9">
                     <TabsTrigger value="basic">Basic Info</TabsTrigger>
                     <TabsTrigger value="tech">Tech Stack</TabsTrigger>
                     <TabsTrigger value="architecture">Architecture</TabsTrigger>
@@ -314,7 +312,6 @@ export default function ProjectDetailPage() {
                     <TabsTrigger value="standards">Standards</TabsTrigger>
                     <TabsTrigger value="endpoints">API Registry</TabsTrigger>
                     <TabsTrigger value="domain">Domain Models</TabsTrigger>
-                    <TabsTrigger value="config">Configuration</TabsTrigger>
                     <TabsTrigger value="services">External Services</TabsTrigger>
                     <TabsTrigger value="team">Team</TabsTrigger>
                 </TabsList>
@@ -806,41 +803,6 @@ export default function ProjectDetailPage() {
                             <DomainModelTable models={projectData?.domainCatalog} />
                         </CardContent>
                     </Card>
-                </TabsContent>
-
-                {/* Configuration Tab */}
-                <TabsContent value="config" className="space-y-4">
-                    <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Environment Variables</CardTitle>
-                                <CardDescription>
-                                    Project-wide environment variables and their usage
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ConfigurationTable
-                                    items={projectData?.configurationCatalog?.envVars}
-                                    type="envVar"
-                                />
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Feature Flags</CardTitle>
-                                <CardDescription>
-                                    Feature flags used across the project
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ConfigurationTable
-                                    items={projectData?.configurationCatalog?.featureFlags}
-                                    type="flag"
-                                />
-                            </CardContent>
-                        </Card>
-                    </div>
                 </TabsContent>
 
                 {/* Team Tab */}
