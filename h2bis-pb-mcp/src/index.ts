@@ -1,7 +1,10 @@
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { tools } from "./tools/index.js";
 import { config } from "./core/config/config.js";
+
 
 async function main() {
   try {

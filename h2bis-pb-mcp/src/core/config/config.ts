@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import { dirname, resolve, join } from 'node:path';
 import { homedir } from 'os';
 import { existsSync } from 'fs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 
 //  Env loading priority 
 //
@@ -14,8 +16,13 @@ import { existsSync } from 'fs';
 // so the priority above is naturally preserved.
 // 
 
+//1.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const pkg = JSON.parse(
+  readFileSync(join(__dirname, '../../../package.json'), 'utf-8')
+);
 
 // 2. Local .env (works when running from the repo, e.g. `npm run dev`)
 const localEnv = resolve(__dirname, '../../../.env');
@@ -31,8 +38,8 @@ if (existsSync(userEnv)) {
 }
 
 export const config = {
-  serverName: process.env.SERVER_NAME || 'h2bis-pb-mcp',
-  serverVersion: process.env.SERVER_VERSION || '1.0.0',
+  serverName: 'h2bis-pb-mcp',
+  serverVersion: pkg.version,
 
   // Cloud API URL  override via env var, VS Code mcp.json "env" block, or user config
   apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',

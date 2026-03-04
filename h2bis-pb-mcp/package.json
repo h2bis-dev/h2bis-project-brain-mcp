@@ -1,6 +1,6 @@
 {
   "name": "h2bis-mcp",
-  "version": "1.0.0",
+  "version": "1.1.3",
   "type": "module",
   "description": "MCP server for H2BIS ProjectBrain - connect AI agents (GitHub Copilot, Claude, Cursor) to the H2BIS ProjectBrain API",
   "main": "dist/index.js",
