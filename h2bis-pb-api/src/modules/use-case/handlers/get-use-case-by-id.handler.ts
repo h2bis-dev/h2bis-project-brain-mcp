@@ -47,7 +47,6 @@ export class GetUseCaseByIdHandler {
             domainModel: useCase.domainModel,
             interfaces: useCase.interfaces,
             errorHandling: useCase.errorHandling,
-            configuration: useCase.configuration,
             quality: useCase.quality,
             aiDirectives: useCase.aiDirectives,
             flows: useCase.flows || [],

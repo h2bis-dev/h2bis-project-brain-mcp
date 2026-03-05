@@ -80,11 +80,6 @@ const ErrorHandlingSchema = z.object({
     })).default([])
 });
 
-const ConfigurationSchema = z.object({
-    envVars: z.array(z.string()).default([]),
-    featureFlags: z.array(z.string()).default([])
-});
-
 const QualitySchema = z.object({
     testTypes: z.array(z.enum(["unit", "integration", "e2e", "security"])).default([]),
     performanceCriteria: z.array(z.string()).default([]),
@@ -153,8 +148,6 @@ export const UseCaseSchema = z.object({
     interfaces: InterfacesSchema.optional(),
 
     errorHandling: ErrorHandlingSchema.optional(),
-
-    configuration: ConfigurationSchema.optional(),
 
     quality: QualitySchema.optional(),
 

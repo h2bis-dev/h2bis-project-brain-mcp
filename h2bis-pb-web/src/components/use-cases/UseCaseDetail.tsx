@@ -765,35 +765,6 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
 
                 {/* Quality Tab */}
                 <TabsContent value="quality" className="flex-1 overflow-y-auto px-4 space-y-6">
-                    {/* Configuration */}
-                    {useCase.configuration && (
-                        <div>
-                            <h3 className="font-semibold text-sm mb-3">Configuration</h3>
-                            <div className="space-y-3">
-                                {useCase.configuration.envVars && useCase.configuration.envVars.length > 0 && (
-                                    <div>
-                                        <p className="text-sm font-medium mb-1">Environment Variables</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {useCase.configuration.envVars.map((envVar, index) => (
-                                                <Badge key={index} variant="outline" className="text-xs font-mono">{envVar}</Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {useCase.configuration.featureFlags && useCase.configuration.featureFlags.length > 0 && (
-                                    <div>
-                                        <p className="text-sm font-medium mb-1">Feature Flags</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {useCase.configuration.featureFlags.map((flag, index) => (
-                                                <Badge key={index} variant="outline" className="text-xs font-mono">{flag}</Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
                     {/* Quality */}
                     {useCase.quality && (
                         <div>
@@ -876,7 +847,7 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                         </div>
                     )}
 
-                    {!useCase.configuration && !useCase.quality && !useCase.aiMetadata && (
+                    {!useCase.quality && !useCase.aiMetadata && (
                         <div className="text-center py-8 text-muted-foreground">
                             <p>No quality information defined</p>
                         </div>

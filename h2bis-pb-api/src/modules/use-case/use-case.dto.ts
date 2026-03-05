@@ -87,11 +87,6 @@ export const CreateUseCaseRequestDto = z.object({
         })).default([])
     }).optional(),
 
-    configuration: z.object({
-        envVars: z.array(z.string()).default([]),
-        featureFlags: z.array(z.string()).default([])
-    }).optional(),
-
     quality: z.object({
         testTypes: z.preprocess(
             (val) => {
@@ -266,10 +261,6 @@ export interface UseCaseDetailResponseDto {
             condition: string;
             expectedBehavior: string;
         }>;
-    };
-    configuration?: {
-        envVars: string[];
-        featureFlags: string[];
     };
     quality?: {
         testTypes: ('unit' | 'integration' | 'e2e' | 'security')[];

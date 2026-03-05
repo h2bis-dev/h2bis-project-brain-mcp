@@ -105,11 +105,6 @@ export interface TechnologyConstraints {
     auth?: string;
 }
 
-export interface Configuration {
-    envVars: string[];
-    featureFlags: string[];
-}
-
 export interface Quality {
     testTypes: ("unit" | "integration" | "e2e" | "security")[];
     performanceCriteria: string[];
@@ -166,7 +161,6 @@ export interface UseCase {
     errorHandling?: ErrorHandling;
     architecture?: Architecture;
     technologyConstraints?: TechnologyConstraints;
-    configuration?: Configuration;
     quality?: Quality;
     aiDirectives?: AIDirectives;
     acceptanceCriteria: string[];

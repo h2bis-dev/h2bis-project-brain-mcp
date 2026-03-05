@@ -69,11 +69,6 @@ export const UseCaseErrorHandlingSchema = z.object({
     knownErrors: z.array(UseCaseKnownErrorSchema).optional().default([]),
 });
 
-export const UseCaseConfigurationSchema = z.object({
-    envVars: z.array(z.string()).optional().default([]),
-    featureFlags: z.array(z.string()).optional().default([]),
-});
-
 export const UseCaseQualitySchema = z.object({
     testTypes: z.array(z.enum(['unit', 'integration', 'e2e', 'security'])).optional().default([]),
     performanceCriteria: z.array(z.string()).optional().default([]),
@@ -203,7 +198,6 @@ export const createUseCaseSchema = z.object({
     domainModel: UseCaseDomainModelSchema.optional(),
     interfaces: UseCaseInterfacesSchema.optional(),
     errorHandling: UseCaseErrorHandlingSchema.optional(),
-    configuration: UseCaseConfigurationSchema.optional(),
     quality: UseCaseQualitySchema.optional(),
     aiDirectives: UseCaseAIDirectivesSchema.optional(),
     flows: z.array(UseCaseFlowSchema).optional(),
@@ -232,7 +226,6 @@ export const updateUseCaseSchema = z.object({
     domainModel: UseCaseDomainModelSchema.optional(),
     interfaces: UseCaseInterfacesSchema.optional(),
     errorHandling: UseCaseErrorHandlingSchema.optional(),
-    configuration: UseCaseConfigurationSchema.optional(),
     quality: UseCaseQualitySchema.optional(),
     aiDirectives: UseCaseAIDirectivesSchema.optional(),
     flows: z.array(UseCaseFlowSchema).optional(),

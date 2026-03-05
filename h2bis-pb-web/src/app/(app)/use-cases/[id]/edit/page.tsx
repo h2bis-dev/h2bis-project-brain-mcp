@@ -72,8 +72,6 @@ export default function EditUseCasePage() {
     const [interfaceEvents, setInterfaceEvents] = useState<string[]>([]);
 
     // Config & Quality
-    const [envVars, setEnvVars] = useState<string[]>([]);
-    const [featureFlags, setFeatureFlags] = useState<string[]>([]);
     const [testTypes, setTestTypes] = useState<Array<'unit' | 'integration' | 'e2e' | 'security'>>(['unit']);
     const [perfCriteria, setPerfCriteria] = useState<string[]>([]);
     const [secConsiderations, setSecConsiderations] = useState<string[]>([]);
@@ -147,11 +145,6 @@ export default function EditUseCasePage() {
                     })));
                 }
                 if (useCase.interfaces.events) setInterfaceEvents(useCase.interfaces.events);
-            }
-
-            if (useCase.configuration) {
-                if (useCase.configuration.envVars) setEnvVars(useCase.configuration.envVars);
-                if (useCase.configuration.featureFlags) setFeatureFlags(useCase.configuration.featureFlags);
             }
 
             if (useCase.quality) {
@@ -269,10 +262,6 @@ export default function EditUseCasePage() {
             if (enhanced.interfaces.type) setInterfaceType(enhanced.interfaces.type);
             if (enhanced.interfaces.endpoints) setInterfaceEndpoints(enhanced.interfaces.endpoints);
             if (enhanced.interfaces.events) setInterfaceEvents(enhanced.interfaces.events);
-        }
-        if (enhanced.configuration) {
-            if (enhanced.configuration.envVars) setEnvVars(enhanced.configuration.envVars);
-            if (enhanced.configuration.featureFlags) setFeatureFlags(enhanced.configuration.featureFlags);
         }
         if (enhanced.quality) {
             if (enhanced.quality.testTypes) setTestTypes(enhanced.quality.testTypes);
@@ -404,10 +393,6 @@ export default function EditUseCasePage() {
                 type: interfaceType,
                 endpoints: interfaceEndpoints.filter(e => e.path.trim()),
                 events: interfaceEvents.filter(e => e.trim())
-            },
-            configuration: {
-                envVars: envVars.filter(v => v.trim()),
-                featureFlags: featureFlags.filter(f => f.trim())
             },
             quality: {
                 testTypes,

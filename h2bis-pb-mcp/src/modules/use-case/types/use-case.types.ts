@@ -89,11 +89,6 @@ export interface UseCaseErrorHandling {
     knownErrors?: UseCaseKnownError[];
 }
 
-export interface UseCaseConfiguration {
-    envVars?: string[];
-    featureFlags?: string[];
-}
-
 export interface UseCaseQuality {
     testTypes?: TestType[];
     performanceCriteria?: string[];
@@ -187,7 +182,6 @@ export interface UseCaseResponse {
     domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
-    configuration?: UseCaseConfiguration;
     quality?: UseCaseQuality;
     aiDirectives?: UseCaseAIDirectives;
 
@@ -231,7 +225,6 @@ export interface CreateUseCaseRequest {
     domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
-    configuration?: UseCaseConfiguration;
     quality?: UseCaseQuality;
     aiDirectives?: UseCaseAIDirectives;
     flows?: UseCaseFlow[];
@@ -259,7 +252,6 @@ export interface UpdateUseCaseRequest {
     domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
-    configuration?: UseCaseConfiguration;
     quality?: UseCaseQuality;
     aiDirectives?: UseCaseAIDirectives;
     flows?: UseCaseFlow[];

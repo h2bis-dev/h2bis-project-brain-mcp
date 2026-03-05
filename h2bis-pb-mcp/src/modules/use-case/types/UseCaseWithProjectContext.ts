@@ -229,11 +229,6 @@ export interface UseCaseErrorHandling {
     knownErrors: UseCaseKnownError[];
 }
 
-export interface UseCaseConfiguration {
-    envVars: string[];
-    featureFlags: string[];
-}
-
 export interface UseCaseQuality {
     testTypes: ('unit' | 'integration' | 'e2e' | 'security')[];
     performanceCriteria: string[];
@@ -324,7 +319,6 @@ export interface UseCaseData {
     domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
-    configuration?: UseCaseConfiguration;
     quality?: UseCaseQuality;
     aiDirectives?: UseCaseAIDirectives;
 

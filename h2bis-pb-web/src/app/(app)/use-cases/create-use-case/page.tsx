@@ -65,8 +65,6 @@ export default function NewUseCasePage() {
     const [interfaceEvents, setInterfaceEvents] = useState<string[]>([]);
 
     // Config & Quality
-    const [envVars, setEnvVars] = useState<string[]>([]);
-    const [featureFlags, setFeatureFlags] = useState<string[]>([]);
     const [testTypes, setTestTypes] = useState<Array<'unit' | 'integration' | 'e2e' | 'security'>>(['unit']);
     const [perfCriteria, setPerfCriteria] = useState<string[]>([]);
     const [secConsiderations, setSecConsiderations] = useState<string[]>([]);
@@ -174,10 +172,6 @@ export default function NewUseCasePage() {
             if (generated.interfaces.type) setInterfaceType(generated.interfaces.type);
             if (generated.interfaces.endpoints) setInterfaceEndpoints(generated.interfaces.endpoints);
             if (generated.interfaces.events) setInterfaceEvents(generated.interfaces.events);
-        }
-        if (generated.configuration) {
-            if (generated.configuration.envVars) setEnvVars(generated.configuration.envVars);
-            if (generated.configuration.featureFlags) setFeatureFlags(generated.configuration.featureFlags);
         }
         if (generated.quality) {
             if (generated.quality.testTypes) setTestTypes(generated.quality.testTypes);
@@ -345,10 +339,6 @@ export default function NewUseCasePage() {
             },
             errorHandling: {
                 knownErrors: [] // Default empty - can be added to UI later
-            },
-            configuration: {
-                envVars: envVars.filter(v => v.trim()),
-                featureFlags: featureFlags.filter(f => f.trim())
             },
             quality: {
                 testTypes,

@@ -71,10 +71,6 @@ export interface CreateUseCaseRequest {
             expectedBehavior: string;
         }>;
     };
-    configuration?: {
-        envVars: string[];
-        featureFlags: string[];
-    };
     quality?: {
         testTypes: ('unit' | 'integration' | 'e2e' | 'security')[];
         performanceCriteria: string[];

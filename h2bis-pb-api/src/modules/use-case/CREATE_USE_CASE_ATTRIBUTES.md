@@ -24,8 +24,6 @@
 | `interfaces.endpoints` | array | `[]` | Endpoints with `method`, `path`, `request`, `response` |
 | `interfaces.events` | string[] | `[]` | Event list |
 | `errorHandling.knownErrors` | array | `[]` | Known errors with `condition`, `expectedBehavior` |
-| `configuration.envVars` | string[] | `[]` | Environment variables |
-| `configuration.featureFlags` | string[] | `[]` | Feature flags |
 | `quality.testTypes` | enum[] | `[]` | `unit`, `integration`, `e2e`, `security` |
 | `quality.performanceCriteria` | string[] | `[]` | Performance requirements |
 | `quality.securityConsiderations` | string[] | `[]` | Security considerations |

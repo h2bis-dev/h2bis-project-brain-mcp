@@ -166,24 +166,6 @@ export const USE_CASE_DEFINITIONS: Record<string, UseCaseFieldDefinition> = {
         type: 'string[]'
     },
 
-    // Config
-    'configuration.envVars': {
-        key: 'configuration.envVars',
-        label: 'Env Vars',
-        description: 'Environment variables',
-        aiInstruction: 'Required env vars.',
-        defaultValue: [],
-        type: 'string[]'
-    },
-    'configuration.featureFlags': {
-        key: 'configuration.featureFlags',
-        label: 'Feature Flags',
-        description: 'Feature toggles',
-        aiInstruction: 'Potential feature flags.',
-        defaultValue: [],
-        type: 'string[]'
-    },
-
     // Quality
     'quality.testTypes': {
         key: 'quality.testTypes',
