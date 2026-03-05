@@ -196,7 +196,6 @@ export interface UseCaseResponse {
     relationships: UseCaseRelationship[];
     implementationRisk: UseCaseImplementationRisk[];
 
-    architecturePatterns: string[];
     tags: string[];
     normative: boolean;
 
@@ -239,7 +238,6 @@ export interface CreateUseCaseRequest {
     technicalSurface?: UseCaseTechnicalSurface;
     relationships?: UseCaseRelationship[];
     implementationRisk?: UseCaseImplementationRisk[];
-    architecturePatterns?: string[];
     tags?: string[];
     normative?: boolean;
     aiMetadata?: UseCaseAIMetadata;
@@ -268,7 +266,6 @@ export interface UpdateUseCaseRequest {
     technicalSurface?: UseCaseTechnicalSurface;
     relationships?: UseCaseRelationship[];
     implementationRisk?: UseCaseImplementationRisk[];
-    architecturePatterns?: string[];
     tags?: string[];
     normative?: boolean;
     aiMetadata?: UseCaseAIMetadata;

@@ -71,9 +71,6 @@ export default function EditUseCasePage() {
     const [interfaceEndpoints, setInterfaceEndpoints] = useState<Array<{ method: string, path: string, request: string, response: string }>>([]);
     const [interfaceEvents, setInterfaceEvents] = useState<string[]>([]);
 
-    // Architecture Patterns
-    const [archPatterns, setArchPatterns] = useState<string[]>([]);
-
     // Config & Quality
     const [envVars, setEnvVars] = useState<string[]>([]);
     const [featureFlags, setFeatureFlags] = useState<string[]>([]);
@@ -151,8 +148,6 @@ export default function EditUseCasePage() {
                 }
                 if (useCase.interfaces.events) setInterfaceEvents(useCase.interfaces.events);
             }
-
-            if (useCase.architecturePatterns) setArchPatterns(useCase.architecturePatterns);
 
             if (useCase.configuration) {
                 if (useCase.configuration.envVars) setEnvVars(useCase.configuration.envVars);
@@ -274,9 +269,6 @@ export default function EditUseCasePage() {
             if (enhanced.interfaces.type) setInterfaceType(enhanced.interfaces.type);
             if (enhanced.interfaces.endpoints) setInterfaceEndpoints(enhanced.interfaces.endpoints);
             if (enhanced.interfaces.events) setInterfaceEvents(enhanced.interfaces.events);
-        }
-        if (enhanced.architecturePatterns) {
-            setArchPatterns(enhanced.architecturePatterns);
         }
         if (enhanced.configuration) {
             if (enhanced.configuration.envVars) setEnvVars(enhanced.configuration.envVars);
@@ -413,7 +405,6 @@ export default function EditUseCasePage() {
                 endpoints: interfaceEndpoints.filter(e => e.path.trim()),
                 events: interfaceEvents.filter(e => e.trim())
             },
-            architecturePatterns: archPatterns.filter(p => p.trim()),
             configuration: {
                 envVars: envVars.filter(v => v.trim()),
                 featureFlags: featureFlags.filter(f => f.trim())
@@ -759,29 +750,6 @@ export default function EditUseCasePage() {
                                             </div>
                                         ))}
                                         <Button type="button" variant="outline" size="sm" onClick={() => setInterfaceEndpoints([...interfaceEndpoints, { method: 'GET', path: '', request: '', response: '' }])}><Plus className="h-4 w-4 mr-2" /> Add Endpoint</Button>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Architecture Patterns</CardTitle>
-                                        <CardDescription>Use case-specific design patterns</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        {archPatterns.map((pattern, i) => (
-                                            <div key={i} className="flex gap-2">
-                                                <Input
-                                                    placeholder="e.g., Repository, Factory, Strategy"
-                                                    value={pattern}
-                                                    onChange={(e) => { const n = [...archPatterns]; n[i] = e.target.value; setArchPatterns(n); }}
-                                                />
-                                                <Button type="button" variant="ghost" size="icon" onClick={() => setArchPatterns(archPatterns.filter((_, idx) => idx !== i))}>
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        <Button type="button" variant="outline" size="sm" onClick={() => setArchPatterns([...archPatterns, ''])}>
-                                            <Plus className="h-4 w-4 mr-2" /> Add Pattern
-                                        </Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>

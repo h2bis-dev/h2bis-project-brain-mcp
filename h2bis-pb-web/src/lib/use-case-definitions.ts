@@ -166,16 +166,6 @@ export const USE_CASE_DEFINITIONS: Record<string, UseCaseFieldDefinition> = {
         type: 'string[]'
     },
 
-    // Architecture Patterns (use case-specific)
-    'architecturePatterns': {
-        key: 'architecturePatterns',
-        label: 'Architecture Patterns',
-        description: 'Design patterns',
-        aiInstruction: 'Design patterns for this specific use case (Repository, Factory, Strategy, etc.).',
-        defaultValue: [],
-        type: 'string[]'
-    },
-
     // Config
     'configuration.envVars': {
         key: 'configuration.envVars',

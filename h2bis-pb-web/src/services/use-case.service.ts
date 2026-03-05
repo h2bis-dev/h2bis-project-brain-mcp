@@ -71,7 +71,6 @@ export interface CreateUseCaseRequest {
             expectedBehavior: string;
         }>;
     };
-    architecturePatterns?: string[];
     configuration?: {
         envVars: string[];
         featureFlags: string[];

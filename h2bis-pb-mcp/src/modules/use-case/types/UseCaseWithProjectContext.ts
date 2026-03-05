@@ -333,7 +333,6 @@ export interface UseCaseData {
     relationships: UseCaseRelationship[];
     implementationRisk: UseCaseImplementationRisk[];
 
-    architecturePatterns: string[];
     tags: string[];
     normative: boolean;
 

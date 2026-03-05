@@ -87,8 +87,6 @@ export const CreateUseCaseRequestDto = z.object({
         })).default([])
     }).optional(),
 
-    architecturePatterns: z.array(z.string()).default([]),
-
     configuration: z.object({
         envVars: z.array(z.string()).default([]),
         featureFlags: z.array(z.string()).default([])
@@ -313,7 +311,6 @@ export interface UseCaseDetailResponseDto {
         rule: string;
         normative: boolean;
     }>;
-    architecturePatterns: string[];
     tags: string[];
     normative: boolean;
     aiMetadata?: {

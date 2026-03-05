@@ -64,9 +64,6 @@ export default function NewUseCasePage() {
     const [interfaceEndpoints, setInterfaceEndpoints] = useState<Array<{ method: string, path: string, request: string, response: string }>>([]);
     const [interfaceEvents, setInterfaceEvents] = useState<string[]>([]);
 
-    // Architecture Patterns (use case-specific)
-    const [archPatterns, setArchPatterns] = useState<string[]>([]);
-
     // Config & Quality
     const [envVars, setEnvVars] = useState<string[]>([]);
     const [featureFlags, setFeatureFlags] = useState<string[]>([]);
@@ -177,9 +174,6 @@ export default function NewUseCasePage() {
             if (generated.interfaces.type) setInterfaceType(generated.interfaces.type);
             if (generated.interfaces.endpoints) setInterfaceEndpoints(generated.interfaces.endpoints);
             if (generated.interfaces.events) setInterfaceEvents(generated.interfaces.events);
-        }
-        if (generated.architecturePatterns) {
-            setArchPatterns(generated.architecturePatterns);
         }
         if (generated.configuration) {
             if (generated.configuration.envVars) setEnvVars(generated.configuration.envVars);
@@ -352,7 +346,6 @@ export default function NewUseCasePage() {
             errorHandling: {
                 knownErrors: [] // Default empty - can be added to UI later
             },
-            architecturePatterns: archPatterns.filter(p => p.trim()),
             configuration: {
                 envVars: envVars.filter(v => v.trim()),
                 featureFlags: featureFlags.filter(f => f.trim())
@@ -697,39 +690,6 @@ export default function NewUseCasePage() {
                                             </div>
                                         ))}
                                         <Button type="button" variant="outline" size="sm" onClick={() => setInterfaceEndpoints([...interfaceEndpoints, { method: 'GET', path: '', request: '', response: '' }])}><Plus className="h-4 w-4 mr-2" /> Add Endpoint</Button>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Architecture Patterns</CardTitle>
-                                        <CardDescription>Use case-specific design patterns (tech stack inherited from project)</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        {archPatterns.map((pattern, i) => (
-                                            <div key={i} className="flex gap-2">
-                                                <Input
-                                                    placeholder="e.g., Repository, Factory, Strategy"
-                                                    value={pattern}
-                                                    onChange={(e) => { const n = [...archPatterns]; n[i] = e.target.value; setArchPatterns(n); }}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => setArchPatterns(archPatterns.filter((_, idx) => idx !== i))}
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setArchPatterns([...archPatterns, ''])}
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" /> Add Pattern
-                                        </Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>

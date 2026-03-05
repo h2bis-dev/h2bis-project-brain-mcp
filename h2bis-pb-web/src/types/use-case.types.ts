@@ -165,7 +165,6 @@ export interface UseCase {
     interfaces?: Interfaces;
     errorHandling?: ErrorHandling;
     architecture?: Architecture;
-    architecturePatterns?: string[];
     technologyConstraints?: TechnologyConstraints;
     configuration?: Configuration;
     quality?: Quality;

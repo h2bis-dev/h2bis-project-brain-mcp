@@ -54,7 +54,6 @@ export class GetUseCaseByIdHandler {
             technicalSurface: useCase.technicalSurface,
             relationships: useCase.relationships || [],
             implementationRisk: useCase.implementationRisk || [],
-            architecturePatterns: useCase.architecturePatterns || [],
             tags: useCase.tags || [],
             normative: useCase.normative || false,
             aiMetadata: useCase.aiMetadata,

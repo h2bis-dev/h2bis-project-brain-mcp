@@ -154,8 +154,6 @@ export const UseCaseSchema = z.object({
 
     errorHandling: ErrorHandlingSchema.optional(),
 
-    architecturePatterns: z.array(z.string()).default([]),
-
     configuration: ConfigurationSchema.optional(),
 
     quality: QualitySchema.optional(),
