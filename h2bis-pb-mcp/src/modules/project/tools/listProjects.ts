@@ -1,71 +1,37 @@
-import { apiService } from '../../../core/services/api.service.js';
 import { z } from 'zod';
-
-export const listProjectsSchema = z.object({
-    status: z.enum(['active', 'archived', 'deleted']).optional().describe('Filter projects by status'),
-    limit: z.number().optional().default(50).describe('Maximum number of projects to return'),
-    offset: z.number().optional().default(0).describe('Number of projects to skip for pagination')
-});
+import { listProjectsSchema } from '../schemas/project.schemas.js';
+import * as projectService from '../services/project.service.js';
 
 export async function listProjects(args?: z.infer<typeof listProjectsSchema>) {
     try {
-        // Use the dedicated MCP endpoint to list projects
-        const endpoint = '/api/projects/mcp/list';
-        console.error('DEBUG: Calling API endpoint:', endpoint);
-        const result = await apiService.get<any>(endpoint);
-        console.error('DEBUG: API result:', JSON.stringify(result, null, 2));
+        const { projects, total } = await projectService.listProjects(
+            args?.status,
+            args?.limit,
+            args?.offset,
+        );
 
-        if (!result || !result.data || !result.data.projects) {
-            console.error('DEBUG: Result structure check failed', { hasResult: !!result, hasData: !!result?.data, hasProjects: !!result?.data?.projects });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: 'No projects found in database',
-                    },
-                ],
-            };
+        if (projects.length === 0) {
+            return text('No projects found.');
         }
 
-        let projects = result.data.projects;
-        
-        // Apply filters if provided
-        if (args?.status) {
-            projects = projects.filter((p: any) => p.status === args.status);
-        }
-
-        // Apply pagination
-        const offset = args?.offset || 0;
-        const limit = args?.limit || 50;
-        const paginatedProjects = projects.slice(offset, offset + limit);
-
-        // Format the projects list
-        const formattedProjects = paginatedProjects.map((p: any) => ({
+        const formatted = projects.map(p => ({
             id: p._id,
             name: p.name,
-            description: p.description || '',
-            status: p.status || 'active',
-            lifecycle: p.lifecycle || 'planning',
+            description: p.description ?? '',
+            status: p.status ?? 'active',
+            lifecycle: p.lifecycle ?? 'planning',
             owner: p.owner,
-            stats: p.stats || { useCaseCount: 0, capabilityCount: 0, completionPercentage: 0 }
+            stats: p.stats ?? { useCaseCount: 0, capabilityCount: 0, completionPercentage: 0 },
         }));
 
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `Found ${formattedProjects.length} project(s) (${projects.length} total):\n\n${JSON.stringify(formattedProjects, null, 2)}`,
-                },
-            ],
-        };
+        return text(
+            `Found ${formatted.length} project(s) (${total} total):\n\n${JSON.stringify(formatted, null, 2)}`,
+        );
     } catch (error) {
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `Error listing projects: ${error instanceof Error ? error.message : String(error)}`,
-                },
-            ],
-        };
+        return text(`Error listing projects: ${error instanceof Error ? error.message : String(error)}`);
     }
+}
+
+function text(message: string) {
+    return { content: [{ type: 'text', text: message }] };
 }

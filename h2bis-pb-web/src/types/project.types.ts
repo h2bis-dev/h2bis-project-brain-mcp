@@ -1,3 +1,10 @@
+export interface ProjectMember {
+    userId: string;
+    role: string;
+    email?: string;
+    name?: string;
+}
+
 export interface DevelopedEndpoint {
     useCaseId: string;
     endpoint: string;
@@ -43,7 +50,7 @@ export interface Project {
     type?: 'software_development';
     developedEndpoints?: DevelopedEndpoint[];
     domainCatalog?: DomainEntity[];
-    members?: any[];
+    members?: ProjectMember[];
     metadata?: {
         repository?: string;
         techStack?: string[];

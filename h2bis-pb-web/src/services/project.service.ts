@@ -73,13 +73,8 @@ export const projectService = {
             // Add nested metadata only if provided
             if (data.metadata.architecture) {
                 metadata.architecture = {
-                    // Convert arrays to strings (join with commas) or keep strings
-                    overview: Array.isArray(data.metadata.architecture.overview) 
-                        ? data.metadata.architecture.overview.join(', ') 
-                        : data.metadata.architecture.overview || '',
-                    style: Array.isArray(data.metadata.architecture.style)
-                        ? data.metadata.architecture.style.join(', ')
-                        : data.metadata.architecture.style || '',
+                    overview: data.metadata.architecture.overview || '',
+                    style: data.metadata.architecture.style || '',
                     directoryStructure: data.metadata.architecture.directoryStructure || '',
                     stateManagement: data.metadata.architecture.stateManagement || [],
                 };
@@ -87,25 +82,14 @@ export const projectService = {
 
             if (data.metadata.authStrategy) {
                 metadata.authStrategy = {
-                    // Convert array to string (join with commas) or keep string
-                    approach: Array.isArray(data.metadata.authStrategy.approach)
-                        ? data.metadata.authStrategy.approach.join(', ')
-                        : data.metadata.authStrategy.approach || '',
-                    // Convert string to array or keep array
-                    implementation: Array.isArray(data.metadata.authStrategy.implementation)
-                        ? data.metadata.authStrategy.implementation
-                        : data.metadata.authStrategy.implementation 
-                            ? [data.metadata.authStrategy.implementation]
-                            : [],
+                    approach: data.metadata.authStrategy.approach || '',
+                    implementation: data.metadata.authStrategy.implementation || [],
                 };
             }
 
             if (data.metadata.deployment) {
                 metadata.deployment = {
-                    // Convert array to string (join with commas) or keep string
-                    environment: Array.isArray(data.metadata.deployment.environment)
-                        ? data.metadata.deployment.environment.join(', ')
-                        : data.metadata.deployment.environment || '',
+                    environment: data.metadata.deployment.environment || '',
                     cicd: data.metadata.deployment.cicd || [],
                 };
             }
@@ -116,12 +100,7 @@ export const projectService = {
 
             if (data.metadata.standards) {
                 metadata.standards = {
-                    // Convert string to array or keep array
-                    namingConventions: Array.isArray(data.metadata.standards.namingConventions)
-                        ? data.metadata.standards.namingConventions
-                        : data.metadata.standards.namingConventions
-                            ? [data.metadata.standards.namingConventions]
-                            : [],
+                    namingConventions: data.metadata.standards.namingConventions || [],
                     errorHandling: data.metadata.standards.errorHandling || [],
                     loggingConvention: data.metadata.standards.loggingConvention || [],
                 };

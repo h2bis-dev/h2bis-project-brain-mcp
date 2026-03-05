@@ -268,9 +268,6 @@ class ApiService {
                 return this.getUseCaseEndpoint(operation, id);
             case 'project':
                 return this.getProjectEndpoint(operation, id);
-            case 'capabilitie': // 'capabilities' -> 'capabilitie' after removing 's'
-            case 'capability':
-                return this.getCapabilityEndpoint(operation, id);
             default:
                 throw new Error(`Unsupported collection: ${collectionName}`);
         }
@@ -308,49 +305,6 @@ class ApiService {
             default:
                 throw new Error(`Unsupported operation: ${operation}`);
         }
-    }
-
-    private getCapabilityEndpoint(operation: string, id?: string): string {
-        switch (operation) {
-            case 'list':
-                return '/api/capabilities'; // No specific list endpoint, returns all
-            case 'find':
-                return `/api/capabilities/${id}`;
-            case 'create':
-                return '/api/capabilities';
-            case 'update':
-                return `/api/capabilities/${id}`;
-            case 'delete':
-                return `/api/capabilities/${id}`;
-            default:
-                throw new Error(`Unsupported operation: ${operation}`);
-        }
-    }
-
-    /* ---------- Capability Graph Operations ---------- */
-
-    /**
-     * Get dependencies for a capability node
-     */
-    async getCapabilityDependencies(
-        nodeId: string,
-        depth: number = 1
-    ): Promise<{ dependencies: any[] }> {
-        return this.httpClient.get(`/api/capabilities/${nodeId}/dependencies?depth=${depth}`);
-    }
-
-    /**
-     * Analyze impact of a capability node change
-     */
-    async analyzeCapabilityImpact(nodeId: string): Promise<{ impact: any }> {
-        return this.httpClient.get(`/api/capabilities/${nodeId}/impact`);
-    }
-
-    /**
-     * Get implementation order for nodes
-     */
-    async getImplementationOrder(nodeIds: string[]): Promise<{ order: any[] }> {
-        return this.httpClient.post('/api/capabilities/order', { nodeIds });
     }
 
     /* ---------- Generic HTTP Methods ---------- */
