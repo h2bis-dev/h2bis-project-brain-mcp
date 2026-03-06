@@ -44,7 +44,6 @@ export class GetUseCaseByIdHandler {
             stakeholders: useCase.stakeholders,
             functionalRequirements: useCase.functionalRequirements,
             scope: useCase.scope,
-            domainModel: useCase.domainModel,
             interfaces: useCase.interfaces,
             errorHandling: useCase.errorHandling,
             quality: useCase.quality,

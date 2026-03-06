@@ -57,21 +57,6 @@ export interface Scope {
     constraints: string[];
 }
 
-export interface DomainEntity {
-    name: string;
-    description?: string;
-    fields: {
-        name: string;
-        type: string;
-        required: boolean;
-        constraints: string[];
-    }[];
-}
-
-export interface DomainModel {
-    entities: DomainEntity[];
-}
-
 export interface InterfaceEndpoint {
     method: string;
     path: string;
@@ -156,7 +141,6 @@ export interface UseCase {
     stakeholders?: string[];
     functionalRequirements?: FunctionalRequirements;
     scope?: Scope;
-    domainModel?: DomainModel;
     interfaces?: Interfaces;
     errorHandling?: ErrorHandling;
     architecture?: Architecture;

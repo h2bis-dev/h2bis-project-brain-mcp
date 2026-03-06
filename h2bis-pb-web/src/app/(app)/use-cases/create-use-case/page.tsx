@@ -52,13 +52,6 @@ export default function NewUseCasePage() {
         inScope: [''], outOfScope: [''], assumptions: [''], constraints: ['']
     });
 
-    // Domain Model
-    const [domainEntities, setDomainEntities] = useState<Array<{
-        name: string;
-        description: string;
-        fields: Array<{ name: string; type: string; required: boolean; constraints: string[] }>
-    }>>([]);
-
     // Interfaces
     const [interfaceType, setInterfaceType] = useState<'REST' | 'GraphQL' | 'Event' | 'UI'>('REST');
     const [interfaceEndpoints, setInterfaceEndpoints] = useState<Array<{ method: string, path: string, request: string, response: string }>>([]);
@@ -156,17 +149,6 @@ export default function NewUseCasePage() {
         }
         if (generated.scope) {
             update('scope', setScope, generated.scope);
-        }
-        if (generated.domainModel?.entities) {
-            // Normalize entities to ensure all fields have constraints array
-            const normalizedEntities = generated.domainModel.entities.map((entity: any) => ({
-                ...entity,
-                fields: (entity.fields || []).map((field: any) => ({
-                    ...field,
-                    constraints: Array.isArray(field.constraints) ? field.constraints : []
-                }))
-            }));
-            setDomainEntities(normalizedEntities);
         }
         if (generated.interfaces) {
             if (generated.interfaces.type) setInterfaceType(generated.interfaces.type);
@@ -325,12 +307,6 @@ export default function NewUseCasePage() {
                 outOfScope: scope.outOfScope.filter(s => s.trim()),
                 assumptions: scope.assumptions.filter(s => s.trim()),
                 constraints: scope.constraints.filter(s => s.trim())
-            },
-            domainModel: {
-                entities: domainEntities.map(e => ({
-                    ...e,
-                    fields: e.fields.filter(f => f.name.trim())
-                })).filter(e => e.name.trim())
             },
             interfaces: {
                 type: interfaceType,
@@ -595,51 +571,6 @@ export default function NewUseCasePage() {
                                                 <Button type="button" variant="outline" size="sm" onClick={() => setScope({ ...scope, outOfScope: [...scope.outOfScope, ''] })}><Plus className="h-4 w-4 mr-2" /> Add Out of Scope</Button>
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Domain Model</CardTitle><CardDescription>Define entities and their fields</CardDescription></CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <Accordion type="multiple" className="w-full">
-                                            {domainEntities.map((entity, i) => (
-                                                <AccordionItem key={i} value={`entity-${i}`}>
-                                                    <div className="flex items-center gap-2 py-4">
-                                                        <Input
-                                                            className="max-w-[200px]"
-                                                            value={entity.name}
-                                                            onChange={(e) => { const n = [...domainEntities]; n[i].name = e.target.value; setDomainEntities(n); }}
-                                                            placeholder="Entity Name"
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => { setDomainEntities(domainEntities.filter((_, idx) => idx !== i)); }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                        <AccordionTrigger className="py-0 flex-none ml-auto">
-                                                            <span className="sr-only">Toggle</span>
-                                                        </AccordionTrigger>
-                                                    </div>
-                                                    <AccordionContent className="px-4 py-2 space-y-3">
-                                                        <Input placeholder="Description" value={entity.description} onChange={(e) => { const n = [...domainEntities]; n[i].description = e.target.value; setDomainEntities(n); }} />
-                                                        <Label>Fields</Label>
-                                                        {entity.fields.map((field, fi) => (
-                                                            <div key={fi} className="grid grid-cols-12 gap-2">
-                                                                <div className="col-span-4"><Input placeholder="Name" value={field.name} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].name = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-3"><Input placeholder="Type" value={field.type} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].type = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-1 flex items-center"><Checkbox checked={field.required} onCheckedChange={(c) => { const n = [...domainEntities]; n[i].fields[fi].required = !!c; setDomainEntities(n); }} /> <span className="ml-1 text-xs">Req</span></div>
-                                                                <div className="col-span-3"><Input placeholder="Constraint" value={field.constraints?.[0] || ''} onChange={(e) => { const n = [...domainEntities]; if (!n[i].fields[fi].constraints) n[i].fields[fi].constraints = []; n[i].fields[fi].constraints[0] = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => { const n = [...domainEntities]; n[i].fields = n[i].fields.filter((_, fidx) => fidx !== fi); setDomainEntities(n); }}><X className="h-3 w-3" /></Button></div>
-                                                            </div>
-                                                        ))}
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => { const n = [...domainEntities]; n[i].fields.push({ name: '', type: 'string', required: false, constraints: [] }); setDomainEntities(n); }}><Plus className="h-3 w-3 mr-1" /> Add Field</Button>
-                                                    </AccordionContent>
-                                                </AccordionItem>
-                                            ))}
-                                        </Accordion>
-                                        <Button type="button" variant="outline" onClick={() => setDomainEntities([...domainEntities, { name: '', description: '', fields: [] }])}><Plus className="h-4 w-4 mr-2" /> Add Entity</Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>

@@ -268,13 +268,12 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
 
             {/* Tabbed Content */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 mx-4">
+                <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mx-4">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="requirements">Requirements</TabsTrigger>
                     <TabsTrigger value="flows">Flows</TabsTrigger>
                     <TabsTrigger value="technical">Technical</TabsTrigger>
                     <TabsTrigger value="interfaces">Interfaces</TabsTrigger>
-                    <TabsTrigger value="domain">Domain</TabsTrigger>
                     <TabsTrigger value="architecture">Architecture</TabsTrigger>
                     <TabsTrigger value="quality">Quality</TabsTrigger>
                     <TabsTrigger value="relationships">Relations</TabsTrigger>
@@ -647,48 +646,6 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     ) : (
                         <div className="text-center py-8 text-muted-foreground">
                             <p>No interfaces defined</p>
-                        </div>
-                    )}
-                </TabsContent>
-
-                {/* Domain Model Tab */}
-                <TabsContent value="domain" className="flex-1 overflow-y-auto px-4 space-y-6">
-                    {useCase.domainModel?.entities && useCase.domainModel.entities.length > 0 ? (
-                        <div className="space-y-4">
-                            {useCase.domainModel.entities.map((entity, index) => (
-                                <div key={index} className="border rounded p-3">
-                                    <h4 className="font-semibold text-sm mb-1">{entity.name}</h4>
-                                    {entity.description && (
-                                        <p className="text-xs text-muted-foreground mb-2">{entity.description}</p>
-                                    )}
-                                    {entity.fields && entity.fields.length > 0 && (
-                                        <div className="mt-2">
-                                            <p className="text-xs font-medium mb-2">Fields:</p>
-                                            <div className="space-y-2">
-                                                {entity.fields.map((field, fieldIndex) => (
-                                                    <div key={fieldIndex} className="flex items-start gap-2 text-xs">
-                                                        <code className="font-mono">{field.name}</code>
-                                                        <span className="text-muted-foreground">:</span>
-                                                        <span className="text-primary font-mono">{field.type}</span>
-                                                        {field.required && (
-                                                            <Badge variant="outline" className="text-xs">required</Badge>
-                                                        )}
-                                                        {field.constraints && field.constraints.length > 0 && (
-                                                            <span className="text-muted-foreground text-xs">
-                                                                ({field.constraints.join(', ')})
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>No domain model defined</p>
                         </div>
                     )}
                 </TabsContent>

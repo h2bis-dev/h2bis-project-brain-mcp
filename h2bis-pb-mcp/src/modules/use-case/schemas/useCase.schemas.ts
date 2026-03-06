@@ -30,23 +30,6 @@ export const UseCaseScopeSchema = z.object({
     constraints: z.array(z.string()).optional(),
 });
 
-export const UseCaseDomainFieldSchema = z.object({
-    name: z.string().min(1),
-    type: z.string().min(1),
-    required: z.boolean().default(false),
-    constraints: z.array(z.string()).optional().default([]),
-});
-
-export const UseCaseDomainEntitySchema = z.object({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    fields: z.array(UseCaseDomainFieldSchema).optional().default([]),
-});
-
-export const UseCaseDomainModelSchema = z.object({
-    entities: z.array(UseCaseDomainEntitySchema).optional().default([]),
-});
-
 export const UseCaseEndpointSchema = z.object({
     method: z.string().min(1),
     path: z.string().min(1),
@@ -195,7 +178,6 @@ export const createUseCaseSchema = z.object({
     status: UseCaseStatusSchema.optional(),
     functionalRequirements: UseCaseFunctionalRequirementsSchema.optional(),
     scope: UseCaseScopeSchema.optional(),
-    domainModel: UseCaseDomainModelSchema.optional(),
     interfaces: UseCaseInterfacesSchema.optional(),
     errorHandling: UseCaseErrorHandlingSchema.optional(),
     quality: UseCaseQualitySchema.optional(),
@@ -223,7 +205,6 @@ export const updateUseCaseSchema = z.object({
     status: UseCaseStatusSchema.optional(),
     functionalRequirements: UseCaseFunctionalRequirementsSchema.optional(),
     scope: UseCaseScopeSchema.optional(),
-    domainModel: UseCaseDomainModelSchema.optional(),
     interfaces: UseCaseInterfacesSchema.optional(),
     errorHandling: UseCaseErrorHandlingSchema.optional(),
     quality: UseCaseQualitySchema.optional(),

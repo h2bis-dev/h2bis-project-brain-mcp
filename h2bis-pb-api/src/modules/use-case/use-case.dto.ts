@@ -53,19 +53,6 @@ export const CreateUseCaseRequestDto = z.object({
         constraints: z.array(z.string()).default([])
     }).optional(),
 
-    domainModel: z.object({
-        entities: z.array(z.object({
-            name: z.string(),
-            description: z.string().optional(),
-            fields: z.array(z.object({
-                name: z.string(),
-                type: z.string(),
-                required: z.boolean(),
-                constraints: z.array(z.string()).default([])
-            })).default([])
-        })).default([])
-    }).optional(),
-
     interfaces: z.object({
         type: z.preprocess(
             (val) => val === '' || val === null || val === undefined ? 'REST' : val,
@@ -233,18 +220,6 @@ export interface UseCaseDetailResponseDto {
         outOfScope: string[];
         assumptions: string[];
         constraints: string[];
-    };
-    domainModel?: {
-        entities: Array<{
-            name: string;
-            description?: string;
-            fields: Array<{
-                name: string;
-                type: string;
-                required: boolean;
-                constraints: string[];
-            }>;
-        }>;
     };
     interfaces?: {
         type: 'REST' | 'GraphQL' | 'Event' | 'UI';

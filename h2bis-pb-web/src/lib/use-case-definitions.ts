@@ -129,16 +129,6 @@ export const USE_CASE_DEFINITIONS: Record<string, UseCaseFieldDefinition> = {
         type: 'string[]'
     },
 
-    // Domain Model
-    'domainModel.entities': {
-        key: 'domainModel.entities',
-        label: 'Domain Entities',
-        description: 'Data entities',
-        aiInstruction: 'Key domain entities with name, description, and fields (name, type).',
-        defaultValue: [],
-        type: 'array_of_objects'
-    },
-
     // Interfaces
     'interfaces.type': {
         key: 'interfaces.type',

@@ -50,23 +50,6 @@ export interface UseCaseScope {
     constraints?: string[];
 }
 
-export interface UseCaseDomainField {
-    name: string;
-    type: string;
-    required: boolean;
-    constraints?: string[];
-}
-
-export interface UseCaseDomainEntity {
-    name: string;
-    description?: string;
-    fields?: UseCaseDomainField[];
-}
-
-export interface UseCaseDomainModel {
-    entities?: UseCaseDomainEntity[];
-}
-
 export interface UseCaseEndpoint {
     method: string;
     path: string;
@@ -179,7 +162,6 @@ export interface UseCaseResponse {
 
     functionalRequirements?: UseCaseFunctionalRequirements;
     scope?: UseCaseScope;
-    domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
     quality?: UseCaseQuality;
@@ -222,7 +204,6 @@ export interface CreateUseCaseRequest {
     status?: Partial<UseCaseStatus>;
     functionalRequirements?: UseCaseFunctionalRequirements;
     scope?: UseCaseScope;
-    domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
     quality?: UseCaseQuality;
@@ -249,7 +230,6 @@ export interface UpdateUseCaseRequest {
     status?: Partial<UseCaseStatus>;
     functionalRequirements?: UseCaseFunctionalRequirements;
     scope?: UseCaseScope;
-    domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
     quality?: UseCaseQuality;

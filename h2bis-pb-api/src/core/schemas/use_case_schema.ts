@@ -43,23 +43,6 @@ const ScopeSchema = z.object({
     constraints: z.array(z.string()).default([])
 });
 
-const DomainEntityFieldSchema = z.object({
-    name: z.string(),
-    type: z.string(),
-    required: z.boolean(),
-    constraints: z.array(z.string()).default([])
-});
-
-const DomainEntitySchema = z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    fields: z.array(DomainEntityFieldSchema).default([])
-});
-
-const DomainModelSchema = z.object({
-    entities: z.array(DomainEntitySchema).default([])
-});
-
 const InterfaceEndpointSchema = z.object({
     method: z.string(),
     path: z.string(),
@@ -143,8 +126,6 @@ export const UseCaseSchema = z.object({
 
     scope: ScopeSchema.optional(),
 
-    domainModel: DomainModelSchema.optional(),
-
     interfaces: InterfacesSchema.optional(),
 
     errorHandling: ErrorHandlingSchema.optional(),
@@ -211,7 +192,6 @@ export type UseCase = z.infer<typeof UseCaseSchema>;
 export type AIMetadata = z.infer<typeof AIMetadataSchema>;
 export type FunctionalRequirements = z.infer<typeof FunctionalRequirementsSchema>;
 export type Scope = z.infer<typeof ScopeSchema>;
-export type DomainModel = z.infer<typeof DomainModelSchema>;
 export type Interfaces = z.infer<typeof InterfacesSchema>;
 export type ErrorHandling = z.infer<typeof ErrorHandlingSchema>;
 

@@ -197,16 +197,6 @@ export interface UseCaseDomainField {
     constraints: string[];
 }
 
-export interface UseCaseDomainEntity {
-    name: string;
-    description?: string;
-    fields: UseCaseDomainField[];
-}
-
-export interface UseCaseDomainModel {
-    entities: UseCaseDomainEntity[];
-}
-
 export interface UseCaseEndpoint {
     method: string;
     path: string;
@@ -316,7 +306,6 @@ export interface UseCaseData {
 
     functionalRequirements?: UseCaseFunctionalRequirements;
     scope?: UseCaseScope;
-    domainModel?: UseCaseDomainModel;
     interfaces?: UseCaseInterfaces;
     errorHandling?: UseCaseErrorHandling;
     quality?: UseCaseQuality;

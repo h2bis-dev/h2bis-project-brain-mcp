@@ -43,18 +43,6 @@ export interface CreateUseCaseRequest {
         assumptions: string[];
         constraints: string[];
     };
-    domainModel?: {
-        entities: Array<{
-            name: string;
-            description?: string;
-            fields: Array<{
-                name: string;
-                type: string;
-                required: boolean;
-                constraints: string[];
-            }>;
-        }>;
-    };
     interfaces?: {
         type: 'REST' | 'GraphQL' | 'Event' | 'UI';
         endpoints: Array<{

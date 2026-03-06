@@ -59,13 +59,6 @@ export default function EditUseCasePage() {
         inScope: [''], outOfScope: [''], assumptions: [''], constraints: ['']
     });
 
-    // Domain Model
-    const [domainEntities, setDomainEntities] = useState<Array<{
-        name: string;
-        description: string;
-        fields: Array<{ name: string; type: string; required: boolean; constraints: string[] }>
-    }>>([]);
-
     // Interfaces
     const [interfaceType, setInterfaceType] = useState<'REST' | 'GraphQL' | 'Event' | 'UI'>('REST');
     const [interfaceEndpoints, setInterfaceEndpoints] = useState<Array<{ method: string, path: string, request: string, response: string }>>([]);
@@ -124,14 +117,6 @@ export default function EditUseCasePage() {
                     assumptions: useCase.scope.assumptions?.length ? useCase.scope.assumptions : [''],
                     constraints: useCase.scope.constraints?.length ? useCase.scope.constraints : [''],
                 });
-            }
-
-            if (useCase.domainModel?.entities) {
-                setDomainEntities(useCase.domainModel.entities.map(e => ({
-                    name: e.name,
-                    description: e.description || '',
-                    fields: e.fields || [],
-                })));
             }
 
             if (useCase.interfaces) {
@@ -254,10 +239,6 @@ export default function EditUseCasePage() {
         if (enhanced.scope) {
             update('scope', setScope, enhanced.scope);
         }
-        if (enhanced.domainModel?.entities) {
-            setDomainEntities(enhanced.domainModel.entities);
-            setFieldOrigins(prev => ({ ...prev, 'domainEntities': 'ai' }));
-        }
         if (enhanced.interfaces) {
             if (enhanced.interfaces.type) setInterfaceType(enhanced.interfaces.type);
             if (enhanced.interfaces.endpoints) setInterfaceEndpoints(enhanced.interfaces.endpoints);
@@ -314,7 +295,6 @@ export default function EditUseCasePage() {
             if (stakeholders.length === 0) emptyFields.push('stakeholders');
             if (functionalReqs.must.every(r => !r.trim())) emptyFields.push('functionalRequirements.must');
             if (scope.inScope.every(s => !s.trim())) emptyFields.push('scope.inScope');
-            if (domainEntities.length === 0) emptyFields.push('domainModel.entities');
             if (secConsiderations.length === 0) emptyFields.push('quality.securityConsiderations');
 
             if (emptyFields.length === 0) {
@@ -382,12 +362,6 @@ export default function EditUseCasePage() {
                 outOfScope: scope.outOfScope.filter(s => s.trim()),
                 assumptions: scope.assumptions.filter(s => s.trim()),
                 constraints: scope.constraints.filter(s => s.trim())
-            },
-            domainModel: {
-                entities: domainEntities.map(e => ({
-                    ...e,
-                    fields: e.fields.filter(f => f.name.trim())
-                })).filter(e => e.name.trim())
             },
             interfaces: {
                 type: interfaceType,
@@ -650,51 +624,6 @@ export default function EditUseCasePage() {
                                                 <Button type="button" variant="outline" size="sm" onClick={() => setScope({ ...scope, outOfScope: [...scope.outOfScope, ''] })}><Plus className="h-4 w-4 mr-2" /> Add Out of Scope</Button>
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Domain Model</CardTitle><CardDescription>Define entities and their fields</CardDescription></CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <Accordion type="multiple" className="w-full">
-                                            {domainEntities.map((entity, i) => (
-                                                <AccordionItem key={i} value={`entity-${i}`}>
-                                                    <div className="flex items-center gap-2 py-4">
-                                                        <Input
-                                                            className="max-w-[200px]"
-                                                            value={entity.name}
-                                                            onChange={(e) => { const n = [...domainEntities]; n[i].name = e.target.value; setDomainEntities(n); }}
-                                                            placeholder="Entity Name"
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => { setDomainEntities(domainEntities.filter((_, idx) => idx !== i)); }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                        <AccordionTrigger className="py-0 flex-none ml-auto">
-                                                            <span className="sr-only">Toggle</span>
-                                                        </AccordionTrigger>
-                                                    </div>
-                                                    <AccordionContent className="px-4 py-2 space-y-3">
-                                                        <Input placeholder="Description" value={entity.description} onChange={(e) => { const n = [...domainEntities]; n[i].description = e.target.value; setDomainEntities(n); }} />
-                                                        <Label>Fields</Label>
-                                                        {entity.fields.map((field, fi) => (
-                                                            <div key={fi} className="grid grid-cols-12 gap-2">
-                                                                <div className="col-span-4"><Input placeholder="Name" value={field.name} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].name = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-3"><Input placeholder="Type" value={field.type} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].type = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-1 flex items-center"><Checkbox checked={field.required} onCheckedChange={(c) => { const n = [...domainEntities]; n[i].fields[fi].required = !!c; setDomainEntities(n); }} /> <span className="ml-1 text-xs">Req</span></div>
-                                                                <div className="col-span-3"><Input placeholder="Constraint" value={field.constraints[0] || ''} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].constraints[0] = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => { const n = [...domainEntities]; n[i].fields = n[i].fields.filter((_, fidx) => fidx !== fi); setDomainEntities(n); }}><X className="h-3 w-3" /></Button></div>
-                                                            </div>
-                                                        ))}
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => { const n = [...domainEntities]; n[i].fields.push({ name: '', type: 'string', required: false, constraints: [] }); setDomainEntities(n); }}><Plus className="h-3 w-3 mr-1" /> Add Field</Button>
-                                                    </AccordionContent>
-                                                </AccordionItem>
-                                            ))}
-                                        </Accordion>
-                                        <Button type="button" variant="outline" onClick={() => setDomainEntities([...domainEntities, { name: '', description: '', fields: [] }])}><Plus className="h-4 w-4 mr-2" /> Add Entity</Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
