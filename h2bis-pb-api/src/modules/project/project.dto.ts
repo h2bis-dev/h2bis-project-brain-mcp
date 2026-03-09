@@ -35,6 +35,19 @@ export const DomainModelEntrySchema = z.object({
     updatedAt:       z.date().optional(),
 });
 
+// Schema for a single application / service within a project
+export const ProjectServiceSchema = z.object({
+    id:          z.string().min(1),
+    name:        z.string().min(1),
+    type:        z.enum(['web-app', 'mobile-app', 'api', 'background-service', 'data-service', 'other']),
+    language:    z.string().optional().default(''),
+    framework:   z.string().optional().default(''),
+    techStack:   z.array(z.string()).optional().default([]),
+    description: z.string().optional().default(''),
+    goals:       z.string().optional().default(''),
+    repository:  z.string().optional().default(''),
+});
+
 export const GetProjectsQuerySchema = z.object({
     status: z.enum(['active', 'archived', 'deleted']).optional(),
     limit: z.string().optional().default('50'),
@@ -88,7 +101,8 @@ export const CreateProjectRequestSchema = z.object({
                 requiresE2ETests: z.boolean().optional().default(false)
             }).optional(),
             documentationStandards: z.array(z.string()).optional().default([])
-        }).optional()
+        }).optional(),
+        services: z.array(ProjectServiceSchema).optional().default([])
     }).optional(),
     domainCatalog: z.array(DomainModelEntrySchema).optional().default([]),
 });
@@ -139,7 +153,8 @@ export const UpdateProjectRequestSchema = z.object({
                 requiresE2ETests: z.boolean().optional()
             }).optional(),
             documentationStandards: z.array(z.string()).optional()
-        }).optional()
+        }).optional(),
+        services: z.array(ProjectServiceSchema).optional()
     }).optional(),
     domainCatalog: z.array(DomainModelEntrySchema).optional(),
 });

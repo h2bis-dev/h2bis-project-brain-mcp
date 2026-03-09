@@ -98,6 +98,10 @@ export const projectService = {
                 metadata.externalServices = data.metadata.externalServices;
             }
 
+            if (data.metadata.services?.length) {
+                metadata.services = data.metadata.services;
+            }
+
             if (data.metadata.standards) {
                 metadata.standards = {
                     namingConventions: data.metadata.standards.namingConventions || [],

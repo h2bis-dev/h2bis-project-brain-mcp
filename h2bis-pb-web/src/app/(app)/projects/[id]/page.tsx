@@ -17,7 +17,8 @@ import { TagInput } from "@/components/ui/tag-input";
 import { PROJECT_METADATA_CONSTANTS } from "@/constants/project-metadata.constants";
 import { ROUTES } from "@/lib/constants";
 import { DomainModelTable } from "@/components/project/DomainModelTable";
-import type { Project, DomainEntity } from "@/types/project.types";
+import { ServicesPanel } from "@/components/project/ServicesPanel";
+import type { Project, DomainEntity, ProjectService } from "@/types/project.types";
 
 interface ExternalService {
     name: string;
@@ -35,6 +36,7 @@ interface ProjectFormData {
         language?: string;
         framework?: string;
         techStack?: string[];
+        services?: ProjectService[];
         architecture?: {
             overview?: string;
             style?: string;
@@ -128,6 +130,7 @@ export default function ProjectDetailPage() {
                             apiDocs: svc.apiDocs ?? '',
                         })
                     ),
+                    services: (data.metadata?.services || []) as ProjectService[],
                     qualityGates: data.metadata?.qualityGates,
                 },
             };
@@ -389,12 +392,13 @@ export default function ProjectDetailPage() {
 
                 {/* Tech Stack Tab */}
                 <TabsContent value="tech" className="space-y-4">
+                    {/* Project-level repository */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Technology Stack</CardTitle>
-                            <CardDescription>Languages, frameworks, and tools</CardDescription>
+                            <CardTitle>Repository</CardTitle>
+                            <CardDescription>Main source-code repository for the project</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent>
                             <div className="space-y-2">
                                 <Label htmlFor="repository">Repository URL</Label>
                                 <Input
@@ -404,44 +408,75 @@ export default function ProjectDetailPage() {
                                     value={formData.metadata.repository || ''}
                                     onChange={(e) => updateField('metadata.repository', e.target.value)}
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Leave blank if the project uses per-service repositories
+                                </p>
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="language">Primary Language</Label>
-                                <Select
-                                    value={formData.metadata.language || ''}
-                                    onValueChange={(value) => updateField('metadata.language', value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select language" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PROJECT_METADATA_CONSTANTS.languages.map((lang) => (
-                                            <SelectItem key={lang} value={lang}>{lang}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                    {/* Multi-service panel */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Technology Stack</CardTitle>
+                            <CardDescription>
+                                Add each application and service that makes up this project — web apps, mobile
+                                apps, APIs, data services, etc. — and specify their individual technologies.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ServicesPanel
+                                services={formData.metadata.services || []}
+                                onChange={(services) => updateField('metadata.services', services)}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    {/* Legacy / fallback primary stack (collapsed visually but still editable) */}
+                    <Card className="border-dashed opacity-80">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm">Legacy Primary Stack</CardTitle>
+                            <CardDescription className="text-xs">
+                                Kept for backward compatibility. Prefer the service definitions above for new projects.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="language">Primary Language</Label>
+                                    <Select
+                                        value={formData.metadata.language || ''}
+                                        onValueChange={(value) => updateField('metadata.language', value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select language" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {PROJECT_METADATA_CONSTANTS.languages.map((lang) => (
+                                                <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="framework">Primary Framework</Label>
+                                    <Select
+                                        value={formData.metadata.framework || ''}
+                                        onValueChange={(value) => updateField('metadata.framework', value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select framework" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {PROJECT_METADATA_CONSTANTS.frameworks.map((fw) => (
+                                                <SelectItem key={fw} value={fw}>{fw}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-
                             <div className="space-y-2">
-                                <Label htmlFor="framework">Primary Framework</Label>
-                                <Select
-                                    value={formData.metadata.framework || ''}
-                                    onValueChange={(value) => updateField('metadata.framework', value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select framework" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PROJECT_METADATA_CONSTANTS.frameworks.map((fw) => (
-                                            <SelectItem key={fw} value={fw}>{fw}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Tech Stack</Label>
+                                <Label>Tech Stack Tags</Label>
                                 <TagInput
                                     value={formData.metadata.techStack || []}
                                     onChange={(value) => updateField('metadata.techStack', value)}

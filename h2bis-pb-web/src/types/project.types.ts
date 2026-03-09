@@ -5,6 +5,20 @@ export interface ProjectMember {
     name?: string;
 }
 
+export type ProjectServiceType = 'web-app' | 'mobile-app' | 'api' | 'background-service' | 'data-service' | 'other';
+
+export interface ProjectService {
+    id: string;
+    name: string;
+    type: ProjectServiceType;
+    language?: string;
+    framework?: string;
+    techStack?: string[];
+    description?: string;
+    goals?: string;
+    repository?: string;
+}
+
 export interface DevelopedEndpoint {
     useCaseId: string;
     endpoint: string;
@@ -75,6 +89,7 @@ export interface Project {
             purpose?: string;
             apiDocs?: string;
         }>;
+        services?: ProjectService[];
         standards?: {
             namingConventions?: string[];
             errorHandling?: string[];

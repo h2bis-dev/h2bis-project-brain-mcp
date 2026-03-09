@@ -121,6 +121,28 @@ const ProjectSchema = new mongoose.Schema(
                     requiresE2ETests: { type: Boolean, default: false }
                 },
                 documentationStandards: { type: [String], default: [] }
+            },
+
+            // Project Applications & Services
+            // Each entry describes a distinct app or backend service in the project
+            // (e.g. Web App, Mobile App, API, Data Service, etc.)
+            services: {
+                type: [{
+                    id:          { type: String, required: true },
+                    name:        { type: String, required: true },
+                    type: {
+                        type: String,
+                        enum: ['web-app', 'mobile-app', 'api', 'background-service', 'data-service', 'other'],
+                        default: 'other'
+                    },
+                    language:    { type: String, default: '' },
+                    framework:   { type: String, default: '' },
+                    techStack:   { type: [String], default: [] },
+                    description: { type: String, default: '' },
+                    goals:       { type: String, default: '' },
+                    repository:  { type: String, default: '' }
+                }],
+                default: []
             }
         },
 
