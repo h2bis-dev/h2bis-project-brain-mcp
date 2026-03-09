@@ -329,6 +329,7 @@ export interface UpdateUseCaseResponseDto {
 
 export const GenerateUseCaseRequestDto = z.object({
     description: z.string().min(1, 'Description is required'),
+    projectId: z.string().optional(),
     existingData: z.record(z.any()).optional()
 });
 

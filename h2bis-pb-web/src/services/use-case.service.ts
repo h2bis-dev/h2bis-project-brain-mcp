@@ -213,6 +213,7 @@ export const useCaseService = {
 
 export interface GenerateUseCaseRequest {
     description: string;
+    projectId?: string;
     existingData?: Partial<CreateUseCaseRequest>;
 }
 

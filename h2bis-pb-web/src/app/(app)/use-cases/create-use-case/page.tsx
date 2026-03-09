@@ -179,7 +179,8 @@ export default function NewUseCasePage() {
             const fullDescription = `${aiDescription}\n\n${systemInstructions}`;
 
             const response = await useCaseService.generate({
-                description: fullDescription
+                description: fullDescription,
+                projectId: selectedProject?.id
             });
 
             // Update form with result
@@ -230,6 +231,7 @@ export default function NewUseCasePage() {
 
             const response = await useCaseService.generate({
                 description: fullDescription,
+                projectId: selectedProject?.id,
                 existingData
             });
 

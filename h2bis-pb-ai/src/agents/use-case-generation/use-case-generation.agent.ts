@@ -15,7 +15,12 @@ export class UseCaseGenerationAgent {
     async generate(input: UseCaseGenerationInput): Promise<UseCaseGenerationResult> {
         logger.info('Generating Use Case', {
             hasDescription: !!input.description,
-            hasExistingData: !!input.existingData
+            hasExistingData: !!input.existingData,
+            hasProjectContext: !!input.projectContext,
+            projectName: input.projectContext?.projectName,
+            techStack: input.projectContext?.techStack,
+            existingEndpointsCount: input.projectContext?.developedEndpoints?.length ?? 0,
+            domainModelsCount: input.projectContext?.domainCatalog?.length ?? 0
         });
 
         const systemPrompt = USE_CASE_GENERATION_SYSTEM_PROMPT;
