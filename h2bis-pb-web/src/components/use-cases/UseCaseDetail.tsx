@@ -268,15 +268,12 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
 
             {/* Tabbed Content */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mx-4">
+                <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 mx-4">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="requirements">Requirements</TabsTrigger>
-                    <TabsTrigger value="flows">Flows</TabsTrigger>
                     <TabsTrigger value="technical">Technical</TabsTrigger>
                     <TabsTrigger value="interfaces">Interfaces</TabsTrigger>
-                    <TabsTrigger value="architecture">Architecture</TabsTrigger>
                     <TabsTrigger value="quality">Quality</TabsTrigger>
-                    <TabsTrigger value="relationships">Relations</TabsTrigger>
                 </TabsList>
 
                 {/* Overview Tab */}
@@ -456,43 +453,6 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     )}
                 </TabsContent>
 
-                {/* Flows Tab */}
-                <TabsContent value="flows" className="flex-1 overflow-y-auto px-4 space-y-6">
-                    {useCase.flows && useCase.flows.length > 0 ? (
-                        <div className="space-y-4">
-                            {useCase.flows.map((flow, index) => (
-                                <div
-                                    key={index}
-                                    className={cn(
-                                        "border-l-2 pl-3",
-                                        flow.type === "main"
-                                            ? "border-primary"
-                                            : flow.type === "alternative"
-                                                ? "border-muted"
-                                                : "border-destructive"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <p className="text-sm font-medium">{flow.name}</p>
-                                        <Badge variant="outline" className="text-xs">
-                                            {flow.type}
-                                        </Badge>
-                                    </div>
-                                    <ol className="list-decimal list-inside space-y-1">
-                                        {flow.steps.map((step, stepIndex) => (
-                                            <li key={stepIndex} className="text-sm text-muted-foreground">{step}</li>
-                                        ))}
-                                    </ol>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>No flows defined</p>
-                        </div>
-                    )}
-                </TabsContent>
-
                 {/* Technical Surface Tab */}
                 <TabsContent value="technical" className="flex-1 overflow-y-auto px-4 space-y-6">
                     {/* Backend */}
@@ -650,76 +610,6 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     )}
                 </TabsContent>
 
-                {/* Architecture & Tech Tab */}
-                <TabsContent value="architecture" className="flex-1 overflow-y-auto px-4 space-y-6">
-                    {/* Architecture Style */}
-                    {useCase.architecture && (
-                        <div>
-                            <h3 className="font-semibold text-sm mb-2">Architecture</h3>
-                            <div className="space-y-2">
-                                {useCase.architecture.style && (
-                                    <p className="text-sm"><span className="font-medium">Style:</span> {useCase.architecture.style}</p>
-                                )}
-                                {useCase.architecture.patterns && useCase.architecture.patterns.length > 0 && (
-                                    <div>
-                                        <p className="text-sm font-medium mb-1">Additional Patterns:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {useCase.architecture.patterns.map((pattern, index) => (
-                                                <Badge key={index} variant="outline" className="text-xs">{pattern}</Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Technology Constraints */}
-                    {useCase.technologyConstraints && (
-                        <div>
-                            <h3 className="font-semibold text-sm mb-2">Technology Constraints</h3>
-                            <div className="grid grid-cols-1 gap-2">
-                                {useCase.technologyConstraints.backend && (
-                                    <p className="text-sm"><span className="font-medium">Backend:</span> {useCase.technologyConstraints.backend}</p>
-                                )}
-                                {useCase.technologyConstraints.frontend && (
-                                    <p className="text-sm"><span className="font-medium">Frontend:</span> {useCase.technologyConstraints.frontend}</p>
-                                )}
-                                {useCase.technologyConstraints.database && (
-                                    <p className="text-sm"><span className="font-medium">Database:</span> {useCase.technologyConstraints.database}</p>
-                                )}
-                                {useCase.technologyConstraints.messaging && (
-                                    <p className="text-sm"><span className="font-medium">Messaging:</span> {useCase.technologyConstraints.messaging}</p>
-                                )}
-                                {useCase.technologyConstraints.auth && (
-                                    <p className="text-sm"><span className="font-medium">Auth:</span> {useCase.technologyConstraints.auth}</p>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Error Handling */}
-                    {useCase.errorHandling?.knownErrors && useCase.errorHandling.knownErrors.length > 0 && (
-                        <div>
-                            <h3 className="font-semibold text-sm mb-2">Error Handling</h3>
-                            <div className="space-y-2">
-                                {useCase.errorHandling.knownErrors.map((error, index) => (
-                                    <div key={index} className="border rounded p-2">
-                                        <p className="text-sm font-medium">{error.condition}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">{error.expectedBehavior}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {!useCase.architecture && !useCase.technologyConstraints && !useCase.errorHandling?.knownErrors?.length && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>No architecture information defined</p>
-                        </div>
-                    )}
-                </TabsContent>
-
                 {/* Quality Tab */}
                 <TabsContent value="quality" className="flex-1 overflow-y-auto px-4 space-y-6">
                     {/* Quality */}
@@ -807,29 +697,6 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     {!useCase.quality && !useCase.aiMetadata && (
                         <div className="text-center py-8 text-muted-foreground">
                             <p>No quality information defined</p>
-                        </div>
-                    )}
-                </TabsContent>
-
-                {/* Relationships Tab */}
-                <TabsContent value="relationships" className="flex-1 overflow-y-auto px-4 space-y-6">
-                    {useCase.relationships && useCase.relationships.length > 0 ? (
-                        <div className="space-y-3">
-                            {useCase.relationships.map((relationship, index) => (
-                                <div key={index} className="border rounded p-3">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Badge variant="outline" className="text-xs">{relationship.type}</Badge>
-                                        <span className="text-sm font-mono">{relationship.targetType}:{relationship.targetKey}</span>
-                                    </div>
-                                    {relationship.reason && (
-                                        <p className="text-xs text-muted-foreground mt-1">{relationship.reason}</p>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>No relationships defined</p>
                         </div>
                     )}
                 </TabsContent>
