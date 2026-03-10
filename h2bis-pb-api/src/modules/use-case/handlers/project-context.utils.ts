@@ -60,5 +60,19 @@ export function buildProjectContext(project: any): ProjectContext {
         }));
     }
 
+    // Project services — helps the AI scope use cases to the right app or service
+    if (meta.services?.length) {
+        ctx.services = meta.services.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            type: s.type,
+            language: s.language || undefined,
+            framework: s.framework || undefined,
+            techStack: s.techStack?.length ? s.techStack : undefined,
+            description: s.description || undefined,
+            goals: s.goals || undefined
+        }));
+    }
+
     return ctx;
 }

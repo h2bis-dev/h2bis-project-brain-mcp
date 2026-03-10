@@ -3,13 +3,10 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Plus, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import {
     createProjectSchema,
     type CreateProjectInput,
-    TECH_STACK_OPTIONS,
-    LANGUAGE_OPTIONS,
-    FRAMEWORK_OPTIONS
 } from '@/lib/validations/project.validation';
 import { PROJECT_METADATA_CONSTANTS } from '@/constants/project-metadata.constants';
 import { projectService } from '@/services/project.service';
@@ -34,7 +31,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
 interface CreateProjectModalProps {
@@ -46,7 +42,6 @@ interface CreateProjectModalProps {
 export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectModalProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedTechStack, setSelectedTechStack] = useState<string[]>([]);
 
     const {
         register,
@@ -64,9 +59,6 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
             description: undefined,
             metadata: {
                 repository: '',
-                techStack: [],
-                language: undefined,
-                framework: undefined,
             },
         },
     });
@@ -85,20 +77,6 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
         setValue('_id', generatedId);
     };
 
-    const addTechStack = (tech: string) => {
-        if (!selectedTechStack.includes(tech)) {
-            const newTechStack = [...selectedTechStack, tech];
-            setSelectedTechStack(newTechStack);
-            setValue('metadata.techStack', newTechStack);
-        }
-    };
-
-    const removeTechStack = (tech: string) => {
-        const newTechStack = selectedTechStack.filter(t => t !== tech);
-        setSelectedTechStack(newTechStack);
-        setValue('metadata.techStack', newTechStack);
-    };
-
     const onSubmit = async (data: CreateProjectInput) => {
         try {
             setIsSubmitting(true);
@@ -111,7 +89,6 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
             });
 
             reset();
-            setSelectedTechStack([]);
             onSuccess(newProject);
             onClose();
         } catch (error) {
@@ -129,7 +106,6 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
     const handleClose = () => {
         if (!isSubmitting) {
             reset();
-            setSelectedTechStack([]);
             onClose();
         }
     };
@@ -221,84 +197,6 @@ export function CreateProjectModal({ open, onClose, onSuccess }: CreateProjectMo
                         <p className="text-xs text-muted-foreground">
                             Current development stage of the project
                         </p>
-                    </div>
-
-                    {/* Language */}
-                    <div className="space-y-2">
-                        <Label htmlFor="language">Primary Language</Label>
-                        <Select
-                            onValueChange={(value) => setValue('metadata.language', value)}
-                            disabled={isSubmitting}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {LANGUAGE_OPTIONS.map((lang) => (
-                                    <SelectItem key={lang} value={lang}>
-                                        {lang}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Framework */}
-                    <div className="space-y-2">
-                        <Label htmlFor="framework">Framework</Label>
-                        <Select
-                            onValueChange={(value) => setValue('metadata.framework', value)}
-                            disabled={isSubmitting}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select framework" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {FRAMEWORK_OPTIONS.map((fw) => (
-                                    <SelectItem key={fw} value={fw}>
-                                        {fw}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Tech Stack */}
-                    <div className="space-y-2">
-                        <Label>Tech Stack</Label>
-                        <Select onValueChange={addTechStack} disabled={isSubmitting}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Add technologies" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {TECH_STACK_OPTIONS.filter(tech => !selectedTechStack.includes(tech)).map((tech) => (
-                                    <SelectItem key={tech} value={tech}>
-                                        <div className="flex items-center gap-2">
-                                            <Plus className="h-3 w-3" />
-                                            {tech}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        {selectedTechStack.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {selectedTechStack.map((tech) => (
-                                    <Badge key={tech} variant="secondary" className="gap-1">
-                                        {tech}
-                                        <button
-                                            type="button"
-                                            onClick={() => removeTechStack(tech)}
-                                            className="ml-1 hover:text-destructive"
-                                            disabled={isSubmitting}
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
                     </div>
 
                     {/* Repository URL */}

@@ -67,9 +67,6 @@ export interface Project {
     members?: ProjectMember[];
     metadata?: {
         repository?: string;
-        techStack?: string[];
-        language?: string;
-        framework?: string;
         architecture?: {
             overview?: string;  // String, not array - matches API
             style?: string;     // String, not array - matches API

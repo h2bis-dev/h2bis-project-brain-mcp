@@ -66,9 +66,6 @@ export const projectService = {
             const metadata: any = {};
 
             if (data.metadata.repository) metadata.repository = data.metadata.repository;
-            if (data.metadata.techStack?.length) metadata.techStack = data.metadata.techStack;
-            if (data.metadata.language) metadata.language = data.metadata.language;
-            if (data.metadata.framework) metadata.framework = data.metadata.framework;
 
             // Add nested metadata only if provided
             if (data.metadata.architecture) {
@@ -98,8 +95,18 @@ export const projectService = {
                 metadata.externalServices = data.metadata.externalServices;
             }
 
-            if (data.metadata.services?.length) {
-                metadata.services = data.metadata.services;
+            if (data.metadata.services) {
+                metadata.services = data.metadata.services.map(service => ({
+                    id:          service.id          || '',
+                    name:        service.name        || '',
+                    type:        service.type        || 'other',
+                    language:    service.language    || '',
+                    framework:   service.framework   || '',
+                    techStack:   service.techStack   || [],
+                    description: service.description || '',
+                    goals:       service.goals       || '',
+                    repository:  service.repository  || '',
+                }));
             }
 
             if (data.metadata.standards) {
@@ -146,7 +153,75 @@ export const projectService = {
      * Update a project
      */
     async update(id: string, data: Partial<Project>): Promise<Project> {
-        const response = await apiClient.put(`${API_ENDPOINTS.PROJECTS.LIST}/${id}`, data);
+        // Build a clean update payload — only send fields the API accepts
+        const payload: any = {};
+
+        if (data.name)        payload.name        = data.name;
+        if (data.description !== undefined) payload.description = data.description;
+        if (data.lifecycle)   payload.lifecycle   = data.lifecycle;
+
+        if (data.metadata) {
+            const metadata: any = {};
+
+            if (data.metadata.repository !== undefined) metadata.repository = data.metadata.repository;
+
+            if (data.metadata.services !== undefined) {
+                metadata.services = data.metadata.services.map((service: any) => ({
+                    id:          service.id          || '',
+                    name:        service.name        || '',
+                    type:        service.type        || 'other',
+                    language:    service.language    || '',
+                    framework:   service.framework   || '',
+                    techStack:   service.techStack   || [],
+                    description: service.description || '',
+                    goals:       service.goals       || '',
+                    repository:  service.repository  || '',
+                }));
+            }
+
+            if (data.metadata.architecture) {
+                metadata.architecture = {
+                    overview:           data.metadata.architecture.overview           ?? '',
+                    style:              data.metadata.architecture.style              ?? '',
+                    directoryStructure: data.metadata.architecture.directoryStructure ?? '',
+                    stateManagement:    data.metadata.architecture.stateManagement    ?? [],
+                };
+            }
+
+            if (data.metadata.authStrategy) {
+                metadata.authStrategy = {
+                    approach:       data.metadata.authStrategy.approach       ?? '',
+                    implementation: data.metadata.authStrategy.implementation ?? [],
+                };
+            }
+
+            if (data.metadata.deployment) {
+                metadata.deployment = {
+                    environment: data.metadata.deployment.environment ?? '',
+                    cicd:        data.metadata.deployment.cicd        ?? [],
+                };
+            }
+
+            if (data.metadata.externalServices !== undefined) {
+                metadata.externalServices = data.metadata.externalServices;
+            }
+
+            if (data.metadata.standards) {
+                metadata.standards = {
+                    namingConventions: data.metadata.standards.namingConventions ?? [],
+                    errorHandling:     data.metadata.standards.errorHandling     ?? [],
+                    loggingConvention: data.metadata.standards.loggingConvention ?? [],
+                };
+            }
+
+            if (data.metadata.qualityGates) {
+                metadata.qualityGates = data.metadata.qualityGates;
+            }
+
+            payload.metadata = metadata;
+        }
+
+        const response = await apiClient.put(`${API_ENDPOINTS.PROJECTS.LIST}/${id}`, payload);
         const project = response.data?.data || response.data;
 
         // Map _id to id for consistency

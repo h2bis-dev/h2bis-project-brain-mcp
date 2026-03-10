@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema, UpdateProjectRequestSchema, DomainModelEntrySchema } from './project.dto.js';
+import { toProjectResponseDto } from './project.mapper.js';
+import { Project } from './project_schema.js';
 import { getProjectsHandler, getProjectByIdHandler } from './handlers/get-projects.handler.js';
 import { getDashboardStatsHandler } from './handlers/get-dashboard-stats.handler.js';
 import { createProjectHandler } from './handlers/create-project.handler.js';
@@ -35,7 +37,6 @@ export const projectController = {
 
                 // For MCP agent requests (API Key auth) or unauthenticated, create project with system owner
                 if (!user || user.isAgent) {
-                    const { Project } = await import('./project_schema.js');
                     const projectData = {
                         ...validationResult.data,
                         owner: 'system-mcp',
@@ -54,8 +55,11 @@ export const projectController = {
                     };
                     
                     const project = await Project.create(projectData);
-                    
-                    return res.status(201).json(project);
+
+                    return res.status(201).json({
+                        success: true,
+                        data: toProjectResponseDto(project.toObject() as any),
+                    });
                 }
 
                 // For authenticated requests
@@ -71,7 +75,7 @@ export const projectController = {
 
                 return res.status(201).json({
                     success: true,
-                    data: project,
+                    data: toProjectResponseDto(project),
                 });
             } catch (error) {
                 logger.error(`Error creating project: ${error}`);
@@ -95,17 +99,16 @@ export const projectController = {
                 
                 // For MCP agent requests (API Key auth) or unauthenticated, return all active projects
                 if (!user || user.isAgent) {
-                    const { Project } = await import('./project_schema.js');
                     const projects = await Project.find({ status: 'active' }).lean();
-                    
+
                     return res.status(200).json({
                         success: true,
                         data: {
-                            projects: projects,
+                            projects: projects.map(p => toProjectResponseDto(p as any)),
                             total: projects.length,
                             limit: projects.length,
-                            offset: 0
-                        }
+                            offset: 0,
+                        },
                     });
                 }
 
@@ -158,14 +161,16 @@ export const projectController = {
 
                 // For MCP agent requests (API Key auth) or unauthenticated, return project directly
                 if (!user || user.isAgent) {
-                    const { Project } = await import('./project_schema.js');
                     const project = await Project.findById(projectId).lean();
-                    
+
                     if (!project) {
                         return res.status(404).json({ error: 'Project not found' });
                     }
-                    
-                    return res.status(200).json(project);
+
+                    return res.status(200).json({
+                        success: true,
+                        data: toProjectResponseDto(project as any),
+                    });
                 }
 
                 // For authenticated requests, use RBAC

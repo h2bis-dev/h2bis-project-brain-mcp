@@ -117,12 +117,14 @@ export class ProjectRepository {
      */
     async update(id: string, data: Partial<ProjectDocument>): Promise<ProjectDocument> {
         const db = await getDb();
+        // Destructure out immutable fields that MongoDB forbids in $set
+        const { _id, createdAt, ...updateFields } = data as any;
         const result = await db.collection(this.collectionName)
             .findOneAndUpdate(
                 { _id: id, status: { $ne: 'deleted' } } as Filter<any>,
                 {
                     $set: {
-                        ...data,
+                        ...updateFields,
                         updatedAt: new Date()
                     }
                 },

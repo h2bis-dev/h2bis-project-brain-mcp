@@ -35,6 +35,17 @@ export interface ProjectContext {
         layer?: string;
         description?: string;
     }>;
+    /** Applications and services that make up the project (web app, mobile app, API, data service, etc.) */
+    services?: Array<{
+        id: string;
+        name: string;
+        type: string;
+        language?: string;
+        framework?: string;
+        techStack?: string[];
+        description?: string;
+        goals?: string;
+    }>;
 }
 
 export interface UseCaseGenerationInput {

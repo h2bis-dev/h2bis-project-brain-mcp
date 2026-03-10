@@ -65,9 +65,6 @@ export const CreateProjectRequestSchema = z.object({
     }).optional(),
     metadata: z.object({
         repository: z.string().optional().default(''),
-        techStack: z.array(z.string()).optional().default([]),
-        language: z.string().optional().default(''),
-        framework: z.string().optional().default(''),
         architecture: z.object({
             overview: z.string().optional().default(''),
             style: z.string().optional().default(''),
@@ -117,9 +114,6 @@ export const UpdateProjectRequestSchema = z.object({
     }).optional(),
     metadata: z.object({
         repository: z.string().optional(),
-        techStack: z.array(z.string()).optional(),
-        language: z.string().optional(),
-        framework: z.string().optional(),
         architecture: z.object({
             overview: z.string().optional(),
             style: z.string().optional(),
@@ -226,9 +220,6 @@ export interface ProjectResponseDto {
     domainCatalog: DomainModelDto[];
     metadata: {
         repository: string;
-        techStack: string[];
-        language: string;
-        framework: string;
         architecture: {
             overview: string;
             style: string;
@@ -247,6 +238,17 @@ export interface ProjectResponseDto {
             name: string;
             purpose: string;
             apiDocs: string;
+        }>;
+        services: Array<{
+            id: string;
+            name: string;
+            type: string;
+            language?: string;
+            framework?: string;
+            techStack?: string[];
+            description?: string;
+            goals?: string;
+            repository?: string;
         }>;
         standards: {
             namingConventions: string[];

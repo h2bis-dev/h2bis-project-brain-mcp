@@ -43,6 +43,14 @@ const buildProjectContextSection = (ctx: ProjectContext): string => {
         });
     }
 
+    if (ctx.services?.length) {
+        lines.push(`\nProject Applications & Services (SCOPE your use case to the relevant service):`);
+        ctx.services.forEach(s => {
+            const tech = [s.language, s.framework, ...(s.techStack ?? [])].filter(Boolean).join(', ');
+            lines.push(`  - [${s.type}] ${s.name}${tech ? ` (${tech})` : ''}${s.description ? `: ${s.description}` : ''}`);
+        });
+    }
+
     lines.push(`--- END PROJECT CONTEXT ---`);
     return lines.join('\n');
 };

@@ -52,11 +52,17 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
         setLoadingProject(true);
         try {
             const project = await projectService.getById(selectedProject.id);
+            const services = project.metadata?.services || [];
+            // Derive flat language/framework from the first service; aggregate all techStack entries
+            const primaryService = services[0];
+            const aggregatedTechStack = Array.from(
+                new Set(services.flatMap(s => s.techStack || []))
+            );
             const ctx: UpdateWithAIProjectContext = {
                 name: project.name,
-                language: project.metadata?.language,
-                framework: project.metadata?.framework,
-                techStack: project.metadata?.techStack,
+                language: primaryService?.language,
+                framework: primaryService?.framework,
+                techStack: aggregatedTechStack.length ? aggregatedTechStack : undefined,
                 architectureStyle: project.metadata?.architecture?.style,
                 architectureOverview: project.metadata?.architecture?.overview,
                 standards: project.metadata?.standards ? {

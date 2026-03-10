@@ -70,9 +70,6 @@ const ProjectSchema = new mongoose.Schema(
         metadata: {
             // System Context
             repository: { type: String, default: '' },
-            techStack: { type: [String], default: [] },
-            language: { type: String, default: '' },
-            framework: { type: String, default: '' },
 
             // Architecture
             architecture: {
@@ -252,6 +249,22 @@ export interface DomainModel {
     updatedAt?: Date;
 }
 
+// ── Project Services ──────────────────────────────────────────────────────────
+
+export type ProjectServiceType = 'web-app' | 'mobile-app' | 'api' | 'background-service' | 'data-service' | 'other';
+
+export interface ProjectServiceEntry {
+    id: string;
+    name: string;
+    type: ProjectServiceType;
+    language?: string;
+    framework?: string;
+    techStack?: string[];
+    description?: string;
+    goals?: string;
+    repository?: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ProjectDocument {
@@ -268,9 +281,6 @@ export interface ProjectDocument {
     domainCatalog: DomainModel[];
     metadata: {
         repository: string;
-        techStack: string[];
-        language: string;
-        framework: string;
         architecture: {
             overview: string;
             style: string;
@@ -290,6 +300,7 @@ export interface ProjectDocument {
             purpose: string;
             apiDocs: string;
         }>;
+        services: ProjectServiceEntry[];
         standards: {
             namingConventions: string[];
             errorHandling: string[];
@@ -367,9 +378,6 @@ export const createProject = (props: CreateProjectProps): ProjectDocument => {
         domainCatalog: props.domainCatalog ?? [],
         metadata: {
             repository: props.metadata?.repository ?? '',
-            techStack: props.metadata?.techStack ?? [],
-            language: props.metadata?.language ?? '',
-            framework: props.metadata?.framework ?? '',
             architecture: {
                 overview: props.metadata?.architecture?.overview ?? '',
                 style: props.metadata?.architecture?.style ?? '',
@@ -385,6 +393,7 @@ export const createProject = (props: CreateProjectProps): ProjectDocument => {
                 cicd: props.metadata?.deployment?.cicd ?? []
             },
             externalServices: props.metadata?.externalServices ?? [],
+            services: props.metadata?.services ?? [],
             standards: {
                 namingConventions: props.metadata?.standards?.namingConventions ?? [],
                 errorHandling: props.metadata?.standards?.errorHandling ?? [],

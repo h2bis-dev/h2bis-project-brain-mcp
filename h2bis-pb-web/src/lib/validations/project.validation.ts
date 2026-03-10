@@ -32,9 +32,6 @@ export const createProjectSchema = z.object({
 
     metadata: z.object({
         repository: z.string().optional(),
-        techStack: z.array(z.string()).optional(),
-        language: z.string().optional(),
-        framework: z.string().optional(),
         architecture: z.object({
             overview: z.string().optional(),
             style: z.string().optional(),
@@ -73,59 +70,3 @@ export const createProjectSchema = z.object({
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
-
-/**
- * Common tech stack options
- */
-export const TECH_STACK_OPTIONS = [
-    'React',
-    'Next.js',
-    'Node.js',
-    'Express',
-    'MongoDB',
-    'PostgreSQL',
-    'TypeScript',
-    'JavaScript',
-    'Python',
-    'Django',
-    'FastAPI',
-    'Vue.js',
-    'Angular',
-    'Tailwind CSS',
-    'Docker',
-    'Kubernetes',
-] as const;
-
-/**
- * Common programming languages
- */
-export const LANGUAGE_OPTIONS = [
-    'TypeScript',
-    'JavaScript',
-    'Python',
-    'Java',
-    'C#',
-    'Go',
-    'Rust',
-    'PHP',
-    'Ruby',
-    'Swift',
-    'Kotlin',
-] as const;
-
-/**
- * Common frameworks
- */
-export const FRAMEWORK_OPTIONS = [
-    'Next.js',
-    'Express',
-    'NestJS',
-    'Django',
-    'FastAPI',
-    'Spring Boot',
-    'ASP.NET Core',
-    'Laravel',
-    'Ruby on Rails',
-    'Flutter',
-    'React Native',
-] as const;
