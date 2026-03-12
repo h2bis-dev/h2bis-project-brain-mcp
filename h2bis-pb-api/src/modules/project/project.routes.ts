@@ -68,6 +68,18 @@ projectRouter.get(
 );
 
 /**
+ * GET /api/projects/:projectId/services
+ * Returns the list of services/applications in the project's metadata
+ * Permissions: view:projects
+ */
+projectRouter.get(
+    '/:projectId/services',
+    authenticate,
+    requirePermission('view:projects'),
+    projectController.getProjectServices
+);
+
+/**
  * GET /api/projects/:projectId
  * Retrieves a specific project with user's role and management status
  * Permissions: view:projects

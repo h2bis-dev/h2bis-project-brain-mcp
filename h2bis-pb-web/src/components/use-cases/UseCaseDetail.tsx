@@ -53,16 +53,8 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
         try {
             const project = await projectService.getById(selectedProject.id);
             const services = project.metadata?.services || [];
-            // Derive flat language/framework from the first service; aggregate all techStack entries
-            const primaryService = services[0];
-            const aggregatedTechStack = Array.from(
-                new Set(services.flatMap(s => s.techStack || []))
-            );
             const ctx: UpdateWithAIProjectContext = {
                 name: project.name,
-                language: primaryService?.language,
-                framework: primaryService?.framework,
-                techStack: aggregatedTechStack.length ? aggregatedTechStack : undefined,
                 architectureStyle: project.metadata?.architecture?.style,
                 architectureOverview: project.metadata?.architecture?.overview,
                 standards: project.metadata?.standards ? {
@@ -75,6 +67,16 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     testTypes: project.metadata.qualityGates.testingRequirements?.testTypes,
                 } : undefined,
                 authStrategy: project.metadata?.authStrategy,
+                services: services.length ? services.map(s => ({
+                    id:          s.id,
+                    name:        s.name,
+                    type:        s.type,
+                    language:    s.language    || undefined,
+                    framework:   s.framework   || undefined,
+                    techStack:   s.techStack?.length ? s.techStack : undefined,
+                    description: s.description || undefined,
+                    goals:       s.goals       || undefined,
+                })) : undefined,
                 // domainCatalog is a top-level Project field, not inside metadata
                 domainCatalog: project.domainCatalog?.map((e: any) => ({
                     name: e.name,
@@ -274,11 +276,10 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
 
             {/* Tabbed Content */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 mx-4">
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mx-4">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="requirements">Requirements</TabsTrigger>
-                    <TabsTrigger value="technical">Technical</TabsTrigger>
-                    <TabsTrigger value="interfaces">Interfaces</TabsTrigger>
+                    <TabsTrigger value="technical">Services</TabsTrigger>
                     <TabsTrigger value="quality">Quality</TabsTrigger>
                 </TabsList>
 
@@ -459,159 +460,61 @@ export function UseCaseDetail({ useCaseId, onClose }: UseCaseDetailProps) {
                     )}
                 </TabsContent>
 
-                {/* Technical Surface Tab */}
-                <TabsContent value="technical" className="flex-1 overflow-y-auto px-4 space-y-6">
-                    {/* Backend */}
-                    <div>
-                        <h3 className="font-semibold text-sm mb-3">Backend</h3>
-                        <div className="space-y-3">
-                            {useCase.technicalSurface?.backend?.repos && useCase.technicalSurface.backend.repos.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-1">Repositories</p>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {useCase.technicalSurface.backend.repos.map((repo, index) => (
-                                            <li key={index} className="text-sm text-muted-foreground">{repo}</li>
-                                        ))}
-                                    </ul>
+                {/* Services & Interfaces Tab */}
+                <TabsContent value="technical" className="flex-1 overflow-y-auto px-4 space-y-4">
+                    {useCase.serviceInterfaces && useCase.serviceInterfaces.length > 0 ? (
+                        useCase.serviceInterfaces.map((svc, idx) => (
+                            <div key={idx} className="border rounded-lg overflow-hidden">
+                                {/* Service header */}
+                                <div className="flex items-center gap-3 p-3 bg-muted/30">
+                                    <span className="font-medium text-sm">{svc.serviceName}</span>
+                                    <Badge variant="outline" className="text-xs capitalize">{svc.serviceType.replace(/-/g, ' ')}</Badge>
+                                    <Badge variant="secondary" className="text-xs">{svc.interfaceType}</Badge>
                                 </div>
-                            )}
-                            {useCase.technicalSurface?.backend?.endpoints && useCase.technicalSurface.backend.endpoints.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-1">Endpoints</p>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {useCase.technicalSurface.backend.endpoints.map((endpoint, index) => (
-                                            <li key={index} className="text-sm text-muted-foreground font-mono">{endpoint}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                            {useCase.technicalSurface?.backend?.collections && useCase.technicalSurface.backend.collections.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-1">Data Collections</p>
-                                    <div className="space-y-2">
-                                        {useCase.technicalSurface.backend.collections.map((collection, index) => (
-                                            <div key={index} className="border rounded p-2">
-                                                <p className="text-sm font-medium">{collection.name}</p>
-                                                <p className="text-xs text-muted-foreground mt-1">{collection.purpose}</p>
-                                                <div className="flex gap-1 mt-1">
-                                                    {collection.operations.map((op) => (
-                                                        <Badge key={op} variant="secondary" className="text-xs">{op}</Badge>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
-                    {/* Frontend */}
-                    <div>
-                        <h3 className="font-semibold text-sm mb-3">Frontend</h3>
-                        <div className="space-y-3">
-                            {useCase.technicalSurface?.frontend?.repos && useCase.technicalSurface.frontend.repos.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-1">Repositories</p>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {useCase.technicalSurface.frontend.repos.map((repo, index) => (
-                                            <li key={index} className="text-sm text-muted-foreground">{repo}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                            {useCase.technicalSurface?.frontend?.routes && useCase.technicalSurface.frontend.routes.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-1">Routes</p>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {useCase.technicalSurface.frontend.routes.map((route, index) => (
-                                            <li key={index} className="text-sm text-muted-foreground font-mono">{route}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                            {useCase.technicalSurface?.frontend?.components && useCase.technicalSurface.frontend.components.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-1">Components</p>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {useCase.technicalSurface.frontend.components.map((component, index) => (
-                                            <li key={index} className="text-sm text-muted-foreground font-mono">{component}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {!useCase.technicalSurface?.backend?.repos?.length && !useCase.technicalSurface?.frontend?.repos?.length && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <p>No technical surface defined</p>
-                        </div>
-                    )}
-                </TabsContent>
-
-                {/* Interfaces & API Tab */}
-                <TabsContent value="interfaces" className="flex-1 overflow-y-auto px-4 space-y-6">
-                    {useCase.interfaces ? (
-                        <>
-                            <div>
-                                <h3 className="font-semibold text-sm mb-2">Interface Type</h3>
-                                <Badge variant="outline">{useCase.interfaces.type}</Badge>
-                            </div>
-
-                            {useCase.interfaces.endpoints && useCase.interfaces.endpoints.length > 0 && (
-                                <div>
-                                    <h3 className="font-semibold text-sm mb-2">API Endpoints</h3>
-                                    <div className="space-y-3">
-                                        {useCase.interfaces.endpoints.map((endpoint, index) => (
-                                            <div key={index} className="border rounded p-3">
-                                                <div className="flex items-center gap-2 mb-2">
+                                {/* Endpoints (REST / GraphQL / UI routes) */}
+                                {svc.endpoints && svc.endpoints.length > 0 && (
+                                    <div className="p-3 border-t space-y-2">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                            {svc.interfaceType === 'UI' ? 'Routes' : 'Endpoints'}
+                                        </p>
+                                        {svc.endpoints.map((ep, epIdx) => (
+                                            <div key={epIdx} className="flex items-center gap-2">
+                                                {svc.interfaceType !== 'UI' && ep.method && (
                                                     <Badge
                                                         variant="outline"
                                                         className={cn(
-                                                            endpoint.method === 'GET' && 'bg-blue-100 text-blue-700',
-                                                            endpoint.method === 'POST' && 'bg-green-100 text-green-700',
-                                                            endpoint.method === 'PUT' && 'bg-yellow-100 text-yellow-700',
-                                                            endpoint.method === 'PATCH' && 'bg-purple-100 text-purple-700',
-                                                            endpoint.method === 'DELETE' && 'bg-red-100 text-red-700'
+                                                            'text-xs shrink-0',
+                                                            ep.method.toUpperCase() === 'GET' && 'bg-blue-100 text-blue-700',
+                                                            ep.method.toUpperCase() === 'POST' && 'bg-green-100 text-green-700',
+                                                            ep.method.toUpperCase() === 'PUT' && 'bg-yellow-100 text-yellow-700',
+                                                            ep.method.toUpperCase() === 'PATCH' && 'bg-purple-100 text-purple-700',
+                                                            ep.method.toUpperCase() === 'DELETE' && 'bg-red-100 text-red-700'
                                                         )}
                                                     >
-                                                        {endpoint.method}
+                                                        {ep.method.toUpperCase()}
                                                     </Badge>
-                                                    <code className="text-sm font-mono">{endpoint.path}</code>
-                                                </div>
-                                                {endpoint.request && (
-                                                    <div className="mt-2">
-                                                        <p className="text-xs font-medium text-muted-foreground mb-1">Request:</p>
-                                                        <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">{endpoint.request}</pre>
-                                                    </div>
                                                 )}
-                                                {endpoint.response && (
-                                                    <div className="mt-2">
-                                                        <p className="text-xs font-medium text-muted-foreground mb-1">Response:</p>
-                                                        <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">{endpoint.response}</pre>
-                                                    </div>
-                                                )}
+                                                <code className="text-sm font-mono text-muted-foreground">{ep.path}</code>
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {useCase.interfaces.events && useCase.interfaces.events.length > 0 && (
-                                <div>
-                                    <h3 className="font-semibold text-sm mb-2">Events</h3>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {useCase.interfaces.events.map((event, index) => (
-                                            <li key={index} className="text-sm text-muted-foreground font-mono">{event}</li>
+                                {/* Events */}
+                                {svc.events && svc.events.length > 0 && (
+                                    <div className="p-3 border-t space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Events</p>
+                                        {svc.events.map((ev, evIdx) => (
+                                            <p key={evIdx} className="text-sm font-mono text-muted-foreground">{ev}</p>
                                         ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </>
+                                    </div>
+                                )}
+                            </div>
+                        ))
                     ) : (
                         <div className="text-center py-8 text-muted-foreground">
-                            <p>No interfaces defined</p>
+                            <p>No services defined for this use case</p>
                         </div>
                     )}
                 </TabsContent>

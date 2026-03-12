@@ -6,9 +6,6 @@ const buildProjectContextSection = (ctx: ProjectContext): string => {
     lines.push(`Use the following project information to make the generated use case coherent with the existing codebase.\n`);
 
     if (ctx.projectName) lines.push(`Project: ${ctx.projectName}`);
-    if (ctx.language)    lines.push(`Language: ${ctx.language}`);
-    if (ctx.framework)   lines.push(`Framework: ${ctx.framework}`);
-    if (ctx.techStack?.length) lines.push(`Tech Stack: ${ctx.techStack.join(', ')}`);
 
     if (ctx.architecture?.style || ctx.architecture?.overview) {
         lines.push(`\nArchitecture:`);

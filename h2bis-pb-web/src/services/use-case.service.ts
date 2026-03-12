@@ -10,7 +10,7 @@ export interface CreateUseCaseRequest {
     description: string;
     businessValue: string;
     primaryActor: string;
-    technicalSurface: {
+    technicalSurface?: {
         backend: {
             repos: string[];
             endpoints?: string[];
@@ -26,6 +26,19 @@ export interface CreateUseCaseRequest {
             components?: string[];
         };
     };
+    serviceInterfaces?: Array<{
+        serviceId: string;
+        serviceName: string;
+        serviceType: string;
+        interfaceType: 'REST' | 'GraphQL' | 'Event' | 'UI';
+        endpoints: Array<{
+            method: string;
+            path: string;
+            request?: string;
+            response?: string;
+        }>;
+        events: string[];
+    }>;
     status?: {
         lifecycle: string;
         reviewedByHuman: boolean;
@@ -225,9 +238,6 @@ export interface GenerateUseCaseResponse {
 
 export interface UpdateWithAIProjectContext {
     name?: string;
-    language?: string;
-    framework?: string;
-    techStack?: string[];
     architectureStyle?: string;
     architectureOverview?: string;
     standards?: {
@@ -243,6 +253,16 @@ export interface UpdateWithAIProjectContext {
         approach?: string;
         implementation?: string[];
     };
+    services?: Array<{
+        id: string;
+        name: string;
+        type: string;
+        language?: string;
+        framework?: string;
+        techStack?: string[];
+        description?: string;
+        goals?: string;
+    }>;
     domainCatalog?: Array<{
         name: string;
         description?: string;

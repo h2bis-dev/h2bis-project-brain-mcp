@@ -371,6 +371,46 @@ export const projectController = {
     ),
 
     /**
+     * GET /api/projects/:projectId/services
+     * Returns the list of services/applications defined in the project metadata
+     */
+    getProjectServices: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const user = (req as any).user;
+                const { projectId } = req.params;
+
+                if (!user || user.isAgent) {
+                    const project = await Project.findById(projectId).lean();
+                    if (!project) {
+                        return res.status(404).json({ error: 'Project not found' });
+                    }
+                    const services = (project as any).metadata?.services ?? [];
+                    return res.status(200).json({ success: true, data: { services } });
+                }
+
+                logger.info(`Fetching services for project ${projectId} for user ${user.userId}`);
+
+                const response: GetProjectByIdResponseDto = await getProjectByIdHandler.execute(
+                    projectId,
+                    user.userId,
+                    user.roles
+                );
+
+                const services = (response as any).metadata?.services ?? [];
+
+                return res.status(200).json({ success: true, data: { services } });
+            } catch (error) {
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found or access denied' });
+                }
+                logger.error(`Error fetching services for project ${req.params.projectId}: ${error}`);
+                return res.status(500).json({ error: 'Failed to fetch project services' });
+            }
+        }
+    ),
+
+    /**
      * DELETE /api/projects/mcp/domain-catalog/:projectId/:modelName
      * Remove a domain model by name from the project catalog.
      */

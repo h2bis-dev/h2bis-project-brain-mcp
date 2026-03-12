@@ -18,7 +18,11 @@ export class UseCaseGenerationAgent {
             hasExistingData: !!input.existingData,
             hasProjectContext: !!input.projectContext,
             projectName: input.projectContext?.projectName,
-            techStack: input.projectContext?.techStack,
+            services: input.projectContext?.services?.map(s => ({
+                id: s.id, name: s.name, type: s.type,
+                language: s.language, framework: s.framework, techStack: s.techStack,
+                description: s.description, goals: s.goals
+            })),
             existingEndpointsCount: input.projectContext?.developedEndpoints?.length ?? 0,
             domainModelsCount: input.projectContext?.domainCatalog?.length ?? 0
         });

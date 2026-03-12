@@ -56,6 +56,14 @@ export class UpdateWithAIHandler {
                 constraints.push(`Existing Domain Entities: ${entityNames}`);
             }
 
+            if (ctx.services?.length) {
+                const svcLines = ctx.services.map(s => {
+                    const tech = [s.language, s.framework, ...(s.techStack ?? [])].filter(Boolean).join(', ');
+                    return `  - [${s.type}] ${s.name}${tech ? ` (${tech})` : ''}${s.description ? `: ${s.description}` : ''}`;
+                });
+                constraints.push(`Project Services (scope your changes to the relevant service):\n${svcLines.join('\n')}`);
+            }
+
             if (constraints.length > 0) {
                 description += `\n\n--- PROJECT CONSTRAINTS (Do NOT contradict these) ---\n${constraints.join('\n')}`;
             }

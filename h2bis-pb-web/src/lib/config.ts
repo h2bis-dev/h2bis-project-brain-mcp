@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
     PROJECTS: {
         LIST: '/api/projects',
         DASHBOARD: '/api/projects/dashboard',
+        SERVICES: (id: string) => `/api/projects/${id}/services`,
     },
     USE_CASES: {
         LIST: '/api/use-cases',

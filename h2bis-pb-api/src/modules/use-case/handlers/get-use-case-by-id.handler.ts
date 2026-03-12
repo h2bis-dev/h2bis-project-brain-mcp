@@ -50,6 +50,7 @@ export class GetUseCaseByIdHandler {
             aiDirectives: useCase.aiDirectives,
             flows: useCase.flows || [],
             technicalSurface: useCase.technicalSurface,
+            serviceInterfaces: useCase.serviceInterfaces,
             relationships: useCase.relationships || [],
             implementationRisk: useCase.implementationRisk || [],
             tags: useCase.tags || [],

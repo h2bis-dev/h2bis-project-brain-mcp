@@ -18,16 +18,30 @@ const DataCollectionSchema = z.object({
 
 const TechnicalSurfaceSchema = z.object({
     backend: z.object({
-        repos: z.array(z.string()),
+        repos: z.array(z.string()).default([]),
         endpoints: z.array(z.string()).default([]),
         collections: z.array(DataCollectionSchema).default([])
     }).strict(),
 
     frontend: z.object({
-        repos: z.array(z.string()),
+        repos: z.array(z.string()).default([]),
         routes: z.array(z.string()).default([]),
         components: z.array(z.string()).default([])
     }).strict()
+});
+
+const ServiceInterfaceSchema = z.object({
+    serviceId: z.string(),
+    serviceName: z.string(),
+    serviceType: z.string(),
+    interfaceType: z.enum(["REST", "GraphQL", "Event", "UI"]),
+    endpoints: z.array(z.object({
+        method: z.string(),
+        path: z.string(),
+        request: z.string().optional(),
+        response: z.string().optional()
+    })).default([]),
+    events: z.array(z.string()).default([])
 });
 
 const FunctionalRequirementsSchema = z.object({
@@ -142,6 +156,8 @@ export const UseCaseSchema = z.object({
         backend: { repos: [], endpoints: [], collections: [] },
         frontend: { repos: [], routes: [], components: [] }
     }),
+
+    serviceInterfaces: z.array(ServiceInterfaceSchema).optional().default([]),
 
     relationships: z.array(
         z.object({

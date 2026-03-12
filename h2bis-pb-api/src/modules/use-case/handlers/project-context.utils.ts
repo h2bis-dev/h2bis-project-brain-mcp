@@ -15,10 +15,7 @@ export function buildProjectContext(project: any): ProjectContext {
     const meta = project.metadata ?? {};
     const ctx: ProjectContext = {};
 
-    if (project.name)           ctx.projectName = project.name;
-    if (meta.language)          ctx.language = meta.language;
-    if (meta.framework)         ctx.framework = meta.framework;
-    if (meta.techStack?.length) ctx.techStack = meta.techStack;
+    if (project.name) ctx.projectName = project.name;
 
     const arch = meta.architecture;
     if (arch?.style || arch?.overview) {

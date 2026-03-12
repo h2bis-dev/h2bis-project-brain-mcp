@@ -7,9 +7,6 @@ import type { UseCase } from '../../intent-extraction/types/intent-analysis.type
  */
 export interface ProjectContext {
     projectName?: string;
-    techStack?: string[];
-    language?: string;
-    framework?: string;
     architecture?: {
         style?: string;
         overview?: string;

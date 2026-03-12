@@ -16,6 +16,7 @@ import { ArrowLeft, Plus, X, Loader2, Sparkles, AlertCircle, Zap, Trash2, Wand2 
 import { useUseCase, useUpdateUseCase, useEnhanceUseCase } from '@/hooks/useUseCases';
 import { type UpdateUseCaseRequest } from '@/services/use-case.service';
 import { generateUseCasePromptInstructions } from '@/lib/use-case-definitions';
+import { useSelectedProject, useProjectServices } from '@/hooks/useProject';
 
 type FieldOrigin = 'original' | 'ai' | 'user';
 
@@ -27,6 +28,8 @@ export default function EditUseCasePage() {
     const { data: useCase, isLoading, error: fetchError } = useUseCase(useCaseId);
     const updateMutation = useUpdateUseCase();
     const enhanceMutation = useEnhanceUseCase();
+    const selectedProject = useSelectedProject();
+    const { data: projectServices } = useProjectServices(selectedProject?.id);
 
     // Track whether form has been populated from existing data
     const [isFormPopulated, setIsFormPopulated] = useState(false);
@@ -38,12 +41,18 @@ export default function EditUseCasePage() {
     const [businessValue, setBusinessValue] = useState('');
     const [primaryActor, setPrimaryActor] = useState('');
 
-    // Technical Surface
-    const [backendRepos, setBackendRepos] = useState<string[]>(['']);
-    const [frontendRepos, setFrontendRepos] = useState<string[]>(['']);
-    const [endpoints, setEndpoints] = useState<string[]>(['']);
-    const [routes, setRoutes] = useState<string[]>(['']);
-    const [components, setComponents] = useState<string[]>(['']);
+    // Service interfaces (replaces Technical Surface)
+    type ServiceInterfaceState = {
+        serviceId: string;
+        serviceName: string;
+        serviceType: string;
+        selected: boolean;
+        interfaceType: 'REST' | 'GraphQL' | 'Event' | 'UI';
+        endpoints: Array<{ method: string; path: string; request: string; response: string }>;
+        events: string[];
+    };
+
+    const [serviceInterfaces, setServiceInterfaces] = useState<ServiceInterfaceState[]>([]);
 
     // Optional fields
     const [acceptanceCriteria, setAcceptanceCriteria] = useState<string[]>(['']);
@@ -59,10 +68,6 @@ export default function EditUseCasePage() {
         inScope: [''], outOfScope: [''], assumptions: [''], constraints: ['']
     });
 
-    // Interfaces
-    const [interfaceType, setInterfaceType] = useState<'REST' | 'GraphQL' | 'Event' | 'UI'>('REST');
-    const [interfaceEndpoints, setInterfaceEndpoints] = useState<Array<{ method: string, path: string, request: string, response: string }>>([]);
-    const [interfaceEvents, setInterfaceEvents] = useState<string[]>([]);
 
     // Config & Quality
     const [testTypes, setTestTypes] = useState<Array<'unit' | 'integration' | 'e2e' | 'security'>>(['unit']);
@@ -80,7 +85,7 @@ export default function EditUseCasePage() {
     const [enhanceError, setEnhanceError] = useState('');
     const [fieldOrigins, setFieldOrigins] = useState<Record<string, FieldOrigin>>({});
 
-    // Populate form from existing use case data
+    // Populate form from existing use case data (once)
     useEffect(() => {
         if (useCase && !isFormPopulated) {
             setKey(useCase.key || '');
@@ -88,16 +93,6 @@ export default function EditUseCasePage() {
             setDescription(useCase.description || '');
             setBusinessValue(useCase.businessValue || '');
             setPrimaryActor(useCase.primaryActor || '');
-
-            // Technical Surface
-            if (useCase.technicalSurface) {
-                const ts = useCase.technicalSurface;
-                setBackendRepos(ts.backend?.repos?.length ? ts.backend.repos : ['']);
-                setFrontendRepos(ts.frontend?.repos?.length ? ts.frontend.repos : ['']);
-                setEndpoints(ts.backend?.endpoints?.length ? ts.backend.endpoints : ['']);
-                setRoutes(ts.frontend?.routes?.length ? ts.frontend.routes : ['']);
-                setComponents(ts.frontend?.components?.length ? ts.frontend.components : ['']);
-            }
 
             setAcceptanceCriteria(useCase.acceptanceCriteria?.length ? useCase.acceptanceCriteria : ['']);
             setStakeholders(useCase.stakeholders || []);
@@ -119,19 +114,6 @@ export default function EditUseCasePage() {
                 });
             }
 
-            if (useCase.interfaces) {
-                if (useCase.interfaces.type) setInterfaceType(useCase.interfaces.type as any);
-                if (useCase.interfaces.endpoints) {
-                    setInterfaceEndpoints(useCase.interfaces.endpoints.map(ep => ({
-                        method: ep.method,
-                        path: ep.path,
-                        request: ep.request || '',
-                        response: ep.response || '',
-                    })));
-                }
-                if (useCase.interfaces.events) setInterfaceEvents(useCase.interfaces.events);
-            }
-
             if (useCase.quality) {
                 if (useCase.quality.testTypes) setTestTypes(useCase.quality.testTypes as any);
                 if (useCase.quality.performanceCriteria) setPerfCriteria(useCase.quality.performanceCriteria);
@@ -145,6 +127,29 @@ export default function EditUseCasePage() {
             setIsFormPopulated(true);
         }
     }, [useCase, isFormPopulated]);
+
+    // Merge project services with saved serviceInterfaces whenever either changes
+    useEffect(() => {
+        if (!useCase) return;
+        const savedInterfaces = useCase.serviceInterfaces ?? [];
+        setServiceInterfaces((projectServices ?? []).map(s => {
+            const saved = savedInterfaces.find((si: any) => si.serviceId === s.id);
+            return {
+                serviceId: s.id,
+                serviceName: s.name,
+                serviceType: s.type,
+                selected: !!saved,
+                interfaceType: (saved?.interfaceType ?? 'REST') as 'REST' | 'GraphQL' | 'Event' | 'UI',
+                endpoints: saved?.endpoints?.map((e: any) => ({
+                    method: e.method ?? '',
+                    path: e.path ?? '',
+                    request: e.request ?? '',
+                    response: e.response ?? '',
+                })) ?? [],
+                events: saved?.events ?? [],
+            };
+        }));
+    }, [useCase, projectServices]);
 
     // Field Origin Indicator Component - 3 states: original, ai, user
     const FieldOriginBadge = ({ field }: { field: string }) => {
@@ -217,17 +222,24 @@ export default function EditUseCasePage() {
         update('businessValue', setBusinessValue, enhanced.businessValue);
         update('primaryActor', setPrimaryActor, enhanced.primaryActor);
 
-        if (enhanced.technicalSurface) {
-            const ts = enhanced.technicalSurface;
-            if (ts.backend) {
-                update('backendRepos', setBackendRepos, ts.backend.repos);
-                update('endpoints', setEndpoints, ts.backend.endpoints);
-            }
-            if (ts.frontend) {
-                update('frontendRepos', setFrontendRepos, ts.frontend.repos);
-                update('routes', setRoutes, ts.frontend.routes);
-                update('components', setComponents, ts.frontend.components);
-            }
+        // Service interfaces mapping (AI may return updated service interface suggestions)
+        if (enhanced.serviceInterfaces?.length) {
+            setServiceInterfaces(prev => {
+                const next = [...prev];
+                enhanced.serviceInterfaces.forEach((si: any) => {
+                    const idx = next.findIndex(s => s.serviceId === si.serviceId);
+                    if (idx !== -1) {
+                        next[idx] = {
+                            ...next[idx],
+                            selected: true,
+                            interfaceType: si.interfaceType ?? next[idx].interfaceType,
+                            endpoints: si.endpoints ?? next[idx].endpoints,
+                            events: si.events ?? next[idx].events,
+                        };
+                    }
+                });
+                return next;
+            });
         }
 
         update('acceptanceCriteria', setAcceptanceCriteria, enhanced.acceptanceCriteria);
@@ -238,11 +250,6 @@ export default function EditUseCasePage() {
         }
         if (enhanced.scope) {
             update('scope', setScope, enhanced.scope);
-        }
-        if (enhanced.interfaces) {
-            if (enhanced.interfaces.type) setInterfaceType(enhanced.interfaces.type);
-            if (enhanced.interfaces.endpoints) setInterfaceEndpoints(enhanced.interfaces.endpoints);
-            if (enhanced.interfaces.events) setInterfaceEvents(enhanced.interfaces.events);
         }
         if (enhanced.quality) {
             if (enhanced.quality.testTypes) setTestTypes(enhanced.quality.testTypes);
@@ -330,17 +337,13 @@ export default function EditUseCasePage() {
             description,
             businessValue,
             primaryActor,
-            technicalSurface: {
-                backend: {
-                    repos: backendRepos.filter(r => r.trim()),
-                    endpoints: endpoints.filter(e => e.trim()),
-                },
-                frontend: {
-                    repos: frontendRepos.filter(r => r.trim()),
-                    routes: routes.filter(r => r.trim()),
-                    components: components.filter(c => c.trim()),
-                }
-            },
+            serviceInterfaces: serviceInterfaces
+                .filter(s => s.selected)
+                .map(({ serviceId, serviceName, serviceType, interfaceType, endpoints, events }) => ({
+                    serviceId, serviceName, serviceType, interfaceType,
+                    endpoints: endpoints.filter(e => e.path.trim()),
+                    events: events.filter(e => e.trim()),
+                })),
             acceptanceCriteria: acceptanceCriteria.filter(ac => ac.trim()),
             tags,
             aiMetadata: {
@@ -362,11 +365,6 @@ export default function EditUseCasePage() {
                 outOfScope: scope.outOfScope.filter(s => s.trim()),
                 assumptions: scope.assumptions.filter(s => s.trim()),
                 constraints: scope.constraints.filter(s => s.trim())
-            },
-            interfaces: {
-                type: interfaceType,
-                endpoints: interfaceEndpoints.filter(e => e.path.trim()),
-                events: interfaceEvents.filter(e => e.trim())
             },
             quality: {
                 testTypes,
@@ -631,39 +629,144 @@ export default function EditUseCasePage() {
                             {/* TECHNICAL TAB */}
                             <TabsContent value="technical" className="space-y-6 mt-6">
                                 <Card>
-                                    <CardHeader><CardTitle>Technical Surface</CardTitle></CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-3">
-                                            <Label>Backend Repos</Label>
-                                            {backendRepos.map((repo, i) => (<div key={i} className="flex gap-2"><Input value={repo} onChange={(e) => handleUpdateItem(i, e.target.value, backendRepos, setBackendRepos)} /><Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(i, backendRepos, setBackendRepos)}><X className="h-4 w-4" /></Button></div>))}
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleAddItem(backendRepos, setBackendRepos)}><Plus className="h-4 w-4 mr-2" /> Add Repo</Button>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <Label>Frontend Repos</Label>
-                                            {frontendRepos.map((repo, i) => (<div key={i} className="flex gap-2"><Input value={repo} onChange={(e) => handleUpdateItem(i, e.target.value, frontendRepos, setFrontendRepos)} /><Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(i, frontendRepos, setFrontendRepos)}><X className="h-4 w-4" /></Button></div>))}
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleAddItem(frontendRepos, setFrontendRepos)}><Plus className="h-4 w-4 mr-2" /> Add Repo</Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Interfaces</CardTitle></CardHeader>
+                                    <CardHeader>
+                                        <CardTitle>Applications / Services</CardTitle>
+                                        <CardDescription>
+                                            Select which services and applications are involved in this use case, and specify the interface each one exposes or consumes.
+                                        </CardDescription>
+                                    </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label>Type</Label>
-                                            <Select value={interfaceType} onValueChange={(v: any) => setInterfaceType(v)}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent><SelectItem value="REST">REST</SelectItem><SelectItem value="GraphQL">GraphQL</SelectItem><SelectItem value="Event">Event</SelectItem></SelectContent>
-                                            </Select>
-                                        </div>
-                                        <Label>Endpoints</Label>
-                                        {interfaceEndpoints.map((ep, i) => (
-                                            <div key={i} className="grid grid-cols-12 gap-2">
-                                                <div className="col-span-3"><Input placeholder="Method" value={ep.method} onChange={(e) => { const n = [...interfaceEndpoints]; n[i].method = e.target.value; setInterfaceEndpoints(n); }} /></div>
-                                                <div className="col-span-8"><Input placeholder="Path" value={ep.path} onChange={(e) => { const n = [...interfaceEndpoints]; n[i].path = e.target.value; setInterfaceEndpoints(n); }} /></div>
-                                                <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => setInterfaceEndpoints(interfaceEndpoints.filter((_, idx) => idx !== i))}><X className="h-4 w-4" /></Button></div>
+                                        {serviceInterfaces.length === 0 && (
+                                            <p className="text-sm text-muted-foreground border rounded-md p-4 text-center">
+                                                No services defined for this project. Add services under the project&apos;s Tech Stack settings.
+                                            </p>
+                                        )}
+                                        {serviceInterfaces.map((svc, idx) => (
+                                            <div key={svc.serviceId} className="border rounded-lg overflow-hidden">
+                                                {/* Service row header */}
+                                                <div className="flex items-center gap-3 p-3 bg-muted/30">
+                                                    <Checkbox
+                                                        checked={svc.selected}
+                                                        onCheckedChange={(checked) => {
+                                                            const next = [...serviceInterfaces];
+                                                            next[idx] = { ...next[idx], selected: !!checked };
+                                                            setServiceInterfaces(next);
+                                                        }}
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="font-medium">{svc.serviceName}</span>
+                                                        <Badge variant="outline" className="ml-2 text-xs capitalize">{svc.serviceType.replace(/-/g, ' ')}</Badge>
+                                                    </div>
+                                                </div>
+                                                {/* Interface config (visible when selected) */}
+                                                {svc.selected && (
+                                                    <div className="p-4 space-y-4 border-t">
+                                                        <div className="space-y-2">
+                                                            <Label>Interface Type</Label>
+                                                            <Select
+                                                                value={svc.interfaceType}
+                                                                onValueChange={(v: any) => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], interfaceType: v };
+                                                                    setServiceInterfaces(next);
+                                                                }}
+                                                            >
+                                                                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="REST">REST</SelectItem>
+                                                                    <SelectItem value="GraphQL">GraphQL</SelectItem>
+                                                                    <SelectItem value="Event">Event</SelectItem>
+                                                                    <SelectItem value="UI">UI</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        {(svc.interfaceType === 'REST' || svc.interfaceType === 'GraphQL') && (
+                                                            <div className="space-y-2">
+                                                                <Label>Endpoints</Label>
+                                                                {svc.endpoints.map((ep, epIdx) => (
+                                                                    <div key={epIdx} className="grid grid-cols-12 gap-2">
+                                                                        <div className="col-span-3">
+                                                                            <Input placeholder="GET" value={ep.method} onChange={(e) => {
+                                                                                const next = [...serviceInterfaces];
+                                                                                next[idx] = { ...next[idx], endpoints: next[idx].endpoints.map((x, i) => i === epIdx ? { ...x, method: e.target.value } : x) };
+                                                                                setServiceInterfaces(next);
+                                                                            }} />
+                                                                        </div>
+                                                                        <div className="col-span-8">
+                                                                            <Input placeholder="/api/v1/resource" value={ep.path} onChange={(e) => {
+                                                                                const next = [...serviceInterfaces];
+                                                                                next[idx] = { ...next[idx], endpoints: next[idx].endpoints.map((x, i) => i === epIdx ? { ...x, path: e.target.value } : x) };
+                                                                                setServiceInterfaces(next);
+                                                                            }} />
+                                                                        </div>
+                                                                        <div className="col-span-1">
+                                                                            <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                                                const next = [...serviceInterfaces];
+                                                                                next[idx] = { ...next[idx], endpoints: next[idx].endpoints.filter((_, i) => i !== epIdx) };
+                                                                                setServiceInterfaces(next);
+                                                                            }}><X className="h-4 w-4" /></Button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], endpoints: [...next[idx].endpoints, { method: 'GET', path: '', request: '', response: '' }] };
+                                                                    setServiceInterfaces(next);
+                                                                }}><Plus className="h-4 w-4 mr-2" /> Add Endpoint</Button>
+                                                            </div>
+                                                        )}
+                                                        {svc.interfaceType === 'UI' && (
+                                                            <div className="space-y-2">
+                                                                <Label>UI Routes / Screens</Label>
+                                                                {svc.endpoints.map((ep, epIdx) => (
+                                                                    <div key={epIdx} className="flex gap-2">
+                                                                        <Input placeholder="/dashboard" value={ep.path} onChange={(e) => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], endpoints: next[idx].endpoints.map((x, i) => i === epIdx ? { ...x, path: e.target.value } : x) };
+                                                                            setServiceInterfaces(next);
+                                                                        }} />
+                                                                        <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], endpoints: next[idx].endpoints.filter((_, i) => i !== epIdx) };
+                                                                            setServiceInterfaces(next);
+                                                                        }}><X className="h-4 w-4" /></Button>
+                                                                    </div>
+                                                                ))}
+                                                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], endpoints: [...next[idx].endpoints, { method: '', path: '', request: '', response: '' }] };
+                                                                    setServiceInterfaces(next);
+                                                                }}><Plus className="h-4 w-4 mr-2" /> Add Route</Button>
+                                                            </div>
+                                                        )}
+                                                        {svc.interfaceType === 'Event' && (
+                                                            <div className="space-y-2">
+                                                                <Label>Events</Label>
+                                                                {svc.events.map((ev, evIdx) => (
+                                                                    <div key={evIdx} className="flex gap-2">
+                                                                        <Input placeholder="e.g. order.created" value={ev} onChange={(e) => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], events: next[idx].events.map((x, i) => i === evIdx ? e.target.value : x) };
+                                                                            setServiceInterfaces(next);
+                                                                        }} />
+                                                                        <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], events: next[idx].events.filter((_, i) => i !== evIdx) };
+                                                                            setServiceInterfaces(next);
+                                                                        }}><X className="h-4 w-4" /></Button>
+                                                                    </div>
+                                                                ))}
+                                                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], events: [...next[idx].events, ''] };
+                                                                    setServiceInterfaces(next);
+                                                                }}><Plus className="h-4 w-4 mr-2" /> Add Event</Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
-                                        <Button type="button" variant="outline" size="sm" onClick={() => setInterfaceEndpoints([...interfaceEndpoints, { method: 'GET', path: '', request: '', response: '' }])}><Plus className="h-4 w-4 mr-2" /> Add Endpoint</Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>

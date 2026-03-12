@@ -1,6 +1,6 @@
 import { apiClient } from './api-client';
 import { API_ENDPOINTS } from '@/lib/config';
-import type { Project } from '@/types/project.types';
+import type { Project, ProjectService } from '@/types/project.types';
 
 export const projectService = {
     /**
@@ -40,6 +40,14 @@ export const projectService = {
             ...project,
             id: project._id || project.id,
         };
+    },
+
+    /**
+     * Get the list of services/applications for a project
+     */
+    async getServices(id: string): Promise<ProjectService[]> {
+        const response = await apiClient.get(API_ENDPOINTS.PROJECTS.SERVICES(id));
+        return response.data?.data?.services ?? [];
     },
 
     /**

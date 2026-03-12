@@ -70,6 +70,15 @@ export interface Interfaces {
     events: string[];
 }
 
+export interface ServiceInterface {
+    serviceId: string;
+    serviceName: string;
+    serviceType: string;
+    interfaceType: "REST" | "GraphQL" | "Event" | "UI";
+    endpoints: InterfaceEndpoint[];
+    events: string[];
+}
+
 export interface ErrorHandling {
     knownErrors: {
         condition: string;
@@ -150,6 +159,7 @@ export interface UseCase {
     acceptanceCriteria: string[];
     flows: Flow[];
     technicalSurface: TechnicalSurface;
+    serviceInterfaces?: ServiceInterface[];
     relationships: Relationship[];
     implementationRisk: ImplementationRisk[];
     tags: string[];
