@@ -44,6 +44,7 @@ web:
       memory: 1Gi
   env:
     NEXT_PUBLIC_API_URL: ""
+    NEXTAUTH_SECRET: ""
 
 # ----- AI Agent Pipeline (h2bis-pb-ai) -----
 ai:

@@ -26,6 +26,15 @@ spec:
               value: {{ .Values.global.nodeEnv | quote }}
             - name: NEXT_PUBLIC_API_URL
               value: {{ .Values.web.env.NEXT_PUBLIC_API_URL | quote }}
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: nextauth-secret
+            - name: NEXTAUTH_URL
+              value: "https://{{ .Values.secret.webIngressHost }}"
+            - name: API_URL
+              value: "http://{{ .Release.Name }}-api:{{ .Values.api.port }}"
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
           readinessProbe:

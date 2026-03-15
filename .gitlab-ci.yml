@@ -15,6 +15,7 @@
 #   WEB_INGRESS_HOST_DEV, WEB_INGRESS_HOST_PROD        - Web ingress hostnames
 #   JWT_ACCESS_SECRET_DEV, JWT_ACCESS_SECRET_PROD      - JWT access token secrets
 #   JWT_REFRESH_SECRET_DEV, JWT_REFRESH_SECRET_PROD    - JWT refresh token secrets
+#   NEXTAUTH_SECRET_DEV, NEXTAUTH_SECRET_PROD          - NextAuth session signing secret
 #   OPENAI_API_KEY                                     - OpenAI API key (shared)
 #   CORS_ALLOWED_ORIGINS_DEV, CORS_ALLOWED_ORIGINS_PROD - Allowed CORS origins
 #   AI_API_BASE_URL_DEV, AI_API_BASE_URL_PROD          - Internal API base URL for ai service
@@ -159,6 +160,7 @@ deploy-dev:
         --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_DEV"
         --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_DEV"
         --set-string web.env.NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL_DEV"
+        --set-string web.env.NEXTAUTH_SECRET="$NEXTAUTH_SECRET_DEV"
         --set-string ai.env.API_BASE_URL="$AI_API_BASE_URL_DEV"
         --set-string ai.env.OPENAI_API_KEY="$OPENAI_API_KEY"
     - export KUBECONFIG=$PWD/kubeconfig
@@ -197,6 +199,7 @@ deploy-prod:
         --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_PROD"
         --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_PROD"
         --set-string web.env.NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL_PROD"
+        --set-string web.env.NEXTAUTH_SECRET="$NEXTAUTH_SECRET_PROD"
         --set-string ai.env.API_BASE_URL="$AI_API_BASE_URL_PROD"
         --set-string ai.env.OPENAI_API_KEY="$OPENAI_API_KEY"
     - export KUBECONFIG=$PWD/kubeconfig
