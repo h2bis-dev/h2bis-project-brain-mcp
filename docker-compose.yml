@@ -29,15 +29,16 @@ services:
     restart: unless-stopped
     ports:
       - "4000:4000"
-    env_file:
-      - .env.production
     environment:
       NODE_ENV: production
       PORT: 4000
       # host.docker.internal resolves to the Windows host from inside a container
       MONGODB_URI: mongodb://host.docker.internal:27017/
-      DB_NAME: use_case_db    # h2bis-project-brain
-      # JWT_ACCESS_SECRET and JWT_REFRESH_SECRET come from .env.production
+      DB_NAME: use_case_db
+      JWT_ACCESS_SECRET: ZxCvBnM1qWeRtYuIoP9lKjHgFdSaSdfGhJkLpOeR1tY2uI3oP
+      JWT_REFRESH_SECRET: ZxCvBnM1qWeRtYuIoP9lKjHgFdSaSdfGhJkLpOeR1tY2uI3oP
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-900}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800}
     networks:
       - h2bis-pb-network
 
@@ -56,8 +57,6 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    env_file:
-      - .env.production
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -65,40 +64,31 @@ services:
       # use the internal Docker service name — these run inside the container.
       API_URL: http://h2bis-pb-api:4000
       NEXTAUTH_URL: http://localhost:3000
-      # NEXTAUTH_SECRET comes from .env.production
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-ZxCvBnM1qWeRtYuIoP9lKjHgFdSaSdfGhJkLpOeR1tY2uI3oP}
     depends_on:
       - h2bis-pb-api
     networks:
       - h2bis-pb-network
 
-  # ── MCP Server ─────────────────────────────────────────────────────────────
-  # The MCP server uses stdio transport — it is NOT an HTTP service with a port.
-  # In local development, AI clients (Copilot, Claude) continue to spawn it
-  # directly as a child process (via .vscode/mcp.json) — no container needed.
-  #
-  # This service is included here so the containerised environment mirrors
-  # what will run in Kubernetes (where it will eventually use HTTP/SSE transport).
-  # For now it runs as a long-lived process that talks to the API internally.
-  h2bis-pb-mcp:
+  # ── AI Agent Pipeline ──────────────────────────────────────────────────────
+  # LLM-powered pipeline for intent extraction, transformation, and validation.
+  # Exposes a lightweight HTTP server with a /health endpoint on port 5000.
+  h2bis-pb-ai:
     build:
-      context: ./h2bis-pb-mcp
+      context: ./h2bis-pb-ai
       dockerfile: Dockerfile
-    container_name: h2bis-pb-mcp
+    container_name: h2bis-pb-ai
     restart: unless-stopped
-    # stdin_open keeps stdin attached so the stdio MCP transport doesn't see
-    # an immediate EOF and exit. Without this, the server starts, stdin closes
-    # instantly (no client connected), the process exits, and Docker restarts it
-    # in an infinite loop.
-    stdin_open: true
-    env_file:
-      - .env.production
+    ports:
+      - "5000:5000"
     environment:
       NODE_ENV: production
-      # Internal service name — MCP reaches the API through the Docker network
-      API_BASE_URL: http://h2bis-pb-api:4000
-      # API_KEY comes from .env.production (generate via POST /api/auth/api-keys)
-    depends_on:
-      - h2bis-pb-api
+      PORT: 5000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-test_key}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      INTENT_EXTRACTION_MODEL: ${INTENT_EXTRACTION_MODEL:-gpt-4-turbo}
+      MAX_COST_PER_REQUEST: ${MAX_COST_PER_REQUEST:-0.10}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     networks:
       - h2bis-pb-network
 
