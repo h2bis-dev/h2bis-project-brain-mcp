@@ -38,8 +38,9 @@ export async function listUseCases(
         ? `/api/use-cases/mcp/list?projectId=${encodeURIComponent(projectId)}`
         : '/api/use-cases/mcp/list';
     
-    const result = await apiService.get<{ data: { useCases: UseCaseResponse[] } }>(endpoint);
-    const allUseCases: UseCaseResponse[] = result?.data?.useCases ?? [];
+    // The use-case controller returns a raw array (no { success, data } envelope)
+    const result = await apiService.get<UseCaseResponse[]>(endpoint);
+    const allUseCases: UseCaseResponse[] = Array.isArray(result) ? result : [];
 
     return {
         useCases: allUseCases.slice(offset, offset + limit),

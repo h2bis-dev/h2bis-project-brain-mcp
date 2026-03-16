@@ -70,11 +70,20 @@ export interface DomainModel {
     updatedAt?: string;
 }
 
-export interface ProjectMetadata {
-    repository: string;
-    techStack: string[];
+export interface ProjectService {
+    id: string;
+    name: string;
+    type: 'web-app' | 'mobile-app' | 'api' | 'background-service' | 'data-service' | 'other';
     language: string;
     framework: string;
+    techStack: string[];
+    description: string;
+    goals: string;
+    repository: string;
+}
+
+export interface ProjectMetadata {
+    repository: string;
     architecture: {
         overview: string;
         style: string;
@@ -94,6 +103,7 @@ export interface ProjectMetadata {
         purpose: string;
         apiDocs: string;
     }>;
+    services: ProjectService[];
     standards: {
         namingConventions: string[];
         errorHandling: string[];
@@ -107,7 +117,7 @@ export interface ProjectMetadata {
             testTypes: string[];
             requiresE2ETests: boolean;
         };
-        documentationStandards: string;
+        documentationStandards: string[];
     };
 }
 

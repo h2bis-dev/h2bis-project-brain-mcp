@@ -51,7 +51,8 @@ export async function listProjects(
  */
 export async function getProjectById(projectId: string): Promise<ProjectResponse | null> {
     try {
-        return await apiService.get<ProjectResponse>(`/api/projects/mcp/find/${projectId}`);
+        const result = await apiService.get<{ success: boolean; data: ProjectResponse }>(`/api/projects/mcp/find/${projectId}`);
+        return result?.data ?? null;
     } catch {
         return null;
     }
@@ -61,7 +62,8 @@ export async function getProjectById(projectId: string): Promise<ProjectResponse
  * Create a new project.
  */
 export async function createProject(payload: CreateProjectRequest): Promise<ProjectResponse> {
-    return apiService.post<ProjectResponse>('/api/projects/mcp/create', payload);
+    const result = await apiService.post<{ success: boolean; data: ProjectResponse }>('/api/projects/mcp/create', payload);
+    return result.data;
 }
 
 /**
@@ -71,7 +73,8 @@ export async function updateProject(
     projectId: string,
     payload: UpdateProjectRequest,
 ): Promise<ProjectResponse> {
-    return apiService.put<ProjectResponse>(`/api/projects/${projectId}`, payload);
+    const result = await apiService.put<{ success: boolean; data: ProjectResponse }>(`/api/projects/${projectId}`, payload);
+    return result.data;
 }
 
 /**
