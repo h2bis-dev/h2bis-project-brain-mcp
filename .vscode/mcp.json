@@ -14,10 +14,10 @@
     //
     // ── GLOBAL INSTALL (end-user) ────────────────────────────────────────────
     // "h2bis-pb-mcp": {
-    //   "command": "h2bis-mcp",
+    //   "command": "npx",
+    //   "args": ["-y", "h2bis-mcp@latest"],
     //   "env": {
-    //     "API_BASE_URL": "https://your-cloud-api.example.com",
-    //     "API_KEY": "h2b_agent_YOUR_KEY_HERE"
+    //     "API_BASE_URL": "https://your-cloud-api.example.com"
     //   }
     // }
     // ─────────────────────────────────────────────────────────────────────────
@@ -27,8 +27,7 @@
         "c:/My_work/RnD/h2bis-pb/h2bis-pb-mcp/dist/index.js"
       ],
       "env": {
-        "API_BASE_URL": "http://localhost:4000",
-        "API_KEY": "h2b_agent_33SG957L6UkdOzvL7lg9BRWMMopWzDB2KgOSveOLp6A"
+        "API_BASE_URL": "http://localhost:4000"
       }
     }
   }

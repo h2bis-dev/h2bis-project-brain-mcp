@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { dirname, resolve, join } from 'node:path';
-import { homedir } from 'os';
-import { existsSync } from 'fs';
+import { homedir } from 'node:os';
+import { existsSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -44,11 +44,10 @@ export const config = {
   // Cloud API URL  override via env var, VS Code mcp.json "env" block, or user config
   apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
 
-  // API Key  generate via POST /api/auth/api-keys (admin only)
-  apiKey: process.env.API_KEY || '',
+  // Local OAuth callback server config (MCP spins this up temporarily during login)
+  oauthCallbackPath: process.env.OAUTH_CALLBACK_PATH || '/oauth-callback',
+  oauthCallbackPort: Number(process.env.OAUTH_CALLBACK_PORT || '51894'),
 
-  // Legacy JWT authentication (fallback)
-  apiToken: process.env.API_TOKEN || '',
-  apiEmail: process.env.API_EMAIL || '',
-  apiPassword: process.env.API_PASSWORD || '',
+  // Where to persist tokens between MCP restarts (~/.config/h2bis-mcp/tokens.json)
+  tokenStorePath: resolve(homedir(), '.config', 'h2bis-mcp', 'tokens.json'),
 };

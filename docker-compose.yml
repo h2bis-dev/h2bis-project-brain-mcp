@@ -30,15 +30,18 @@ services:
     ports:
       - "4000:4000"
     env_file:
-      - .env.production
+      - ./h2bis-pb-api/.env
     environment:
       NODE_ENV: production
       PORT: 4000
-      # host.docker.internal resolves to the Windows host from inside a container
       MONGODB_URI: mongodb+srv://h2bis_app_user_dev:hWOeNENJ9l5YVtkN@h2bis-dev.ge3apn5.mongodb.net/
       DB_NAME: h2bis-project-brain
-      # JWT_ACCESS_SECRET and JWT_REFRESH_SECRET come from .env.production
-      # OPENAI_API_KEY, LLM_PROVIDER, INTENT_EXTRACTION_MODEL come from .env.production
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/auth/github/authorize').catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
     networks:
       - h2bis-pb-network
 
@@ -58,50 +61,24 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env.production
+      - ./h2bis-pb-web/.env.local
     environment:
       NODE_ENV: production
       PORT: 3000
-      # Server-side API calls (Next.js route handlers / server components)
-      # use the internal Docker service name — these run inside the container.
+      # Server-side Next.js calls use the internal Docker service name
       API_URL: http://h2bis-pb-api:4000
       NEXTAUTH_URL: http://localhost:3000
-      # NEXTAUTH_SECRET comes from .env.production
     depends_on:
       - h2bis-pb-api
     networks:
       - h2bis-pb-network
 
   # ── MCP Server ─────────────────────────────────────────────────────────────
-  # The MCP server uses stdio transport — it is NOT an HTTP service with a port.
-  # In local development, AI clients (Copilot, Claude) continue to spawn it
-  # directly as a child process (via .vscode/mcp.json) — no container needed.
-  #
-  # This service is included here so the containerised environment mirrors
-  # what will run in Kubernetes (where it will eventually use HTTP/SSE transport).
-  # For now it runs as a long-lived process that talks to the API internally.
-  h2bis-pb-mcp:
-    build:
-      context: ./h2bis-pb-mcp
-      dockerfile: Dockerfile
-    container_name: h2bis-pb-mcp
-    restart: unless-stopped
-    # stdin_open keeps stdin attached so the stdio MCP transport doesn't see
-    # an immediate EOF and exit. Without this, the server starts, stdin closes
-    # instantly (no client connected), the process exits, and Docker restarts it
-    # in an infinite loop.
-    stdin_open: true
-    env_file:
-      - .env.production
-    environment:
-      NODE_ENV: production
-      # Internal service name — MCP reaches the API through the Docker network
-      API_BASE_URL: http://h2bis-pb-api:4000
-      # API_KEY comes from .env.production (generate via POST /api/auth/api-keys)
-    depends_on:
-      - h2bis-pb-api
-    networks:
-      - h2bis-pb-network
+  # MCP runs locally as a child process spawned by VS Code (via .vscode/mcp.json
+  # or the user's mcp.json with npx h2bis-mcp@latest). It is NOT containerised.
+  # Reason: the stdio MCP transport requires a browser for GitHub OAuth, which
+  # containers do not have. Run `docker compose up --build` to start API + web only.
+  # h2bis-pb-mcp: (intentionally omitted)
 
 # ── Networks ───────────────────────────────────────────────────────────────
 networks:

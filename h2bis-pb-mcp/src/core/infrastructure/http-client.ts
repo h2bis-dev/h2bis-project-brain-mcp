@@ -70,7 +70,11 @@ export class HttpClient {
                 );
             }
 
-            throw new Error(error.error?.message || error.message || `HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(
+                (typeof error.error === 'string' ? error.error : error.error?.message)
+                    || error.message
+                    || `HTTP ${response.status}: ${response.statusText}`
+            );
         }
 
         return await response.json() as T;

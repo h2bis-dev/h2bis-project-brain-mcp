@@ -22,29 +22,47 @@ export class UserRepository {
         return user;
     }
 
-    /**
-     * Create a new user
-     */
+    async findByGithubId(githubId: string) {
+        return await User.findOne({ githubId });
+    }
+
+    async findAll(filter: { isActive?: boolean } = {}) {
+        return await User.find(filter).sort({ createdAt: -1 }).select('-passwordHash');
+    }
+
+    async findPending() {
+        return await User.find({ isActive: false }).sort({ createdAt: -1 }).select('-passwordHash');
+    }
+
     async create(userData: {
         email: string;
-        passwordHash: string;
+        passwordHash?: string;
         name: string;
         role: string[];
         isActive?: boolean;
+        githubId?: string;
     }) {
-        // Check if user already exists
-        const existing = await this.findByEmail(userData.email);
-        if (existing) {
+        // Check if user already exists by email or github
+        const existingByEmail = await this.findByEmail(userData.email);
+        if (existingByEmail) {
             throw new ConflictError('User with this email already exists');
+        }
+
+        if (userData.githubId) {
+            const existingByGithub = await this.findByGithubId(userData.githubId);
+            if (existingByGithub) {
+                throw new ConflictError('User with this GitHub account already exists');
+            }
         }
 
         // Create user
         const user = await User.create({
             email: userData.email.toLowerCase(),
-            passwordHash: userData.passwordHash,
+            passwordHash: userData.passwordHash || '',
+            githubId: userData.githubId || undefined,
             name: userData.name,
-            role: userData.role as ("user" | "admin")[],
-            isActive: userData.isActive ?? true
+            role: userData.role as ("user" | "admin" | "agent")[],
+            isActive: userData.isActive ?? false
         });
 
         return user;
