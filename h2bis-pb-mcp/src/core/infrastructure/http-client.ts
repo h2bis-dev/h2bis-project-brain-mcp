@@ -9,6 +9,18 @@
  * - Logging
  */
 
+/**
+ * Structured HTTP error that carries the response status code.
+ * Thrown by HttpClient for any non-2xx response so callers can branch on status
+ * without string-matching error messages.
+ */
+export class HttpError extends Error {
+    constructor(public readonly status: number, message: string) {
+        super(message);
+        this.name = 'HttpError';
+    }
+}
+
 export interface HttpClientConfig {
     baseUrl: string;
     headers?: Record<string, string>;
@@ -70,7 +82,8 @@ export class HttpClient {
                 );
             }
 
-            throw new Error(
+            throw new HttpError(
+                response.status,
                 (typeof error.error === 'string' ? error.error : error.error?.message)
                     || error.message
                     || `HTTP ${response.status}: ${response.statusText}`

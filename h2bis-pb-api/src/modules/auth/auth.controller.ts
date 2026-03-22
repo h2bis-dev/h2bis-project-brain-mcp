@@ -8,6 +8,7 @@ import { userRepository } from './repositories/user.repository.js';
 import { refreshTokenRepository } from './repositories/refresh-token.repository.js';
 import { UnauthorizedError, ValidationError } from '../../core/errors/app.error.js';
 import { config } from '../../core/config/config.js';
+import { accessRequestRepository } from './repositories/access-request.repository.js';
 
 /**
  * Register a new user
@@ -97,20 +98,24 @@ export const githubCallback = asyncHandler(async (req: Request, res: Response) =
     const name = profile.name || profile.login || 'GitHub User';
     let email = profile.email;
 
-    // Fetch verified email if missing
+    // Fetch verified email if not on the public profile
     if (!email) {
         const emailRes = await fetch('https://api.github.com/user/emails', {
             headers: { Authorization: `Bearer ${githubToken}`, Accept: 'application/json' },
         });
         if (emailRes.ok) {
             const emails = await emailRes.json();
-            const verified = Array.isArray(emails) ? emails.find((e: any) => e.verified && e.primary) || emails.find((e: any) => e.verified) : null;
-            email = verified?.email;
+            if (Array.isArray(emails)) {
+                const primary = emails.find((e: any) => e.verified && e.primary);
+                const anyVerified = emails.find((e: any) => e.verified);
+                email = (primary || anyVerified)?.email;
+            }
         }
     }
 
+    // Fallback: GitHub noreply address (every account has one)
     if (!email) {
-        throw new ValidationError('GitHub account does not have a verified email');
+        email = `${profile.id}+${profile.login}@users.noreply.github.com`;
     }
 
     // Normalize email
@@ -126,31 +131,48 @@ export const githubCallback = asyncHandler(async (req: Request, res: Response) =
         } catch { /* ignore malformed state */ }
     }
 
-    // Find or create user
+    const safeReturnUrl = returnUrlFromState && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(returnUrlFromState)
+        ? returnUrlFromState
+        : '';
+
+    // Find existing user by GitHub ID or email
     let user = await userRepository.findByGithubId(githubId);
     if (!user) {
         user = await userRepository.findByEmail(email);
     }
 
     if (!user) {
-        user = await userRepository.create({
-            email,
-            name,
-            role: ['user'],
-            isActive: false,
-            githubId,
-        });
-    } else {
-        // Link GitHub identity
-        if (!user.githubId) {
-            user.githubId = githubId;
-            await user.save();
+        // User does not exist — create an access request instead of auto-creating
+        const existingRequest = await accessRequestRepository.findPendingByEmail(email)
+            || await accessRequestRepository.findPendingByGithubId(githubId);
+
+        if (!existingRequest) {
+            await accessRequestRepository.create({
+                email,
+                name,
+                githubId,
+                githubLogin: profile.login,
+                avatarUrl: profile.avatar_url,
+            });
         }
+
+        if (safeReturnUrl) {
+            const redirectUrl = new URL(safeReturnUrl);
+            redirectUrl.searchParams.append('success', 'false');
+            redirectUrl.searchParams.append('error', 'pending_approval');
+            return res.redirect(redirectUrl.toString());
+        }
+        return res.status(403).json({
+            success: false,
+            message: 'Access request submitted. An admin must approve your account before you can sign in.',
+        });
     }
 
-    const safeReturnUrl = returnUrlFromState && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(returnUrlFromState)
-        ? returnUrlFromState
-        : '';
+    // Link GitHub identity if not yet linked
+    if (!user.githubId) {
+        user.githubId = githubId;
+        await user.save();
+    }
 
     if (!user.isActive) {
         if (safeReturnUrl) {

@@ -8,6 +8,35 @@ const router = Router();
 
 // All user-management routes require authentication + admin permission
 
+// ==================== Access Request Routes ====================
+// These MUST come before /:id routes to avoid Express matching "access-requests" as an :id param
+
+// GET /api/users/access-requests?status=pending
+router.get(
+    '/access-requests',
+    authenticate,
+    requirePermission(PERMISSIONS.USERS.APPROVE),
+    usersController.listAccessRequests
+);
+
+// POST /api/users/access-requests/:id/approve
+router.post(
+    '/access-requests/:id/approve',
+    authenticate,
+    requirePermission(PERMISSIONS.USERS.APPROVE),
+    usersController.approveAccessRequest
+);
+
+// POST /api/users/access-requests/:id/reject
+router.post(
+    '/access-requests/:id/reject',
+    authenticate,
+    requirePermission(PERMISSIONS.USERS.APPROVE),
+    usersController.rejectAccessRequest
+);
+
+// ==================== User Management Routes ====================
+
 // GET /api/users?pending=true  — list all users (or pending-only)
 router.get(
     '/',

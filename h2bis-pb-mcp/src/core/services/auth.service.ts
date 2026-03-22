@@ -1,8 +1,8 @@
 import { config } from '../config/config.js';
-import { HttpClient } from '../infrastructure/http-client.js';
+import { HttpClient, HttpError } from '../infrastructure/http-client.js';
 import { createServer } from 'node:http';
 import { URL } from 'node:url';
-import { execFile } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -25,6 +25,9 @@ class AuthService {
     private accessTokenExpiry: number = 0;
     private initialized: boolean = false;
     private _pendingApproval: boolean = false;
+    /** Set when startup verification was skipped because the API was unreachable.
+     *  ensureAuth will re-verify on the first actual tool call before using the token. */
+    private _needsApiVerification: boolean = false;
 
     /** Unauthenticated HTTP client used only for auth-related API calls. */
     private httpClient: HttpClient;
@@ -58,6 +61,27 @@ class AuthService {
     }
 
     /**
+     * Revoke the refresh token on the API, then wipe all local tokens and the
+     * persisted token store. After this call the service is fully unauthenticated
+     * and the next tool call will trigger a fresh GitHub OAuth flow.
+     */
+    async logout(): Promise<void> {
+        try {
+            if (this.refreshToken) {
+                await this.httpClient.post('/api/auth/logout', { refreshToken: this.refreshToken });
+            }
+        } catch {
+            // Best-effort server-side revocation — clear locally regardless
+        }
+        this.accessToken = '';
+        this.refreshToken = '';
+        this.accessTokenExpiry = 0;
+        this._pendingApproval = false;
+        try { writeFileSync(config.tokenStorePath, '{}'); } catch { /* ignore */ }
+        console.error('🔓 Signed out — tokens cleared.');
+    }
+
+    /**
      * Returns current auth headers to attach to outgoing requests.
      * Ensures authentication is valid before returning — may trigger
      * a token refresh or a full GitHub OAuth flow.
@@ -71,16 +95,40 @@ class AuthService {
 
     private async initializeAuth(): Promise<void> {
         try {
-            // Priority 1: Restore valid tokens from disk (survives npx restarts)
+            // Priority 1: Restore valid tokens from disk — then verify against the API.
+            // Local expiry check is not enough: tokens from deleted users, revoked sessions,
+            // or a different environment would pass a purely local check.
             if (this.loadPersistedTokens()) {
-                this.initialized = true;
-                console.error('🔐 Restored session from saved tokens');
-                return;
+                const status = await this.verifyTokenWithApi();
+
+                if (status === 'valid') {
+                    this.initialized = true;
+                    console.error('🔐 Restored session from saved tokens');
+                    return;
+                }
+
+                if (status === 'unreachable') {
+                    // API is down at startup (Docker cold-start, network blip).
+                    // Keep the tokens but flag them as unverified — ensureAuth will
+                    // re-verify against the live API on the first actual tool call.
+                    this._needsApiVerification = true;
+                    this.initialized = true;
+                    console.error('⚠️ API unreachable at startup — will re-verify tokens on first tool use.');
+                    return;
+                }
+
+                // status === 'rejected': 401/403 — token is definitively invalid
+                // (deleted user, deactivated account, wrong environment JWT secret, etc.)
+                console.error('🔐 Saved tokens rejected by API — clearing session and starting fresh OAuth...');
+                this.accessToken = '';
+                this.refreshToken = '';
+                this.accessTokenExpiry = 0;
+                try { writeFileSync(config.tokenStorePath, '{}'); } catch { /* ignore */ }
             }
 
             // Priority 2: GitHub OAuth browser flow — default for end users
             // No secrets needed in MCP; the API holds GitHub client credentials.
-            console.error('🔐 No saved session — starting GitHub OAuth...');
+            console.error('🔐 No valid session — starting GitHub OAuth...');
             await this.githubOAuthFlow();
             this.initialized = true;
 
@@ -90,6 +138,8 @@ class AuthService {
                 this._pendingApproval = true;
                 console.error('⏳ Your account is pending admin approval. MCP will start but tool calls will require re-authentication once approved.');
                 console.error('   Once an admin approves your account, reload VS Code to authenticate.');
+            } else if (msg.includes('Cannot reach the API')) {
+                console.error(`⚠️ ${msg}`);
             } else {
                 console.error('⚠️ Authentication failed:', msg);
                 console.error('   MCP will start. Authentication will be retried when you use a tool.');
@@ -108,6 +158,21 @@ class AuthService {
         // Wait for initializeAuth() to complete (OAuth can take minutes).
         if (!this.initialized) {
             await this._initPromise;
+        }
+
+        // If startup verification was deferred (API was unreachable), re-verify now.
+        // This prevents using stale / environment-mismatched tokens silently.
+        if (this.accessToken && this._needsApiVerification) {
+            this._needsApiVerification = false;
+            const status = await this.verifyTokenWithApi();
+            if (status === 'rejected') {
+                console.error('🔐 Deferred token verification failed — clearing session and starting OAuth...');
+                this.accessToken = '';
+                this.refreshToken = '';
+                this.accessTokenExpiry = 0;
+                try { writeFileSync(config.tokenStorePath, '{}'); } catch { /* ignore */ }
+            }
+            // 'valid' → proceed normally; 'unreachable' → try using the token anyway
         }
 
         // Proactive token refresh
@@ -135,6 +200,9 @@ class AuthService {
                         'An administrator needs to activate your account before you can use the tools. ' +
                         'Reload VS Code once approved.'
                     );
+                }
+                if (msg.includes('Cannot reach the API')) {
+                    throw new Error(msg);
                 }
                 throw new Error(
                     'Authentication failed: ' + msg + '. ' +
@@ -169,6 +237,37 @@ class AuthService {
             return JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
         } catch {
             return null;
+        }
+    }
+
+    /**
+     * Call GET /api/auth/me to confirm the token is live on the API.
+     *
+     * Returns:
+     *  'valid'       — API confirmed the token (200 OK, user exists and is active)
+     *  'rejected'    — API definitively rejected it (401 / 403);
+     *                  tokens must be wiped and a fresh OAuth flow started
+     *  'unreachable' — API could not be contacted (network error, timeout, cold-start);
+     *                  tokens are kept and verification is deferred to the first tool call
+     */
+    private async verifyTokenWithApi(): Promise<'valid' | 'rejected' | 'unreachable'> {
+        try {
+            const client = new HttpClient({
+                baseUrl: config.apiBaseUrl,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.accessToken}`,
+                },
+                timeout: 8000,
+            });
+            await client.get('/api/auth/me');
+            return 'valid';
+        } catch (err) {
+            if (err instanceof HttpError && (err.status === 401 || err.status === 403)) {
+                return 'rejected';
+            }
+            // Network error, timeout, unexpected 5xx — API unreachable
+            return 'unreachable';
         }
     }
 
@@ -240,14 +339,46 @@ class AuthService {
 
     /* ─── GitHub OAuth Browser Flow ──────────────────────────────────── */
 
+    /** Probes ports starting at preferredPort until a free one is found (up to 10 attempts). */
+    private findFreePort(preferredPort: number): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const tryPort = (port: number, remaining: number) => {
+                if (remaining <= 0) {
+                    reject(new Error(`Could not find a free OAuth callback port near ${preferredPort}. Free a port and retry.`));
+                    return;
+                }
+                const probe = createServer();
+                probe.listen(port, () => probe.close(() => resolve(port)));
+                probe.on('error', (err: any) => {
+                    if (err.code === 'EADDRINUSE') {
+                        tryPort(port + 1, remaining - 1);
+                    } else {
+                        reject(err);
+                    }
+                });
+            };
+            tryPort(preferredPort, 10);
+        });
+    }
+
     private async githubOAuthFlow(): Promise<void> {
-        const callbackPort = config.oauthCallbackPort;
+        const callbackPort = await this.findFreePort(config.oauthCallbackPort);
         const callbackPath = config.oauthCallbackPath;
         const localCallbackUrl = `http://localhost:${callbackPort}${callbackPath}`;
 
-        const response = await this.httpClient.get(
-            `/api/auth/github/authorize?returnUrl=${encodeURIComponent(localCallbackUrl)}`
-        ) as any;
+        let response: any;
+        try {
+            response = await this.httpClient.get(
+                `/api/auth/github/authorize?returnUrl=${encodeURIComponent(localCallbackUrl)}`
+            );
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            throw new Error(
+                `Cannot reach the API at ${config.apiBaseUrl} (${msg}). ` +
+                'Make sure the API server is running, or set API_BASE_URL in your ' +
+                'mcp.json env block (or ~/.config/h2bis-mcp/.env) to the correct URL.'
+            );
+        }
 
         const authorizeUrl = response?.authorizeUrl;
         if (!authorizeUrl) {
@@ -306,11 +437,7 @@ class AuthService {
             });
 
             server.on('error', (err: any) => {
-                if (err.code === 'EADDRINUSE') {
-                    reject(new Error(`OAuth callback port ${callbackPort} is already in use. Set OAUTH_CALLBACK_PORT in your env to a different port.`));
-                } else {
-                    reject(err);
-                }
+                reject(err);
             });
 
             const timeout = setTimeout(() => {
@@ -356,7 +483,10 @@ class AuthService {
 
         const platform = process.platform;
         if (platform === 'win32') {
-            execFile('cmd', ['/c', 'start', '', url], onError);
+            // URL must be quoted — unquoted & is a cmd.exe command separator,
+            // which would truncate the URL and lose the OAuth state parameter.
+            const safeUrl = url.replace(/"/g, '');
+            exec(`start "" "${safeUrl}"`, onError);
         } else if (platform === 'darwin') {
             execFile('open', [url], onError);
         } else {
