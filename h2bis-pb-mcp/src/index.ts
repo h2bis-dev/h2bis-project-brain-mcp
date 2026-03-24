@@ -5,6 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { tools } from "./tools/index.js";
 import { config } from "./core/config/config.js";
 import { authService } from "./core/services/auth.service.js";
+import { logger } from "./core/utils/logger.js";
 
 
 async function main() {
@@ -34,7 +35,7 @@ async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
-    console.error(`🔗 ${config.serverName} v${config.serverVersion} connected to ${config.apiBaseUrl}`);
+    logger.info(`🔗 ${config.serverName} v${config.serverVersion} connected to ${config.apiBaseUrl}`);
 
     // Wait for the auth handshake to finish (GitHub OAuth, persisted token, etc.).
     // Tool calls also await this via authService.getAuthHeaders(), but awaiting here
@@ -42,25 +43,25 @@ async function main() {
     await authService.waitForAuth();
 
     if (authService.isAuthenticated) {
-      console.error(`✅ ${config.serverName} v${config.serverVersion} running — authenticated`);
+      logger.info(`✅ ${config.serverName} v${config.serverVersion} running — authenticated`);
     } else if (authService.isPendingApproval) {
-      console.error(`⏳ ${config.serverName} running — account pending admin approval`);
+      logger.warn(`⏳ ${config.serverName} running — account pending admin approval`);
     } else {
-      console.error(`⚠️ ${config.serverName} running — not authenticated (tools will retry on first use)`);
+      logger.warn(`⚠️ ${config.serverName} running — not authenticated (tools will retry on first use)`);
     }
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
-      console.error('\n⏹️  Shutting down...');
+      logger.info('\n⏹️  Shutting down...');
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.error('\n⏹️  Shutting down...');
+      logger.info('\n⏹️  Shutting down...');
       process.exit(0);
     });
   } catch (error) {
-    console.error('❌ Failed to start MCP server:', error instanceof Error ? error.message : String(error));
+    logger.error('❌ Failed to start MCP server: ' + (error instanceof Error ? error.message : String(error)));
     process.exit(1);
   }
 }
