@@ -7,4 +7,5 @@ export const config = {
     dbName: process.env.DB_NAME || 'h2bis-project-brain',
     port: parseInt(process.env.PORT || '4000', 10),
     nodeEnv: process.env.NODE_ENV || 'development',
+    corsAllowedOrigins: process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000',
 };
