@@ -18,7 +18,9 @@
 #   NEXTAUTH_SECRET_DEV, NEXTAUTH_SECRET_PROD          - NextAuth session signing secret
 #   OPENAI_API_KEY                                     - OpenAI API key (shared)
 #   CORS_ALLOWED_ORIGINS_DEV, CORS_ALLOWED_ORIGINS_PROD - Allowed CORS origins
-#   AI_API_BASE_URL_DEV, AI_API_BASE_URL_PROD          - Internal API base URL for ai service
+#   GITHUB_CLIENT_ID                                   - GitHub OAuth client ID (shared)
+#   GITHUB_CLIENT_SECRET                               - GitHub OAuth client secret (shared)
+#   GITHUB_CALLBACK_URL_DEV, GITHUB_CALLBACK_URL_PROD  - GitHub OAuth callback URL
 
 stages:
   - validate
@@ -118,18 +120,6 @@ build-h2bis-pb-api:
   rules:
     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
 
-build-h2bis-pb-ai:
-  <<: *build_template
-  script:
-    - /kaniko/executor
-      --context $CI_PROJECT_DIR/h2bis-pb-ai
-      --dockerfile $CI_PROJECT_DIR/h2bis-pb-ai/Dockerfile
-      --destination $REGISTRY/h2bis-pb-ai:$CI_COMMIT_SHA
-      --cache=true
-      --cache-repo=$REGISTRY/cache
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
-
 # ==========================================
 # Deploy Jobs
 # ==========================================
@@ -142,7 +132,6 @@ deploy-dev:
   needs:
     - build-h2bis-pb-api
     - build-h2bis-pb-web
-    - build-h2bis-pb-ai
   script:
     - >-
         helm upgrade --install h2bis-pb-dev ./helm-chart
@@ -151,22 +140,21 @@ deploy-dev:
         --set-string api.image.tag=$CI_COMMIT_SHA
         --set-string web.image.repository=$REGISTRY/h2bis-pb-web
         --set-string web.image.tag=$CI_COMMIT_SHA
-        --set-string ai.image.repository=$REGISTRY/h2bis-pb-ai
-        --set-string ai.image.tag=$CI_COMMIT_SHA
         --set-string secret.apiIngressHost=$API_INGRESS_HOST_DEV
         --set-string secret.webIngressHost=$WEB_INGRESS_HOST_DEV
-        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_DEV}/use_case_db"
+        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_DEV}/h2bis-project-brain"
         --set-string api.env.JWT_ACCESS_SECRET="$JWT_ACCESS_SECRET_DEV"
         --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_DEV"
         --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_DEV"
+        --set-string api.env.GITHUB_CLIENT_ID="$GITHUB_CLIENT_ID"
+        --set-string api.env.GITHUB_CLIENT_SECRET="$GITHUB_CLIENT_SECRET"
+        --set-string api.env.GITHUB_CALLBACK_URL="$GITHUB_CALLBACK_URL_DEV"
+        --set-string api.env.OPENAI_API_KEY="$OPENAI_API_KEY"
         --set-string web.env.NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL_DEV"
         --set-string web.env.NEXTAUTH_SECRET="$NEXTAUTH_SECRET_DEV"
-        --set-string ai.env.API_BASE_URL="$AI_API_BASE_URL_DEV"
-        --set-string ai.env.OPENAI_API_KEY="$OPENAI_API_KEY"
     - export KUBECONFIG=$PWD/kubeconfig
     - kubectl rollout status deployment/h2bis-pb-dev-api --timeout=120s
     - kubectl rollout status deployment/h2bis-pb-dev-web --timeout=120s
-    - kubectl rollout status deployment/h2bis-pb-dev-ai --timeout=120s
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
 
@@ -181,7 +169,6 @@ deploy-prod:
   needs:
     - build-h2bis-pb-api
     - build-h2bis-pb-web
-    - build-h2bis-pb-ai
   script:
     - >-
         helm upgrade --install h2bis-pb-prod ./helm-chart
@@ -190,21 +177,20 @@ deploy-prod:
         --set-string api.image.tag=$CI_COMMIT_SHA
         --set-string web.image.repository=$REGISTRY/h2bis-pb-web
         --set-string web.image.tag=$CI_COMMIT_SHA
-        --set-string ai.image.repository=$REGISTRY/h2bis-pb-ai
-        --set-string ai.image.tag=$CI_COMMIT_SHA
         --set-string secret.apiIngressHost=$API_INGRESS_HOST_PROD
         --set-string secret.webIngressHost=$WEB_INGRESS_HOST_PROD
-        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_PROD}/use_case_db"
+        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_PROD}/h2bis-project-brain"
         --set-string api.env.JWT_ACCESS_SECRET="$JWT_ACCESS_SECRET_PROD"
         --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_PROD"
         --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_PROD"
+        --set-string api.env.GITHUB_CLIENT_ID="$GITHUB_CLIENT_ID"
+        --set-string api.env.GITHUB_CLIENT_SECRET="$GITHUB_CLIENT_SECRET"
+        --set-string api.env.GITHUB_CALLBACK_URL="$GITHUB_CALLBACK_URL_PROD"
+        --set-string api.env.OPENAI_API_KEY="$OPENAI_API_KEY"
         --set-string web.env.NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL_PROD"
         --set-string web.env.NEXTAUTH_SECRET="$NEXTAUTH_SECRET_PROD"
-        --set-string ai.env.API_BASE_URL="$AI_API_BASE_URL_PROD"
-        --set-string ai.env.OPENAI_API_KEY="$OPENAI_API_KEY"
     - export KUBECONFIG=$PWD/kubeconfig
     - kubectl rollout status deployment/h2bis-pb-prod-api --timeout=120s
     - kubectl rollout status deployment/h2bis-pb-prod-web --timeout=120s
-    - kubectl rollout status deployment/h2bis-pb-prod-ai --timeout=120s
   rules:
     - if: $CI_COMMIT_BRANCH == "main"

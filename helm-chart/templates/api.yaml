@@ -47,6 +47,30 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-secrets
                   key: jwt-refresh-secret
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: github-client-id
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: github-client-secret
+            - name: GITHUB_CALLBACK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: github-callback-url
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: openai-api-key
+            - name: LLM_PROVIDER
+              value: {{ .Values.api.env.LLM_PROVIDER | quote }}
+            - name: INTENT_EXTRACTION_MODEL
+              value: {{ .Values.api.env.INTENT_EXTRACTION_MODEL | quote }}
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
           readinessProbe:

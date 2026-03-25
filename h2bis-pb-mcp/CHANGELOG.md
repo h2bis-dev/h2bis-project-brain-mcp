@@ -98,7 +98,7 @@ npm run build
 #### Server Startup Test
 ```bash
 node dist/index.js
-# ✅ Connected to MongoDB: use_case_db
+# ✅ Connected to MongoDB: h2bis-project-brain
 # ✅ h2bis-pb-mcp v1.0.0 running
 ```
 
@@ -170,11 +170,11 @@ If upgrading from previous version:
 1. Update `.env` file:
    ```env
    # Old
-   MONGO_URI=mongodb://localhost:27017/use_case_db
+   MONGO_URI=mongodb://localhost:27017/h2bis-project-brain
    
    # New
    MONGODB_URI=mongodb://localhost:27017/
-   DB_NAME=use_case_db
+   DB_NAME=h2bis-project-brain
    ```
 
 2. Rebuild project:
@@ -226,13 +226,13 @@ If upgrading from previous version:
 
 **Before**:
 ```
-MONGODB_URI=mongodb://localhost:27017/use_case_db
+MONGODB_URI=mongodb://localhost:27017/h2bis-project-brain
 ```
 
 **After**:
 ```
 MONGODB_URI=mongodb://localhost:27017
-DB_NAME=use_case_db
+DB_NAME=h2bis-project-brain
 ```
 
 **Why**: Database name should be passed as separate `dbName` option to mongoose, not in URI.

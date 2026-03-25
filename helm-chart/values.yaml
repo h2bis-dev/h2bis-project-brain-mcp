@@ -22,10 +22,16 @@ api:
       memory: 512Mi
   env:
     MONGODB_URI: ""
-    DB_NAME: "use_case_db"
+    DB_NAME: "h2bis-project-brain"
     JWT_ACCESS_SECRET: ""
     JWT_REFRESH_SECRET: ""
     CORS_ALLOWED_ORIGINS: ""
+    GITHUB_CLIENT_ID: ""
+    GITHUB_CLIENT_SECRET: ""
+    GITHUB_CALLBACK_URL: ""
+    OPENAI_API_KEY: ""
+    LLM_PROVIDER: "openai"
+    INTENT_EXTRACTION_MODEL: "gpt-4-turbo"
     LOG_LEVEL: "info"
 
 # ----- Web Service (h2bis-pb-web) -----
@@ -45,26 +51,6 @@ web:
   env:
     NEXT_PUBLIC_API_URL: ""
     NEXTAUTH_SECRET: ""
-
-# ----- AI Agent Pipeline (h2bis-pb-ai) -----
-ai:
-  image:
-    repository: ""
-    tag: latest
-  replicas: 1
-  port: 5000
-  resources:
-    requests:
-      cpu: 200m
-      memory: 512Mi
-    limits:
-      cpu: 1000m
-      memory: 1Gi
-  env:
-    API_BASE_URL: ""
-    OPENAI_API_KEY: ""
-    OPENAI_MODEL: "gpt-4o"
-    LOG_LEVEL: "info"
 
 # ----- Ingress -----
 ingress:

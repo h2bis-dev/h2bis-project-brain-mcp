@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/use_case_db';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/h2bis-project-brain';
 
 const ProjectSchema = new mongoose.Schema({
     _id: String,

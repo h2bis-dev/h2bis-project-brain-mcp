@@ -8,7 +8,7 @@
 
 MCP (Model Context Protocol) server that exposes MongoDB database operations as tools for Claude Desktop. Enables AI to perform complete CRUD operations on local MongoDB instance.
 
-**Database**: `use_case_db`  
+**Database**: `h2bis-project-brain`  
 **Collections**: Dynamic (any collection in the database)  
 **Transport**: stdio (standard input/output)  
 **Tools**: 5 (insertDocument, findDocument, updateDocument, deleteDocument, listCollections)
@@ -80,7 +80,7 @@ export const config = {
 - Automatic reconnection handling
 - Error logging to stderr
 
-**Connection String**: `mongodb://localhost:27017/` + `dbName: 'use_case_db'`
+**Connection String**: `mongodb://localhost:27017/` + `dbName: 'h2bis-project-brain'`
 
 ---
 
@@ -166,7 +166,7 @@ Database Layer (db.ts)
     ↓ (getDb())
 MongoDB Native Client
     ↓ (CRUD operation)
-MongoDB Database (use_case_db)
+MongoDB Database (h2bis-project-brain)
     ↓ (result)
 Tool Handler
     ↓ (format response)
@@ -320,7 +320,7 @@ Claude Desktop
 ### .env File
 ```env
 MONGODB_URI=mongodb://localhost:27017/
-DB_NAME=use_case_db
+DB_NAME=h2bis-project-brain
 SERVER_NAME=h2bis-pb-mcp
 SERVER_VERSION=1.0.0
 ```

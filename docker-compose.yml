@@ -34,11 +34,17 @@ services:
       PORT: 4000
       # host.docker.internal resolves to the Windows host from inside a container
       MONGODB_URI: mongodb://host.docker.internal:27017/
-      DB_NAME: use_case_db
+      DB_NAME: h2bis-project-brain
       JWT_ACCESS_SECRET: ZxCvBnM1qWeRtYuIoP9lKjHgFdSaSdfGhJkLpOeR1tY2uI3oP
       JWT_REFRESH_SECRET: ZxCvBnM1qWeRtYuIoP9lKjHgFdSaSdfGhJkLpOeR1tY2uI3oP
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-900}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL:-http://localhost:4000/api/auth/github/callback}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-test_key}
+      LLM_PROVIDER: openai
+      INTENT_EXTRACTION_MODEL: gpt-4-turbo
     networks:
       - h2bis-pb-network
 
@@ -67,28 +73,6 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-ZxCvBnM1qWeRtYuIoP9lKjHgFdSaSdfGhJkLpOeR1tY2uI3oP}
     depends_on:
       - h2bis-pb-api
-    networks:
-      - h2bis-pb-network
-
-  # ── AI Agent Pipeline ──────────────────────────────────────────────────────
-  # LLM-powered pipeline for intent extraction, transformation, and validation.
-  # Exposes a lightweight HTTP server with a /health endpoint on port 5000.
-  h2bis-pb-ai:
-    build:
-      context: ./h2bis-pb-ai
-      dockerfile: Dockerfile
-    container_name: h2bis-pb-ai
-    restart: unless-stopped
-    ports:
-      - "5000:5000"
-    environment:
-      NODE_ENV: production
-      PORT: 5000
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-test_key}
-      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
-      INTENT_EXTRACTION_MODEL: ${INTENT_EXTRACTION_MODEL:-gpt-4-turbo}
-      MAX_COST_PER_REQUEST: ${MAX_COST_PER_REQUEST:-0.10}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
     networks:
       - h2bis-pb-network
 

@@ -51,7 +51,7 @@ src/
 ### Environment Variables (.env)
 ```env
 MONGODB_URI=mongodb://localhost:27017
-DB_NAME=use_case_db
+DB_NAME=h2bis-project-brain
 SERVER_NAME=h2bis-pb-mcp
 SERVER_VERSION=1.0.0
 ```
@@ -59,7 +59,7 @@ SERVER_VERSION=1.0.0
 ### Database Connection
 - **URI Format**: `mongodb://localhost:27017` (no database name in URI)
 - **Database Name**: Specified separately via `dbName` option
-- **Target Database**: `use_case_db`
+- **Target Database**: `h2bis-project-brain`
 - **Collections**: `use_cases`, `features`
 
 ---
@@ -102,7 +102,7 @@ SERVER_VERSION=1.0.0
 
 1. Test raw MongoDB connection first:
    ```js
-   node -e "import('mongoose').then(m => m.default.connect('mongodb://localhost:27017', {dbName: 'use_case_db'}))"
+   node -e "import('mongoose').then(m => m.default.connect('mongodb://localhost:27017', {dbName: 'h2bis-project-brain'}))"
    ```
 
 2. Check `.env` file has correct values
@@ -125,7 +125,7 @@ SERVER_VERSION=1.0.0
       "args": ["C:\\My_work\\RnD\\project_brain_prototype_node\\h2bis-pb\\h2bis-pb-mcp\\dist\\index.js"],
       "env": {
         "MONGODB_URI": "mongodb://localhost:27017",
-        "DB_NAME": "use_case_db"
+        "DB_NAME": "h2bis-project-brain"
       }
     }
   }
