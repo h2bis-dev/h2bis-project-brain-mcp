@@ -82,3 +82,4 @@ networks:
     driver: bridge
     # All services on this network can reach each other by service name.
     # From outside (your browser, Compass, Postman), access via localhost:<port>.
+
