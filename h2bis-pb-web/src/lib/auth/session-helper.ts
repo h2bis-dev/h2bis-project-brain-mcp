@@ -39,6 +39,6 @@ export async function authenticatedFetch(
  * Example usage:
  * 
  * // Get current user from protected endpoint
- * const response = await authenticatedFetch('http://localhost:4000/api/auth/me');
+ * const response = await authenticatedFetch('https://api-project-brain-dev.h2bis.com/api/auth/me');
  * const data = await response.json();
  */

@@ -9,7 +9,7 @@
 
 // API Base URL - Backend server address (REQUIRED)
 export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    process.env.NEXT_PUBLIC_API_URL || 'https://api-project-brain-dev.h2bis.com';
 
 // Application Name
 export const APP_NAME =

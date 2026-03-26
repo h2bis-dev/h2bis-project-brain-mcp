@@ -5,11 +5,8 @@ import axios from 'axios';
 import { API_BASE_URL, NEXTAUTH_SECRET } from '@/lib/config';
 
 // SERVER_API_URL is for server-side calls (NextAuth authorize, token refresh).
-// In Docker, process.env.API_URL = "http://h2bis-pb-api:4000" (internal service name).
-// On a local dev machine with no Docker, it falls back to API_BASE_URL (localhost:4000).
-// NEXT_PUBLIC_API_URL cannot be used here: it is baked into the client bundle at build
-// time and resolves to "http://localhost:4000" — which is unreachable from inside a
-// container where localhost refers to the web container itself, not the API container.
+// In Docker, process.env.API_URL overrides to the internal service name.
+// Otherwise it falls back to the cloud API URL.
 const SERVER_API_URL = process.env.API_URL || API_BASE_URL;
 
 // Access token lifetime in ms (15 min), with 1-min buffer for proactive refresh
