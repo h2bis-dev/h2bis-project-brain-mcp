@@ -1,0 +1,10 @@
+# Exclude from VSIX package
+src/**
+scripts/**
+tsconfig.json
+.gitignore
+**/*.ts
+!**/*.d.ts
+**/*.map
+server/dist/**/*.d.ts
+server/dist/**/*.d.ts.map
