@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,12 +17,13 @@ import { ArrowLeft, Plus, X, Loader2, Sparkles, AlertCircle, Zap, Trash2 } from 
 import { useCreateUseCase } from '@/hooks/useUseCases';
 import { useCaseService, type CreateUseCaseRequest } from '@/services/use-case.service';
 import { generateUseCasePromptInstructions } from '@/lib/use-case-definitions';
-import { useSelectedProject } from '@/hooks/useProject';
+import { useSelectedProject, useProjectServices } from '@/hooks/useProject';
 
 export default function NewUseCasePage() {
     const router = useRouter();
     const createMutation = useCreateUseCase();
     const selectedProject = useSelectedProject();
+    const { data: projectServices } = useProjectServices(selectedProject?.id);
 
     // Form state
     const [key, setKey] = useState('');
@@ -31,12 +32,18 @@ export default function NewUseCasePage() {
     const [businessValue, setBusinessValue] = useState('');
     const [primaryActor, setPrimaryActor] = useState('');
 
-    // Technical Surface
-    const [backendRepos, setBackendRepos] = useState<string[]>(['']);
-    const [frontendRepos, setFrontendRepos] = useState<string[]>(['']);
-    const [endpoints, setEndpoints] = useState<string[]>(['']);
-    const [routes, setRoutes] = useState<string[]>(['']);
-    const [components, setComponents] = useState<string[]>(['']);
+    // Service interfaces (replaces Technical Surface)
+    type ServiceInterfaceState = {
+        serviceId: string;
+        serviceName: string;
+        serviceType: string;
+        selected: boolean;
+        interfaceType: 'REST' | 'GraphQL' | 'Event' | 'UI';
+        endpoints: Array<{ method: string; path: string; request: string; response: string }>;
+        events: string[];
+    };
+
+    const [serviceInterfaces, setServiceInterfaces] = useState<ServiceInterfaceState[]>([]);
 
     // Optional fields
     const [acceptanceCriteria, setAcceptanceCriteria] = useState<string[]>(['']);
@@ -52,24 +59,8 @@ export default function NewUseCasePage() {
         inScope: [''], outOfScope: [''], assumptions: [''], constraints: ['']
     });
 
-    // Domain Model
-    const [domainEntities, setDomainEntities] = useState<Array<{
-        name: string;
-        description: string;
-        fields: Array<{ name: string; type: string; required: boolean; constraints: string[] }>
-    }>>([]);
-
-    // Interfaces
-    const [interfaceType, setInterfaceType] = useState<'REST' | 'GraphQL' | 'Event' | 'UI'>('REST');
-    const [interfaceEndpoints, setInterfaceEndpoints] = useState<Array<{ method: string, path: string, request: string, response: string }>>([]);
-    const [interfaceEvents, setInterfaceEvents] = useState<string[]>([]);
-
-    // Architecture Patterns (use case-specific)
-    const [archPatterns, setArchPatterns] = useState<string[]>([]);
 
     // Config & Quality
-    const [envVars, setEnvVars] = useState<string[]>([]);
-    const [featureFlags, setFeatureFlags] = useState<string[]>([]);
     const [testTypes, setTestTypes] = useState<Array<'unit' | 'integration' | 'e2e' | 'security'>>(['unit']);
     const [perfCriteria, setPerfCriteria] = useState<string[]>([]);
     const [secConsiderations, setSecConsiderations] = useState<string[]>([]);
@@ -78,6 +69,19 @@ export default function NewUseCasePage() {
     const [tagInput, setTagInput] = useState('');
     const [complexity, setComplexity] = useState<'low' | 'medium' | 'high'>('medium');
     const [lifecycle, setLifecycle] = useState('idea');
+
+    // Initialize service interfaces from project when services are loaded
+    useEffect(() => {
+        setServiceInterfaces((projectServices ?? []).map(s => ({
+            serviceId: s.id,
+            serviceName: s.name,
+            serviceType: s.type,
+            selected: false,
+            interfaceType: 'REST' as const,
+            endpoints: [],
+            events: [],
+        })));
+    }, [projectServices]);
 
     // AI Generation state
     const [aiDescription, setAiDescription] = useState('');
@@ -139,18 +143,24 @@ export default function NewUseCasePage() {
         update('businessValue', setBusinessValue, generated.businessValue);
         update('primaryActor', setPrimaryActor, generated.primaryActor);
 
-        // Technical surface mapping
-        if (generated.technicalSurface) {
-            const ts = generated.technicalSurface;
-            if (ts.backend) {
-                update('backendRepos', setBackendRepos, ts.backend.repos);
-                update('endpoints', setEndpoints, ts.backend.endpoints);
-            }
-            if (ts.frontend) {
-                update('frontendRepos', setFrontendRepos, ts.frontend.repos);
-                update('routes', setRoutes, ts.frontend.routes);
-                update('components', setComponents, ts.frontend.components);
-            }
+        // Service interfaces mapping (AI may return updated service interface suggestions)
+        if (generated.serviceInterfaces?.length) {
+            setServiceInterfaces(prev => {
+                const next = [...prev];
+                generated.serviceInterfaces.forEach((si: any) => {
+                    const idx = next.findIndex(s => s.serviceId === si.serviceId);
+                    if (idx !== -1) {
+                        next[idx] = {
+                            ...next[idx],
+                            selected: true,
+                            interfaceType: si.interfaceType ?? next[idx].interfaceType,
+                            endpoints: si.endpoints ?? next[idx].endpoints,
+                            events: si.events ?? next[idx].events,
+                        };
+                    }
+                });
+                return next;
+            });
         }
 
         update('acceptanceCriteria', setAcceptanceCriteria, generated.acceptanceCriteria);
@@ -161,29 +171,6 @@ export default function NewUseCasePage() {
         }
         if (generated.scope) {
             update('scope', setScope, generated.scope);
-        }
-        if (generated.domainModel?.entities) {
-            // Normalize entities to ensure all fields have constraints array
-            const normalizedEntities = generated.domainModel.entities.map((entity: any) => ({
-                ...entity,
-                fields: (entity.fields || []).map((field: any) => ({
-                    ...field,
-                    constraints: Array.isArray(field.constraints) ? field.constraints : []
-                }))
-            }));
-            setDomainEntities(normalizedEntities);
-        }
-        if (generated.interfaces) {
-            if (generated.interfaces.type) setInterfaceType(generated.interfaces.type);
-            if (generated.interfaces.endpoints) setInterfaceEndpoints(generated.interfaces.endpoints);
-            if (generated.interfaces.events) setInterfaceEvents(generated.interfaces.events);
-        }
-        if (generated.architecturePatterns) {
-            setArchPatterns(generated.architecturePatterns);
-        }
-        if (generated.configuration) {
-            if (generated.configuration.envVars) setEnvVars(generated.configuration.envVars);
-            if (generated.configuration.featureFlags) setFeatureFlags(generated.configuration.featureFlags);
         }
         if (generated.quality) {
             if (generated.quality.testTypes) setTestTypes(generated.quality.testTypes);
@@ -209,7 +196,8 @@ export default function NewUseCasePage() {
             const fullDescription = `${aiDescription}\n\n${systemInstructions}`;
 
             const response = await useCaseService.generate({
-                description: fullDescription
+                description: fullDescription,
+                projectId: selectedProject?.id
             });
 
             // Update form with result
@@ -240,17 +228,13 @@ export default function NewUseCasePage() {
             // Collect existing data
             const existingData: Partial<CreateUseCaseRequest> = {
                 key, name, description, businessValue, primaryActor,
-                technicalSurface: {
-                    backend: {
-                        repos: backendRepos.filter(r => r.trim()),
-                        endpoints: endpoints.filter(e => e.trim())
-                    },
-                    frontend: {
-                        repos: frontendRepos.filter(r => r.trim()),
-                        routes: routes.filter(r => r.trim()),
-                        components: components.filter(c => c.trim())
-                    }
-                },
+                serviceInterfaces: serviceInterfaces
+                    .filter(s => s.selected)
+                    .map(({ serviceId, serviceName, serviceType, interfaceType, endpoints, events }) => ({
+                        serviceId, serviceName, serviceType, interfaceType,
+                        endpoints: endpoints.filter(e => e.path.trim()),
+                        events: events.filter(e => e.trim()),
+                    })),
                 acceptanceCriteria: acceptanceCriteria.filter(ac => ac.trim())
             };
 
@@ -260,6 +244,7 @@ export default function NewUseCasePage() {
 
             const response = await useCaseService.generate({
                 description: fullDescription,
+                projectId: selectedProject?.id,
                 existingData
             });
 
@@ -303,21 +288,16 @@ export default function NewUseCasePage() {
             description,
             businessValue,
             primaryActor,
-            technicalSurface: {
-                backend: {
-                    repos: backendRepos.filter(r => r.trim()),
-                    endpoints: endpoints.filter(e => e.trim()),
-                    collections: [] // Default empty - can be added to UI later
-                },
-                frontend: {
-                    repos: frontendRepos.filter(r => r.trim()),
-                    routes: routes.filter(r => r.trim()),
-                    components: components.filter(c => c.trim()),
-                }
-            },
+            serviceInterfaces: serviceInterfaces
+                .filter(s => s.selected)
+                .map(({ serviceId, serviceName, serviceType, interfaceType, endpoints, events }) => ({
+                    serviceId, serviceName, serviceType, interfaceType,
+                    endpoints: endpoints.filter(e => e.path.trim()),
+                    events: events.filter(e => e.trim()),
+                })),
             acceptanceCriteria: acceptanceCriteria.filter(ac => ac.trim()),
             tags,
-            normative: false, // Default to false - can be added to UI later
+            normative: false,
             aiMetadata: {
                 estimatedComplexity: complexity
             },
@@ -338,33 +318,17 @@ export default function NewUseCasePage() {
                 assumptions: scope.assumptions.filter(s => s.trim()),
                 constraints: scope.constraints.filter(s => s.trim())
             },
-            domainModel: {
-                entities: domainEntities.map(e => ({
-                    ...e,
-                    fields: e.fields.filter(f => f.name.trim())
-                })).filter(e => e.name.trim())
-            },
-            interfaces: {
-                type: interfaceType,
-                endpoints: interfaceEndpoints.filter(e => e.path.trim()),
-                events: interfaceEvents.filter(e => e.trim())
-            },
             errorHandling: {
-                knownErrors: [] // Default empty - can be added to UI later
-            },
-            architecturePatterns: archPatterns.filter(p => p.trim()),
-            configuration: {
-                envVars: envVars.filter(v => v.trim()),
-                featureFlags: featureFlags.filter(f => f.trim())
+                knownErrors: []
             },
             quality: {
                 testTypes,
                 performanceCriteria: perfCriteria.filter(c => c.trim()),
                 securityConsiderations: secConsiderations.filter(c => c.trim())
             },
-            flows: [], // Default empty - can be added to UI later
-            relationships: [], // Default empty - can be added to UI later
-            implementationRisk: [] // Default empty - can be added to UI later
+            flows: [],
+            relationships: [],
+            implementationRisk: []
         };
 
         createMutation.mutate(request);
@@ -614,122 +578,149 @@ export default function NewUseCasePage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Domain Model</CardTitle><CardDescription>Define entities and their fields</CardDescription></CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <Accordion type="multiple" className="w-full">
-                                            {domainEntities.map((entity, i) => (
-                                                <AccordionItem key={i} value={`entity-${i}`}>
-                                                    <div className="flex items-center gap-2 py-4">
-                                                        <Input
-                                                            className="max-w-[200px]"
-                                                            value={entity.name}
-                                                            onChange={(e) => { const n = [...domainEntities]; n[i].name = e.target.value; setDomainEntities(n); }}
-                                                            placeholder="Entity Name"
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => { setDomainEntities(domainEntities.filter((_, idx) => idx !== i)); }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                        <AccordionTrigger className="py-0 flex-none ml-auto">
-                                                            <span className="sr-only">Toggle</span>
-                                                        </AccordionTrigger>
-                                                    </div>
-                                                    <AccordionContent className="px-4 py-2 space-y-3">
-                                                        <Input placeholder="Description" value={entity.description} onChange={(e) => { const n = [...domainEntities]; n[i].description = e.target.value; setDomainEntities(n); }} />
-                                                        <Label>Fields</Label>
-                                                        {entity.fields.map((field, fi) => (
-                                                            <div key={fi} className="grid grid-cols-12 gap-2">
-                                                                <div className="col-span-4"><Input placeholder="Name" value={field.name} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].name = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-3"><Input placeholder="Type" value={field.type} onChange={(e) => { const n = [...domainEntities]; n[i].fields[fi].type = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-1 flex items-center"><Checkbox checked={field.required} onCheckedChange={(c) => { const n = [...domainEntities]; n[i].fields[fi].required = !!c; setDomainEntities(n); }} /> <span className="ml-1 text-xs">Req</span></div>
-                                                                <div className="col-span-3"><Input placeholder="Constraint" value={field.constraints?.[0] || ''} onChange={(e) => { const n = [...domainEntities]; if (!n[i].fields[fi].constraints) n[i].fields[fi].constraints = []; n[i].fields[fi].constraints[0] = e.target.value; setDomainEntities(n); }} /></div>
-                                                                <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => { const n = [...domainEntities]; n[i].fields = n[i].fields.filter((_, fidx) => fidx !== fi); setDomainEntities(n); }}><X className="h-3 w-3" /></Button></div>
-                                                            </div>
-                                                        ))}
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => { const n = [...domainEntities]; n[i].fields.push({ name: '', type: 'string', required: false, constraints: [] }); setDomainEntities(n); }}><Plus className="h-3 w-3 mr-1" /> Add Field</Button>
-                                                    </AccordionContent>
-                                                </AccordionItem>
-                                            ))}
-                                        </Accordion>
-                                        <Button type="button" variant="outline" onClick={() => setDomainEntities([...domainEntities, { name: '', description: '', fields: [] }])}><Plus className="h-4 w-4 mr-2" /> Add Entity</Button>
-                                    </CardContent>
-                                </Card>
                             </TabsContent>
 
                             {/* TECHNICAL TAB */}
                             <TabsContent value="technical" className="space-y-6 mt-6">
                                 <Card>
-                                    <CardHeader><CardTitle>Technical Surface</CardTitle></CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-3">
-                                            <Label>Backend Repos <span className="text-destructive">*</span></Label>
-                                            {backendRepos.map((repo, i) => (<div key={i} className="flex gap-2"><Input value={repo} onChange={(e) => handleUpdateItem(i, e.target.value, backendRepos, setBackendRepos)} required={i === 0} /><Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(i, backendRepos, setBackendRepos)}><X className="h-4 w-4" /></Button></div>))}
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleAddItem(backendRepos, setBackendRepos)}><Plus className="h-4 w-4 mr-2" /> Add Repo</Button>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <Label>Frontend Repos <span className="text-destructive">*</span></Label>
-                                            {frontendRepos.map((repo, i) => (<div key={i} className="flex gap-2"><Input value={repo} onChange={(e) => handleUpdateItem(i, e.target.value, frontendRepos, setFrontendRepos)} required={i === 0} /><Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(i, frontendRepos, setFrontendRepos)}><X className="h-4 w-4" /></Button></div>))}
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleAddItem(frontendRepos, setFrontendRepos)}><Plus className="h-4 w-4 mr-2" /> Add Repo</Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Interfaces</CardTitle></CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label>Type</Label>
-                                            <Select value={interfaceType} onValueChange={(v: any) => setInterfaceType(v)}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent><SelectItem value="REST">REST</SelectItem><SelectItem value="GraphQL">GraphQL</SelectItem><SelectItem value="Event">Event</SelectItem></SelectContent>
-                                            </Select>
-                                        </div>
-                                        <Label>Endpoints</Label>
-                                        {interfaceEndpoints.map((ep, i) => (
-                                            <div key={i} className="grid grid-cols-12 gap-2">
-                                                <div className="col-span-3"><Input placeholder="Method" value={ep.method} onChange={(e) => { const n = [...interfaceEndpoints]; n[i].method = e.target.value; setInterfaceEndpoints(n); }} /></div>
-                                                <div className="col-span-8"><Input placeholder="Path" value={ep.path} onChange={(e) => { const n = [...interfaceEndpoints]; n[i].path = e.target.value; setInterfaceEndpoints(n); }} /></div>
-                                                <div className="col-span-1"><Button type="button" variant="ghost" size="icon" onClick={() => setInterfaceEndpoints(interfaceEndpoints.filter((_, idx) => idx !== i))}><X className="h-4 w-4" /></Button></div>
-                                            </div>
-                                        ))}
-                                        <Button type="button" variant="outline" size="sm" onClick={() => setInterfaceEndpoints([...interfaceEndpoints, { method: 'GET', path: '', request: '', response: '' }])}><Plus className="h-4 w-4 mr-2" /> Add Endpoint</Button>
-                                    </CardContent>
-                                </Card>
-                                <Card>
                                     <CardHeader>
-                                        <CardTitle>Architecture Patterns</CardTitle>
-                                        <CardDescription>Use case-specific design patterns (tech stack inherited from project)</CardDescription>
+                                        <CardTitle>Applications / Services</CardTitle>
+                                        <CardDescription>
+                                            Select which services and applications are involved in this use case, and specify the interface each one exposes or consumes.
+                                        </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        {archPatterns.map((pattern, i) => (
-                                            <div key={i} className="flex gap-2">
-                                                <Input
-                                                    placeholder="e.g., Repository, Factory, Strategy"
-                                                    value={pattern}
-                                                    onChange={(e) => { const n = [...archPatterns]; n[i] = e.target.value; setArchPatterns(n); }}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => setArchPatterns(archPatterns.filter((_, idx) => idx !== i))}
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
+                                    <CardContent className="space-y-4">
+                                        {serviceInterfaces.length === 0 && (
+                                            <p className="text-sm text-muted-foreground border rounded-md p-4 text-center">
+                                                No services defined for this project. Add services under the project&apos;s Tech Stack settings.
+                                            </p>
+                                        )}
+                                        {serviceInterfaces.map((svc, idx) => (
+                                            <div key={svc.serviceId} className="border rounded-lg overflow-hidden">
+                                                {/* Service row header */}
+                                                <div className="flex items-center gap-3 p-3 bg-muted/30">
+                                                    <Checkbox
+                                                        checked={svc.selected}
+                                                        onCheckedChange={(checked) => {
+                                                            const next = [...serviceInterfaces];
+                                                            next[idx] = { ...next[idx], selected: !!checked };
+                                                            setServiceInterfaces(next);
+                                                        }}
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="font-medium">{svc.serviceName}</span>
+                                                        <Badge variant="outline" className="ml-2 text-xs capitalize">{svc.serviceType.replace(/-/g, ' ')}</Badge>
+                                                    </div>
+                                                </div>
+                                                {/* Interface config (visible when selected) */}
+                                                {svc.selected && (
+                                                    <div className="p-4 space-y-4 border-t">
+                                                        <div className="space-y-2">
+                                                            <Label>Interface Type</Label>
+                                                            <Select
+                                                                value={svc.interfaceType}
+                                                                onValueChange={(v: any) => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], interfaceType: v };
+                                                                    setServiceInterfaces(next);
+                                                                }}
+                                                            >
+                                                                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="REST">REST</SelectItem>
+                                                                    <SelectItem value="GraphQL">GraphQL</SelectItem>
+                                                                    <SelectItem value="Event">Event</SelectItem>
+                                                                    <SelectItem value="UI">UI</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        {(svc.interfaceType === 'REST' || svc.interfaceType === 'GraphQL') && (
+                                                            <div className="space-y-2">
+                                                                <Label>Endpoints</Label>
+                                                                {svc.endpoints.map((ep, epIdx) => (
+                                                                    <div key={epIdx} className="grid grid-cols-12 gap-2">
+                                                                        <div className="col-span-3">
+                                                                            <Input placeholder="GET" value={ep.method} onChange={(e) => {
+                                                                                const next = [...serviceInterfaces];
+                                                                                next[idx] = { ...next[idx], endpoints: next[idx].endpoints.map((x, i) => i === epIdx ? { ...x, method: e.target.value } : x) };
+                                                                                setServiceInterfaces(next);
+                                                                            }} />
+                                                                        </div>
+                                                                        <div className="col-span-8">
+                                                                            <Input placeholder="/api/v1/resource" value={ep.path} onChange={(e) => {
+                                                                                const next = [...serviceInterfaces];
+                                                                                next[idx] = { ...next[idx], endpoints: next[idx].endpoints.map((x, i) => i === epIdx ? { ...x, path: e.target.value } : x) };
+                                                                                setServiceInterfaces(next);
+                                                                            }} />
+                                                                        </div>
+                                                                        <div className="col-span-1">
+                                                                            <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                                                const next = [...serviceInterfaces];
+                                                                                next[idx] = { ...next[idx], endpoints: next[idx].endpoints.filter((_, i) => i !== epIdx) };
+                                                                                setServiceInterfaces(next);
+                                                                            }}><X className="h-4 w-4" /></Button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], endpoints: [...next[idx].endpoints, { method: 'GET', path: '', request: '', response: '' }] };
+                                                                    setServiceInterfaces(next);
+                                                                }}><Plus className="h-4 w-4 mr-2" /> Add Endpoint</Button>
+                                                            </div>
+                                                        )}
+                                                        {svc.interfaceType === 'UI' && (
+                                                            <div className="space-y-2">
+                                                                <Label>UI Routes / Screens</Label>
+                                                                {svc.endpoints.map((ep, epIdx) => (
+                                                                    <div key={epIdx} className="flex gap-2">
+                                                                        <Input placeholder="/dashboard" value={ep.path} onChange={(e) => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], endpoints: next[idx].endpoints.map((x, i) => i === epIdx ? { ...x, path: e.target.value } : x) };
+                                                                            setServiceInterfaces(next);
+                                                                        }} />
+                                                                        <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], endpoints: next[idx].endpoints.filter((_, i) => i !== epIdx) };
+                                                                            setServiceInterfaces(next);
+                                                                        }}><X className="h-4 w-4" /></Button>
+                                                                    </div>
+                                                                ))}
+                                                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], endpoints: [...next[idx].endpoints, { method: '', path: '', request: '', response: '' }] };
+                                                                    setServiceInterfaces(next);
+                                                                }}><Plus className="h-4 w-4 mr-2" /> Add Route</Button>
+                                                            </div>
+                                                        )}
+                                                        {svc.interfaceType === 'Event' && (
+                                                            <div className="space-y-2">
+                                                                <Label>Events</Label>
+                                                                {svc.events.map((ev, evIdx) => (
+                                                                    <div key={evIdx} className="flex gap-2">
+                                                                        <Input placeholder="e.g. order.created" value={ev} onChange={(e) => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], events: next[idx].events.map((x, i) => i === evIdx ? e.target.value : x) };
+                                                                            setServiceInterfaces(next);
+                                                                        }} />
+                                                                        <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                                            const next = [...serviceInterfaces];
+                                                                            next[idx] = { ...next[idx], events: next[idx].events.filter((_, i) => i !== evIdx) };
+                                                                            setServiceInterfaces(next);
+                                                                        }}><X className="h-4 w-4" /></Button>
+                                                                    </div>
+                                                                ))}
+                                                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                                                    const next = [...serviceInterfaces];
+                                                                    next[idx] = { ...next[idx], events: [...next[idx].events, ''] };
+                                                                    setServiceInterfaces(next);
+                                                                }}><Plus className="h-4 w-4 mr-2" /> Add Event</Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setArchPatterns([...archPatterns, ''])}
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" /> Add Pattern
-                                        </Button>
                                     </CardContent>
                                 </Card>
                             </TabsContent>

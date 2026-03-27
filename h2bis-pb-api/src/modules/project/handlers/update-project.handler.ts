@@ -58,9 +58,6 @@ export class UpdateProjectHandler {
             } : existingProject.accessControl,
             metadata: {
                 repository: updateData.metadata?.repository ?? existingProject.metadata.repository,
-                techStack: updateData.metadata?.techStack ?? existingProject.metadata.techStack,
-                language: updateData.metadata?.language ?? existingProject.metadata.language,
-                framework: updateData.metadata?.framework ?? existingProject.metadata.framework,
                 architecture: {
                     overview: updateData.metadata?.architecture?.overview ?? existingProject.metadata.architecture.overview,
                     style: updateData.metadata?.architecture?.style ?? existingProject.metadata.architecture.style,
@@ -80,11 +77,8 @@ export class UpdateProjectHandler {
                     purpose: s.purpose ?? '',
                     apiDocs: s.apiDocs ?? ''
                 })) : existingProject.metadata.externalServices) as Array<{ name: string; purpose: string; apiDocs: string; }>,
+                services: (updateData.metadata?.services ?? existingProject.metadata.services ?? []) as any,
                 standards: {
-                    codingStyle: {
-                        guide: updateData.metadata?.standards?.codingStyle?.guide ?? existingProject.metadata.standards.codingStyle.guide,
-                        linter: updateData.metadata?.standards?.codingStyle?.linter ?? existingProject.metadata.standards.codingStyle.linter
-                    },
                     namingConventions: updateData.metadata?.standards?.namingConventions ?? existingProject.metadata.standards.namingConventions,
                     errorHandling: updateData.metadata?.standards?.errorHandling ?? existingProject.metadata.standards.errorHandling,
                     loggingConvention: updateData.metadata?.standards?.loggingConvention ?? existingProject.metadata.standards.loggingConvention

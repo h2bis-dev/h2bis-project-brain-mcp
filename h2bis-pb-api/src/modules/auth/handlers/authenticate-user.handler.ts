@@ -20,15 +20,15 @@ export class AuthenticateUserHandler {
         }
 
         // Verify password
-        const isValid = await verifyPassword(dto.password, user.passwordHash);
+        const isValid = await verifyPassword(dto.password, user.passwordHash || '');
 
         if (!isValid) {
             throw new UnauthorizedError('Invalid credentials');
         }
 
-        // Check if account is active
+        // Check if account is active (pending approval logic)
         if (!user.isActive) {
-            throw new UnauthorizedError('Account is inactive');
+            throw new UnauthorizedError('Account pending approval');
         }
 
         // Compute permissions based on user's roles

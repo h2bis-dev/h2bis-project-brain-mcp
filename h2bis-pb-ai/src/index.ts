@@ -31,4 +31,4 @@ export { validateIntentExtraction } from './core/utils/validators.js';
 
 // New Agents
 export { UseCaseGenerationAgent } from './agents/use-case-generation/use-case-generation.agent.js';
-export type { UseCaseGenerationInput, UseCaseGenerationResult } from './agents/use-case-generation/types/use-case-generation.types.js';
+export type { UseCaseGenerationInput, UseCaseGenerationResult, ProjectContext } from './agents/use-case-generation/types/use-case-generation.types.js';

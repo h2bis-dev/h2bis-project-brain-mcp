@@ -70,9 +70,6 @@ const ProjectSchema = new mongoose.Schema(
         metadata: {
             // System Context
             repository: { type: String, default: '' },
-            techStack: { type: [String], default: [] },
-            language: { type: String, default: '' },
-            framework: { type: String, default: '' },
 
             // Architecture
             architecture: {
@@ -106,10 +103,6 @@ const ProjectSchema = new mongoose.Schema(
 
             // Standards & Conventions
             standards: {
-                codingStyle: {
-                    guide: { type: String, default: '' },
-                    linter: { type: [String], default: [] }
-                },
                 namingConventions: { type: [String], default: [] },
                 errorHandling: { type: [String], default: [] },
                 loggingConvention: { type: [String], default: [] }
@@ -124,8 +117,69 @@ const ProjectSchema = new mongoose.Schema(
                     testTypes: { type: [String], default: [] },
                     requiresE2ETests: { type: Boolean, default: false }
                 },
-                documentationStandards: { type: String, default: '' }
+                documentationStandards: { type: [String], default: [] }
+            },
+
+            // Project Applications & Services
+            // Each entry describes a distinct app or backend service in the project
+            // (e.g. Web App, Mobile App, API, Data Service, etc.)
+            services: {
+                type: [{
+                    id:          { type: String, required: true },
+                    name:        { type: String, required: true },
+                    type: {
+                        type: String,
+                        enum: ['web-app', 'mobile-app', 'api', 'background-service', 'data-service', 'other'],
+                        default: 'other'
+                    },
+                    language:    { type: String, default: '' },
+                    framework:   { type: String, default: '' },
+                    techStack:   { type: [String], default: [] },
+                    description: { type: String, default: '' },
+                    goals:       { type: String, default: '' },
+                    repository:  { type: String, default: '' }
+                }],
+                default: []
             }
+        },
+
+        // Domain Model Catalog
+        // Maintained by MCP agents when features are developed.
+        // Serves as a shared catalog of data-layer, DTO, domain, and other object models
+        // to prevent redundant model definitions across use cases.
+        domainCatalog: {
+            type: [{
+                // Model identity
+                name: { type: String, required: true },            // e.g. "User", "OrderDto"
+                description: { type: String, default: '' },
+                layer: {
+                    type: String,
+                    enum: ['data', 'dto', 'domain', 'response', 'request', 'event', 'other'],
+                    default: 'domain'
+                },
+
+                // Fields — each can have any supported primitive or composite type
+                fields: {
+                    type: [{
+                        name:         { type: String, required: true },
+                        type:         { type: String, required: true }, // free-form: 'string', 'number', 'boolean', 'Date', 'string[]', 'ObjectId', etc.
+                        required:     { type: Boolean, default: false },
+                        description:  { type: String, default: '' },
+                        defaultValue: { type: String, default: '' },
+                        constraints:  { type: [String], default: [] }  // e.g. ['unique', 'min:0', 'max:255']
+                    }],
+                    default: []
+                },
+
+                // Traceability
+                usedByUseCases: { type: [String], default: [] }, // use case keys that reference this model
+
+                // Audit
+                addedBy:   { type: String, default: '' },
+                addedAt:   { type: Date, default: Date.now },
+                updatedAt: { type: Date, default: Date.now }
+            }],
+            default: []
         },
 
         // Project Statistics
@@ -168,6 +222,51 @@ export interface DevelopedEndpoint {
     lastScanned?: Date;
 }
 
+// ── Domain Catalog types ────────────────────────────────────────────────────
+
+export type DomainModelLayer = 'data' | 'dto' | 'domain' | 'response' | 'request' | 'event' | 'other';
+
+export interface DomainModelField {
+    name: string;
+    /** Free-form type string: 'string', 'number', 'boolean', 'Date', 'string[]', 'ObjectId', custom class name, etc. */
+    type: string;
+    required: boolean;
+    description?: string;
+    defaultValue?: string;
+    /** Constraint hints, e.g. ['unique', 'min:0', 'max:255'] */
+    constraints: string[];
+}
+
+export interface DomainModel {
+    name: string;
+    description?: string;
+    layer?: DomainModelLayer;
+    fields: DomainModelField[];
+    /** Keys of use cases that reference this model */
+    usedByUseCases: string[];
+    addedBy?: string;
+    addedAt?: Date;
+    updatedAt?: Date;
+}
+
+// ── Project Services ──────────────────────────────────────────────────────────
+
+export type ProjectServiceType = 'web-app' | 'mobile-app' | 'api' | 'background-service' | 'data-service' | 'other';
+
+export interface ProjectServiceEntry {
+    id: string;
+    name: string;
+    type: ProjectServiceType;
+    language?: string;
+    framework?: string;
+    techStack?: string[];
+    description?: string;
+    goals?: string;
+    repository?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface ProjectDocument {
     _id: string;
     name: string;
@@ -179,11 +278,9 @@ export interface ProjectDocument {
     accessControl: ProjectAccessControl;
     type: 'software_development';
     developedEndpoints: DevelopedEndpoint[];
+    domainCatalog: DomainModel[];
     metadata: {
         repository: string;
-        techStack: string[];
-        language: string;
-        framework: string;
         architecture: {
             overview: string;
             style: string;
@@ -203,11 +300,8 @@ export interface ProjectDocument {
             purpose: string;
             apiDocs: string;
         }>;
+        services: ProjectServiceEntry[];
         standards: {
-            codingStyle: {
-                guide: string;
-                linter: string[];
-            };
             namingConventions: string[];
             errorHandling: string[];
             loggingConvention: string[];
@@ -220,7 +314,7 @@ export interface ProjectDocument {
                 testTypes: string[];
                 requiresE2ETests: boolean;
             };
-            documentationStandards: string;
+            documentationStandards: string[];
         };
     };
     stats: {
@@ -231,3 +325,97 @@ export interface ProjectDocument {
     createdAt: Date;
     updatedAt: Date;
 }
+
+/* ---------- Factory Functions ---------- */
+
+export type CreateProjectProps = {
+    _id: string;
+    name: string;
+    owner: string;
+    description?: string;
+    status?: 'active' | 'archived' | 'deleted';
+    lifecycle?: 'planning' | 'in_development' | 'in_review' | 'in_testing' | 'staging' | 'production' | 'maintenance' | 'archived';
+    members?: ProjectMember[];
+    accessControl?: ProjectAccessControl;
+    developedEndpoints?: DevelopedEndpoint[];
+    domainCatalog?: DomainModel[];
+    metadata?: any; // Accept flexible metadata structure from DTOs
+    stats?: {
+        useCaseCount: number;
+        capabilityCount: number;
+        completionPercentage: number;
+    };
+};
+
+/**
+ * Factory function to create a standardized Project object
+ * Centralizes default logic and eliminates verbose manual mapping
+ * Note: Timestamps are set manually because repository uses raw MongoDB, not Mongoose
+ */
+export const createProject = (props: CreateProjectProps): ProjectDocument => {
+    const now = new Date();
+    
+    return {
+        _id: props._id,
+        name: props.name,
+        description: props.description ?? '',
+        status: props.status ?? 'active',
+        lifecycle: props.lifecycle ?? 'planning',
+        owner: props.owner,
+        members: props.members ?? [
+            {
+                userId: props.owner,
+                role: 'owner',
+                addedAt: now
+            }
+        ],
+        accessControl: props.accessControl ?? {
+            allowAdmins: true,
+            allowedRoles: ['user', 'moderator', 'admin']
+        },
+        type: 'software_development',
+        developedEndpoints: props.developedEndpoints ?? [],
+        domainCatalog: props.domainCatalog ?? [],
+        metadata: {
+            repository: props.metadata?.repository ?? '',
+            architecture: {
+                overview: props.metadata?.architecture?.overview ?? '',
+                style: props.metadata?.architecture?.style ?? '',
+                directoryStructure: props.metadata?.architecture?.directoryStructure ?? '',
+                stateManagement: props.metadata?.architecture?.stateManagement ?? []
+            },
+            authStrategy: {
+                approach: props.metadata?.authStrategy?.approach ?? '',
+                implementation: props.metadata?.authStrategy?.implementation ?? []
+            },
+            deployment: {
+                environment: props.metadata?.deployment?.environment ?? '',
+                cicd: props.metadata?.deployment?.cicd ?? []
+            },
+            externalServices: props.metadata?.externalServices ?? [],
+            services: props.metadata?.services ?? [],
+            standards: {
+                namingConventions: props.metadata?.standards?.namingConventions ?? [],
+                errorHandling: props.metadata?.standards?.errorHandling ?? [],
+                loggingConvention: props.metadata?.standards?.loggingConvention ?? []
+            },
+            qualityGates: {
+                definitionOfDone: props.metadata?.qualityGates?.definitionOfDone ?? [],
+                codeReviewChecklist: props.metadata?.qualityGates?.codeReviewChecklist ?? [],
+                testingRequirements: {
+                    coverage: props.metadata?.qualityGates?.testingRequirements?.coverage ?? 0,
+                    testTypes: props.metadata?.qualityGates?.testingRequirements?.testTypes ?? [],
+                    requiresE2ETests: props.metadata?.qualityGates?.testingRequirements?.requiresE2ETests ?? false
+                },
+                documentationStandards: props.metadata?.qualityGates?.documentationStandards ?? []
+            }
+        },
+        stats: props.stats ?? {
+            useCaseCount: 0,
+            capabilityCount: 0,
+            completionPercentage: 0
+        },
+        createdAt: now,
+        updatedAt: now
+    };
+};

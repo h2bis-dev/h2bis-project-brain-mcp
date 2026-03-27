@@ -12,14 +12,18 @@ export function errorHandler(
     res: Response,
     next: NextFunction
 ) {
-    // Safe error logging
+    // Safe error logging — only log unexpected errors (5xx).
+    // 4xx AppErrors (401 Unauthorized, 403 Forbidden, 404 Not Found, etc.) are
+    // expected client errors; logging them as ❌ is misleading noise in production.
+    const isClientError = err instanceof AppError && err.statusCode < 500;
     try {
-        console.error('❌ Error caught by global handler:', {
-            message: err.message,
-            stack: err.stack,
-            name: err.name,
-            // Only log non-circular properties if possible, or just the basics
-        });
+        if (!isClientError) {
+            console.error('❌ Error caught by global handler:', {
+                message: err.message,
+                stack: err.stack,
+                name: err.name,
+            });
+        }
     } catch (loggingError) {
         console.error('❌ Error logging failed:', loggingError);
         console.error('Original error message:', err.message);

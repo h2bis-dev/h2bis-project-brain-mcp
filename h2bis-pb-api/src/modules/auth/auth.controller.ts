@@ -6,7 +6,9 @@ import { authenticateUserHandler } from './handlers/authenticate-user.handler.js
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from './services/jwt.service.js';
 import { userRepository } from './repositories/user.repository.js';
 import { refreshTokenRepository } from './repositories/refresh-token.repository.js';
-import { UnauthorizedError } from '../../core/errors/app.error.js';
+import { UnauthorizedError, ValidationError } from '../../core/errors/app.error.js';
+import { config } from '../../core/config/config.js';
+import { accessRequestRepository } from './repositories/access-request.repository.js';
 
 /**
  * Register a new user
@@ -40,6 +42,207 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     // from server-to-server calls).
     res.status(200).json(result);
 });
+
+/**
+ * GitHub OAuth callback
+ * GET /api/auth/github/callback?code=...
+ */
+export const githubCallback = asyncHandler(async (req: Request, res: Response) => {
+    const code = req.query.code as string;
+    if (!code) {
+        throw new ValidationError('Missing code parameter');
+    }
+
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+    const redirectUri = process.env.GITHUB_CALLBACK_URL;
+
+    if (!clientId || !clientSecret || !redirectUri) {
+        throw new ValidationError('GitHub OAuth is not configured. Set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and GITHUB_CALLBACK_URL.');
+    }
+
+    // Exchange code for access token
+    const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            client_id: clientId,
+            client_secret: clientSecret,
+            code,
+            redirect_uri: redirectUri,
+        }),
+    });
+
+    if (!tokenRes.ok) {
+        throw new Error('GitHub token exchange failed');
+    }
+
+    const tokenData: any = await tokenRes.json();
+    const githubToken = tokenData.access_token;
+
+    if (!githubToken) {
+        throw new Error('GitHub token exchange returned no access token');
+    }
+
+    // Fetch GitHub user profile
+    const profileRes = await fetch('https://api.github.com/user', {
+        headers: { Authorization: `Bearer ${githubToken}`, Accept: 'application/json' },
+    });
+
+    if (!profileRes.ok) {
+        throw new Error('GitHub user fetch failed');
+    }
+
+    const profile: any = await profileRes.json();
+    const githubId = String(profile.id || profile.node_id);
+    const name = profile.name || profile.login || 'GitHub User';
+    let email = profile.email;
+
+    // Fetch verified email if not on the public profile
+    if (!email) {
+        const emailRes = await fetch('https://api.github.com/user/emails', {
+            headers: { Authorization: `Bearer ${githubToken}`, Accept: 'application/json' },
+        });
+        if (emailRes.ok) {
+            const emails = await emailRes.json();
+            if (Array.isArray(emails)) {
+                const primary = emails.find((e: any) => e.verified && e.primary);
+                const anyVerified = emails.find((e: any) => e.verified);
+                email = (primary || anyVerified)?.email;
+            }
+        }
+    }
+
+    // Fallback: GitHub noreply address (every account has one)
+    if (!email) {
+        email = `${profile.id}+${profile.login}@users.noreply.github.com`;
+    }
+
+    // Normalize email
+    email = String(email).toLowerCase();
+
+    // Recover returnUrl from state parameter (set by /api/auth/github/authorize)
+    let returnUrlFromState = '';
+    const stateParam = String(req.query.state || '');
+    if (stateParam) {
+        try {
+            const decoded = JSON.parse(Buffer.from(stateParam, 'base64url').toString('utf-8'));
+            returnUrlFromState = decoded?.returnUrl || '';
+        } catch { /* ignore malformed state */ }
+    }
+
+    const safeReturnUrl = returnUrlFromState && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(returnUrlFromState)
+        ? returnUrlFromState
+        : '';
+
+    // Find existing user by GitHub ID or email
+    let user = await userRepository.findByGithubId(githubId);
+    if (!user) {
+        user = await userRepository.findByEmail(email);
+    }
+
+    if (!user) {
+        // User does not exist — create an access request instead of auto-creating
+        const existingRequest = await accessRequestRepository.findPendingByEmail(email)
+            || await accessRequestRepository.findPendingByGithubId(githubId);
+
+        if (!existingRequest) {
+            await accessRequestRepository.create({
+                email,
+                name,
+                githubId,
+                githubLogin: profile.login,
+                avatarUrl: profile.avatar_url,
+            });
+        }
+
+        if (safeReturnUrl) {
+            const redirectUrl = new URL(safeReturnUrl);
+            redirectUrl.searchParams.append('success', 'false');
+            redirectUrl.searchParams.append('error', 'pending_approval');
+            return res.redirect(redirectUrl.toString());
+        }
+        return res.status(403).json({
+            success: false,
+            message: 'Access request submitted. An admin must approve your account before you can sign in.',
+        });
+    }
+
+    // Link GitHub identity if not yet linked
+    if (!user.githubId) {
+        user.githubId = githubId;
+        await user.save();
+    }
+
+    if (!user.isActive) {
+        if (safeReturnUrl) {
+            const redirectUrl = new URL(safeReturnUrl);
+            redirectUrl.searchParams.append('success', 'false');
+            redirectUrl.searchParams.append('error', 'pending_approval');
+            return res.redirect(redirectUrl.toString());
+        }
+        return res.status(403).json({ success: false, message: 'pending approval' });
+    }
+
+    // Issue JWT tokens
+    const accessToken = generateAccessToken(user._id.toString(), user.email, user.role || ['user']);
+    const refreshToken = generateRefreshToken(user._id.toString());
+    const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await refreshTokenRepository.create(refreshToken, user._id.toString(), refreshExpiry);
+
+    if (safeReturnUrl) {
+        const redirectUrl = new URL(safeReturnUrl);
+        redirectUrl.searchParams.append('success', 'true');
+        redirectUrl.searchParams.append('accessToken', accessToken);
+        redirectUrl.searchParams.append('refreshToken', refreshToken);
+        return res.redirect(redirectUrl.toString());
+    }
+
+    res.status(200).json({
+        success: true,
+        user: {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            githubId: user.githubId,
+        },
+        accessToken,
+        refreshToken,
+    });
+});
+
+/**
+ * Get GitHub OAuth authorize URL
+ * GET /api/auth/github/authorize?returnUrl=<local-callback-url>
+ */
+export const githubAuthorize = asyncHandler(async (req: Request, res: Response) => {
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const redirectUri = process.env.GITHUB_CALLBACK_URL;
+
+    if (!clientId || !redirectUri) {
+        throw new ValidationError('GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CALLBACK_URL.');
+    }
+
+    const returnUrl = String(req.query.returnUrl || '');
+
+    // Encode returnUrl inside the OAuth `state` parameter.
+    // GitHub preserves `state` exactly and returns it to the callback —
+    // unlike query params appended to the authorize URL, which GitHub ignores.
+    const statePayload = JSON.stringify({ returnUrl });
+    const state = Buffer.from(statePayload).toString('base64url');
+
+    const authorizeUrl = new URL('https://github.com/login/oauth/authorize');
+    authorizeUrl.searchParams.append('client_id', clientId);
+    authorizeUrl.searchParams.append('redirect_uri', redirectUri);
+    authorizeUrl.searchParams.append('scope', 'read:user user:email');
+    authorizeUrl.searchParams.append('state', state);
+
+    res.status(200).json({
+        success: true,
+        authorizeUrl: authorizeUrl.toString(),
+    });
+})
 
 /**
  * Get current user profile (protected route)

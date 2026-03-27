@@ -37,10 +37,6 @@ export interface ProjectMetadata {
         apiDocs: string;
     }>;
     standards: {
-        codingStyle: {
-            guide: string;
-            linter: string[];
-        };
         namingConventions: string;
         errorHandling: string[];
         loggingConvention: string[];
@@ -53,7 +49,7 @@ export interface ProjectMetadata {
             testTypes: string[];
             requiresE2ETests: boolean;
         };
-        documentationStandards: string;
+        documentationStandards?: string[];
     };
 }
 
@@ -84,10 +80,6 @@ const defaultMetadata: ProjectMetadata = {
     },
     externalServices: [],
     standards: {
-        codingStyle: {
-            guide: "",
-            linter: [],
-        },
         namingConventions: "",
         errorHandling: [],
         loggingConvention: [],
@@ -100,7 +92,7 @@ const defaultMetadata: ProjectMetadata = {
             testTypes: [],
             requiresE2ETests: false,
         },
-        documentationStandards: "",
+        documentationStandards: [],
     },
 };
 
@@ -386,35 +378,6 @@ export function ProjectMetadataForm({ value = defaultMetadata, onChange, classNa
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="codingStyleGuide">Coding Style Guide</Label>
-                        <Select
-                            value={value.standards.codingStyle.guide}
-                            onValueChange={(val) => updateMetadata("standards.codingStyle.guide", val)}
-                        >
-                            <SelectTrigger id="codingStyleGuide">
-                                <SelectValue placeholder="Select style guide" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {PROJECT_METADATA_CONSTANTS.codingStyleGuide.map((guide) => (
-                                    <SelectItem key={guide} value={guide}>
-                                        {guide}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Linters & Formatters</Label>
-                        <TagInput
-                            value={value.standards.codingStyle.linter}
-                            onChange={(tags) => updateMetadata("standards.codingStyle.linter", tags)}
-                            suggestions={PROJECT_METADATA_CONSTANTS.linters}
-                            placeholder="e.g., ESLint, Prettier..."
-                        />
-                    </div>
-
-                    <div className="space-y-2">
                         <Label>Error Handling Patterns</Label>
                         <TagInput
                             value={value.standards.errorHandling}
@@ -555,12 +518,10 @@ export function ProjectMetadataForm({ value = defaultMetadata, onChange, classNa
 
                     <div className="space-y-2">
                         <Label htmlFor="documentationStandards">Documentation Standards</Label>
-                        <Textarea
-                            id="documentationStandards"
-                            placeholder="Describe documentation requirements..."
-                            value={value.qualityGates.documentationStandards}
-                            onChange={(e) => updateMetadata("qualityGates.documentationStandards", e.target.value)}
-                            rows={2}
+                        <TagInput
+                            value={value.qualityGates.documentationStandards || []}
+                            onChange={(tags) => updateMetadata("qualityGates.documentationStandards", tags)}
+                            placeholder="e.g., JSDoc for all public APIs, README per module..."
                         />
                     </div>
                 </CardContent>

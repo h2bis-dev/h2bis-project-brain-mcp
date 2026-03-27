@@ -20,8 +20,9 @@ export async function connectDb(): Promise<Db> {
         dbInstance = clientInstance.db(config.dbName);
         console.log(`✅ Connected to MongoDB: ${config.dbName}`);
 
-        // Connect Mongoose
-        const mongooseUri = `${config.mongoUri}${config.dbName}`;
+        // Connect Mongoose — ensure exactly one "/" separates the URI from the DB name
+        const baseUri = config.mongoUri.endsWith('/') ? config.mongoUri : `${config.mongoUri}/`;
+        const mongooseUri = `${baseUri}${config.dbName}`;
         await mongoose.connect(mongooseUri, {
             // Disable automatic collection creation
             // Collections will only be created when first document is inserted

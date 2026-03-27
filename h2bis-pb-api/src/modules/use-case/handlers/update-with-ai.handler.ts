@@ -40,7 +40,6 @@ export class UpdateWithAIHandler {
             if (ctx.architectureOverview) constraints.push(`Architecture Overview: ${ctx.architectureOverview}`);
 
             if (ctx.standards) {
-                if (ctx.standards.codingStyle?.guide) constraints.push(`Coding Style Guide: ${ctx.standards.codingStyle.guide}`);
                 if (ctx.standards.namingConventions?.length) constraints.push(`Naming Conventions: ${ctx.standards.namingConventions.join(', ')}`);
                 if (ctx.standards.errorHandling?.length) constraints.push(`Error Handling Patterns: ${ctx.standards.errorHandling.join(', ')}`);
             }
@@ -55,6 +54,14 @@ export class UpdateWithAIHandler {
             if (ctx.domainCatalog?.length) {
                 const entityNames = ctx.domainCatalog.map(e => e.name).join(', ');
                 constraints.push(`Existing Domain Entities: ${entityNames}`);
+            }
+
+            if (ctx.services?.length) {
+                const svcLines = ctx.services.map(s => {
+                    const tech = [s.language, s.framework, ...(s.techStack ?? [])].filter(Boolean).join(', ');
+                    return `  - [${s.type}] ${s.name}${tech ? ` (${tech})` : ''}${s.description ? `: ${s.description}` : ''}`;
+                });
+                constraints.push(`Project Services (scope your changes to the relevant service):\n${svcLines.join('\n')}`);
             }
 
             if (constraints.length > 0) {

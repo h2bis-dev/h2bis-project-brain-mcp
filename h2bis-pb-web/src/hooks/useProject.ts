@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '@/services/project.service';
 import { useProject } from '@/contexts/ProjectContext';
-import type { Project } from '@/types/project.types';
+import type { Project, ProjectService } from '@/types/project.types';
 
 /**
  * Hook to fetch all projects
@@ -40,6 +40,19 @@ export function useSwitchProject() {
             queryClient.invalidateQueries({ queryKey: ['capabilities'] });
         },
     };
+}
+
+/**
+ * Hook to fetch the services/applications for a specific project
+ */
+export function useProjectServices(projectId: string | undefined) {
+    return useQuery<ProjectService[], Error>({
+        queryKey: ['project-services', projectId],
+        queryFn: () => projectService.getServices(projectId!),
+        enabled: !!projectId,
+        staleTime: 10 * 60 * 1000, // 10 minutes
+        retry: 2,
+    });
 }
 
 /**

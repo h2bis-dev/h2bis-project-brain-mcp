@@ -1,3 +1,24 @@
+export interface ProjectMember {
+    userId: string;
+    role: string;
+    email?: string;
+    name?: string;
+}
+
+export type ProjectServiceType = 'web-app' | 'mobile-app' | 'api' | 'background-service' | 'data-service' | 'other';
+
+export interface ProjectService {
+    id: string;
+    name: string;
+    type: ProjectServiceType;
+    language?: string;
+    framework?: string;
+    techStack?: string[];
+    description?: string;
+    goals?: string;
+    repository?: string;
+}
+
 export interface DevelopedEndpoint {
     useCaseId: string;
     endpoint: string;
@@ -10,41 +31,26 @@ export interface DevelopedEndpoint {
     lastScanned?: string;
 }
 
+export type DomainModelLayer = 'data' | 'dto' | 'domain' | 'response' | 'request' | 'event' | 'other';
+
 export interface DomainField {
     name: string;
     type: string;
     required: boolean;
-    description: string;
+    description?: string;
+    defaultValue?: string;
+    constraints: string[];
 }
 
 export interface DomainEntity {
     name: string;
-    description: string;
-    modulePath: string;
+    description?: string;
+    layer?: DomainModelLayer;
     fields: DomainField[];
     usedByUseCases: string[];
-    addedAt: Date;
-    lastScanned?: Date;
-}
-
-export interface EnvironmentVariable {
-    name: string;
-    description: string;
-    required: boolean;
-    defaultValue: string;
-    usedByUseCases: string[];
-}
-
-export interface FeatureFlag {
-    name: string;
-    description: string;
-    defaultValue: boolean;
-    usedByUseCases: string[];
-}
-
-export interface ConfigurationCatalog {
-    envVars: EnvironmentVariable[];
-    featureFlags: FeatureFlag[];
+    addedBy?: string;
+    addedAt?: string;
+    updatedAt?: string;
 }
 
 export interface Project {
@@ -58,13 +64,9 @@ export interface Project {
     type?: 'software_development';
     developedEndpoints?: DevelopedEndpoint[];
     domainCatalog?: DomainEntity[];
-    configurationCatalog?: ConfigurationCatalog;
-    members?: any[];
+    members?: ProjectMember[];
     metadata?: {
         repository?: string;
-        techStack?: string[];
-        language?: string;
-        framework?: string;
         architecture?: {
             overview?: string;  // String, not array - matches API
             style?: string;     // String, not array - matches API
@@ -84,11 +86,8 @@ export interface Project {
             purpose?: string;
             apiDocs?: string;
         }>;
+        services?: ProjectService[];
         standards?: {
-            codingStyle?: {
-                guide?: string;
-                linter?: string[];
-            };
             namingConventions?: string[];
             errorHandling?: string[];
             loggingConvention?: string[];
@@ -101,7 +100,7 @@ export interface Project {
                 testTypes?: string[];
                 requiresE2ETests?: boolean;
             };
-            documentationStandards?: string;
+            documentationStandards?: string[];
         };
     };
     stats?: {

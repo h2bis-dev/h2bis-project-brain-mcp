@@ -53,19 +53,6 @@ export const CreateUseCaseRequestDto = z.object({
         constraints: z.array(z.string()).default([])
     }).optional(),
 
-    domainModel: z.object({
-        entities: z.array(z.object({
-            name: z.string(),
-            description: z.string().optional(),
-            fields: z.array(z.object({
-                name: z.string(),
-                type: z.string(),
-                required: z.boolean(),
-                constraints: z.array(z.string()).default([])
-            })).default([])
-        })).default([])
-    }).optional(),
-
     interfaces: z.object({
         type: z.preprocess(
             (val) => val === '' || val === null || val === undefined ? 'REST' : val,
@@ -85,13 +72,6 @@ export const CreateUseCaseRequestDto = z.object({
             condition: z.string(),
             expectedBehavior: z.string()
         })).default([])
-    }).optional(),
-
-    architecturePatterns: z.array(z.string()).default([]),
-
-    configuration: z.object({
-        envVars: z.array(z.string()).default([]),
-        featureFlags: z.array(z.string()).default([])
     }).optional(),
 
     quality: z.object({
@@ -129,7 +109,7 @@ export const CreateUseCaseRequestDto = z.object({
 
     technicalSurface: z.object({
         backend: z.object({
-            repos: z.array(z.string()),
+            repos: z.array(z.string()).default([]),
             endpoints: z.array(z.string()).default([]),
             collections: z.array(z.object({
                 name: z.string(),
@@ -145,11 +125,31 @@ export const CreateUseCaseRequestDto = z.object({
             })).default([])
         }),
         frontend: z.object({
-            repos: z.array(z.string()),
+            repos: z.array(z.string()).default([]),
             routes: z.array(z.string()).default([]),
             components: z.array(z.string()).default([])
         })
+    }).optional().default({
+        backend: { repos: [], endpoints: [], collections: [] },
+        frontend: { repos: [], routes: [], components: [] }
     }),
+
+    serviceInterfaces: z.array(z.object({
+        serviceId: z.string(),
+        serviceName: z.string(),
+        serviceType: z.string(),
+        interfaceType: z.preprocess(
+            (val) => val === '' || val === null || val === undefined ? 'REST' : val,
+            z.enum(['REST', 'GraphQL', 'Event', 'UI'])
+        ),
+        endpoints: z.array(z.object({
+            method: z.string(),
+            path: z.string(),
+            request: z.string().optional(),
+            response: z.string().optional()
+        })).default([]),
+        events: z.array(z.string()).default([])
+    })).optional().default([]),
 
     relationships: z.array(z.object({
         type: z.preprocess(
@@ -241,18 +241,6 @@ export interface UseCaseDetailResponseDto {
         assumptions: string[];
         constraints: string[];
     };
-    domainModel?: {
-        entities: Array<{
-            name: string;
-            description?: string;
-            fields: Array<{
-                name: string;
-                type: string;
-                required: boolean;
-                constraints: string[];
-            }>;
-        }>;
-    };
     interfaces?: {
         type: 'REST' | 'GraphQL' | 'Event' | 'UI';
         endpoints: Array<{
@@ -268,21 +256,6 @@ export interface UseCaseDetailResponseDto {
             condition: string;
             expectedBehavior: string;
         }>;
-    };
-    architecture?: {
-        style: 'layered' | 'clean' | 'hexagonal' | 'event-driven';
-        patterns: string[];
-    };
-    technologyConstraints?: {
-        backend?: string;
-        frontend?: string;
-        database?: string;
-        messaging?: string;
-        auth?: string;
-    };
-    configuration?: {
-        envVars: string[];
-        featureFlags: string[];
     };
     quality?: {
         testTypes: ('unit' | 'integration' | 'e2e' | 'security')[];
@@ -314,6 +287,19 @@ export interface UseCaseDetailResponseDto {
             components: string[];
         };
     };
+    serviceInterfaces?: Array<{
+        serviceId: string;
+        serviceName: string;
+        serviceType: string;
+        interfaceType: 'REST' | 'GraphQL' | 'Event' | 'UI';
+        endpoints: Array<{
+            method: string;
+            path: string;
+            request?: string;
+            response?: string;
+        }>;
+        events: string[];
+    }>;
     relationships: Array<{
         type: string;
         targetType: string;
@@ -376,6 +362,7 @@ export interface UpdateUseCaseResponseDto {
 
 export const GenerateUseCaseRequestDto = z.object({
     description: z.string().min(1, 'Description is required'),
+    projectId: z.string().optional(),
     existingData: z.record(z.any()).optional()
 });
 
@@ -422,10 +409,6 @@ export const UpdateWithAIRequestDto = z.object({
         architectureStyle: z.string().optional(),
         architectureOverview: z.string().optional(),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional(),
-                linter: z.array(z.string()).optional(),
-            }).optional(),
             namingConventions: z.array(z.string()).optional(),
             errorHandling: z.array(z.string()).optional(),
             loggingConvention: z.array(z.string()).optional(),
@@ -445,6 +428,16 @@ export const UpdateWithAIRequestDto = z.object({
                 name: z.string(),
                 type: z.string(),
             })).optional(),
+        })).optional(),
+        services: z.array(z.object({
+            id: z.string(),
+            name: z.string(),
+            type: z.string(),
+            language: z.string().optional(),
+            framework: z.string().optional(),
+            techStack: z.array(z.string()).optional(),
+            description: z.string().optional(),
+            goals: z.string().optional(),
         })).optional(),
     }).optional(),
     fieldsToUpdate: z.array(z.string()).optional(),

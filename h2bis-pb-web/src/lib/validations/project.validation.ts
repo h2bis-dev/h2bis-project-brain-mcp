@@ -32,9 +32,6 @@ export const createProjectSchema = z.object({
 
     metadata: z.object({
         repository: z.string().optional(),
-        techStack: z.array(z.string()).optional(),
-        language: z.string().optional(),
-        framework: z.string().optional(),
         architecture: z.object({
             overview: z.string().optional(),
             style: z.string().optional(),
@@ -55,10 +52,6 @@ export const createProjectSchema = z.object({
             apiDocs: z.string().optional(),
         })).optional(),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional(),
-                linter: z.array(z.string()).optional(),
-            }).optional(),
             namingConventions: z.array(z.string()).optional(),
             errorHandling: z.array(z.string()).optional(),
             loggingConvention: z.array(z.string()).optional(),
@@ -71,65 +64,9 @@ export const createProjectSchema = z.object({
                 testTypes: z.array(z.string()).optional(),
                 requiresE2ETests: z.boolean().optional(),
             }).optional(),
-            documentationStandards: z.string().optional(),
+            documentationStandards: z.array(z.string()).optional(),
         }).optional(),
     }).optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
-
-/**
- * Common tech stack options
- */
-export const TECH_STACK_OPTIONS = [
-    'React',
-    'Next.js',
-    'Node.js',
-    'Express',
-    'MongoDB',
-    'PostgreSQL',
-    'TypeScript',
-    'JavaScript',
-    'Python',
-    'Django',
-    'FastAPI',
-    'Vue.js',
-    'Angular',
-    'Tailwind CSS',
-    'Docker',
-    'Kubernetes',
-] as const;
-
-/**
- * Common programming languages
- */
-export const LANGUAGE_OPTIONS = [
-    'TypeScript',
-    'JavaScript',
-    'Python',
-    'Java',
-    'C#',
-    'Go',
-    'Rust',
-    'PHP',
-    'Ruby',
-    'Swift',
-    'Kotlin',
-] as const;
-
-/**
- * Common frameworks
- */
-export const FRAMEWORK_OPTIONS = [
-    'Next.js',
-    'Express',
-    'NestJS',
-    'Django',
-    'FastAPI',
-    'Spring Boot',
-    'ASP.NET Core',
-    'Laravel',
-    'Ruby on Rails',
-    'Flutter',
-    'React Native',
-] as const;

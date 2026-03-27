@@ -57,21 +57,6 @@ export interface Scope {
     constraints: string[];
 }
 
-export interface DomainEntity {
-    name: string;
-    description?: string;
-    fields: {
-        name: string;
-        type: string;
-        required: boolean;
-        constraints: string[];
-    }[];
-}
-
-export interface DomainModel {
-    entities: DomainEntity[];
-}
-
 export interface InterfaceEndpoint {
     method: string;
     path: string;
@@ -81,6 +66,15 @@ export interface InterfaceEndpoint {
 
 export interface Interfaces {
     type: "REST" | "GraphQL" | "Event" | "UI";
+    endpoints: InterfaceEndpoint[];
+    events: string[];
+}
+
+export interface ServiceInterface {
+    serviceId: string;
+    serviceName: string;
+    serviceType: string;
+    interfaceType: "REST" | "GraphQL" | "Event" | "UI";
     endpoints: InterfaceEndpoint[];
     events: string[];
 }
@@ -103,11 +97,6 @@ export interface TechnologyConstraints {
     database?: string;
     messaging?: string;
     auth?: string;
-}
-
-export interface Configuration {
-    envVars: string[];
-    featureFlags: string[];
 }
 
 export interface Quality {
@@ -161,18 +150,16 @@ export interface UseCase {
     stakeholders?: string[];
     functionalRequirements?: FunctionalRequirements;
     scope?: Scope;
-    domainModel?: DomainModel;
     interfaces?: Interfaces;
     errorHandling?: ErrorHandling;
     architecture?: Architecture;
-    architecturePatterns?: string[];
     technologyConstraints?: TechnologyConstraints;
-    configuration?: Configuration;
     quality?: Quality;
     aiDirectives?: AIDirectives;
     acceptanceCriteria: string[];
     flows: Flow[];
     technicalSurface: TechnicalSurface;
+    serviceInterfaces?: ServiceInterface[];
     relationships: Relationship[];
     implementationRisk: ImplementationRisk[];
     tags: string[];

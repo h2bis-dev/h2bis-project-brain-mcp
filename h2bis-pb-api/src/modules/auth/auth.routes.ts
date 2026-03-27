@@ -21,6 +21,10 @@ router.post('/refresh', authController.refreshToken);
 // POST /api/auth/logout - Logout user (revoke refresh token)
 router.post('/logout', authController.logout);
 
+// GitHub OAuth authorize and callback
+router.get('/github/authorize', authController.githubAuthorize);
+router.get('/github/callback', authController.githubCallback);
+
 // ==================== API Key Management Routes ====================
 
 // POST /api/auth/api-keys - Create new API key (admin only)

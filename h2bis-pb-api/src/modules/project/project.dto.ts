@@ -13,6 +13,41 @@ export const DevelopedEndpointSchema = z.object({
     lastScanned: z.date().optional()
 });
 
+// Schema for a single field inside a domain model
+export const DomainModelFieldSchema = z.object({
+    name:         z.string().min(1),
+    type:         z.string().min(1), // free-form: 'string', 'number', 'Date', 'string[]', custom class, etc.
+    required:     z.boolean().optional().default(false),
+    description:  z.string().optional().default(''),
+    defaultValue: z.string().optional().default(''),
+    constraints:  z.array(z.string()).optional().default([]),
+});
+
+// Schema for a domain model entry
+export const DomainModelEntrySchema = z.object({
+    name:            z.string().min(1),
+    description:     z.string().optional().default(''),
+    layer:           z.enum(['data', 'dto', 'domain', 'response', 'request', 'event', 'other']).optional().default('domain'),
+    fields:          z.array(DomainModelFieldSchema).optional().default([]),
+    usedByUseCases:  z.array(z.string()).optional().default([]),
+    addedBy:         z.string().optional().default(''),
+    addedAt:         z.date().optional(),
+    updatedAt:       z.date().optional(),
+});
+
+// Schema for a single application / service within a project
+export const ProjectServiceSchema = z.object({
+    id:          z.string().min(1),
+    name:        z.string().min(1),
+    type:        z.enum(['web-app', 'mobile-app', 'api', 'background-service', 'data-service', 'other']),
+    language:    z.string().optional().default(''),
+    framework:   z.string().optional().default(''),
+    techStack:   z.array(z.string()).optional().default([]),
+    description: z.string().optional().default(''),
+    goals:       z.string().optional().default(''),
+    repository:  z.string().optional().default(''),
+});
+
 export const GetProjectsQuerySchema = z.object({
     status: z.enum(['active', 'archived', 'deleted']).optional(),
     limit: z.string().optional().default('50'),
@@ -30,9 +65,6 @@ export const CreateProjectRequestSchema = z.object({
     }).optional(),
     metadata: z.object({
         repository: z.string().optional().default(''),
-        techStack: z.array(z.string()).optional().default([]),
-        language: z.string().optional().default(''),
-        framework: z.string().optional().default(''),
         architecture: z.object({
             overview: z.string().optional().default(''),
             style: z.string().optional().default(''),
@@ -53,10 +85,6 @@ export const CreateProjectRequestSchema = z.object({
             apiDocs: z.string().optional().default('')
         })).optional().default([]),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional().default(''),
-                linter: z.array(z.string()).optional().default([])
-            }).optional(),
             namingConventions: z.array(z.string()).optional().default([]),
             errorHandling: z.array(z.string()).optional().default([]),
             loggingConvention: z.array(z.string()).optional().default([])
@@ -69,9 +97,11 @@ export const CreateProjectRequestSchema = z.object({
                 testTypes: z.array(z.string()).optional().default([]),
                 requiresE2ETests: z.boolean().optional().default(false)
             }).optional(),
-            documentationStandards: z.string().optional().default('')
-        }).optional()
+            documentationStandards: z.array(z.string()).optional().default([])
+        }).optional(),
+        services: z.array(ProjectServiceSchema).optional().default([])
     }).optional(),
+    domainCatalog: z.array(DomainModelEntrySchema).optional().default([]),
 });
 
 export const UpdateProjectRequestSchema = z.object({
@@ -84,9 +114,6 @@ export const UpdateProjectRequestSchema = z.object({
     }).optional(),
     metadata: z.object({
         repository: z.string().optional(),
-        techStack: z.array(z.string()).optional(),
-        language: z.string().optional(),
-        framework: z.string().optional(),
         architecture: z.object({
             overview: z.string().optional(),
             style: z.string().optional(),
@@ -107,10 +134,6 @@ export const UpdateProjectRequestSchema = z.object({
             apiDocs: z.string().optional()
         })).optional(),
         standards: z.object({
-            codingStyle: z.object({
-                guide: z.string().optional(),
-                linter: z.array(z.string()).optional()
-            }).optional(),
             namingConventions: z.array(z.string()).optional(),
             errorHandling: z.array(z.string()).optional(),
             loggingConvention: z.array(z.string()).optional()
@@ -123,9 +146,11 @@ export const UpdateProjectRequestSchema = z.object({
                 testTypes: z.array(z.string()).optional(),
                 requiresE2ETests: z.boolean().optional()
             }).optional(),
-            documentationStandards: z.string().optional()
-        }).optional()
+            documentationStandards: z.array(z.string()).optional()
+        }).optional(),
+        services: z.array(ProjectServiceSchema).optional()
     }).optional(),
+    domainCatalog: z.array(DomainModelEntrySchema).optional(),
 });
 
 export const AddProjectMemberRequestSchema = z.object({
@@ -161,6 +186,26 @@ export interface DevelopedEndpointDto {
     lastScanned?: string;
 }
 
+export interface DomainModelFieldDto {
+    name: string;
+    type: string;
+    required: boolean;
+    description?: string;
+    defaultValue?: string;
+    constraints: string[];
+}
+
+export interface DomainModelDto {
+    name: string;
+    description?: string;
+    layer?: 'data' | 'dto' | 'domain' | 'response' | 'request' | 'event' | 'other';
+    fields: DomainModelFieldDto[];
+    usedByUseCases: string[];
+    addedBy?: string;
+    addedAt?: string;
+    updatedAt?: string;
+}
+
 export interface ProjectResponseDto {
     _id: string;
     name: string;
@@ -172,11 +217,9 @@ export interface ProjectResponseDto {
     lifecycle: 'planning' | 'in_development' | 'in_review' | 'in_testing' | 'staging' | 'production' | 'maintenance' | 'archived';
     type: 'software_development';
     developedEndpoints: DevelopedEndpointDto[];
+    domainCatalog: DomainModelDto[];
     metadata: {
         repository: string;
-        techStack: string[];
-        language: string;
-        framework: string;
         architecture: {
             overview: string;
             style: string;
@@ -196,11 +239,18 @@ export interface ProjectResponseDto {
             purpose: string;
             apiDocs: string;
         }>;
+        services: Array<{
+            id: string;
+            name: string;
+            type: string;
+            language?: string;
+            framework?: string;
+            techStack?: string[];
+            description?: string;
+            goals?: string;
+            repository?: string;
+        }>;
         standards: {
-            codingStyle: {
-                guide: string;
-                linter: string[];
-            };
             namingConventions: string[];
             errorHandling: string[];
             loggingConvention: string[];
@@ -213,7 +263,7 @@ export interface ProjectResponseDto {
                 testTypes: string[];
                 requiresE2ETests: boolean;
             };
-            documentationStandards: string;
+            documentationStandards: string[];
         };
     };
     stats: {

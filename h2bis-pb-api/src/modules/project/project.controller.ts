@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema, UpdateProjectRequestSchema } from './project.dto.js';
+import { GetProjectsResponseDto, GetProjectByIdResponseDto, GetProjectsQuerySchema, CreateProjectRequestSchema, UpdateProjectRequestSchema, DomainModelEntrySchema } from './project.dto.js';
+import { toProjectResponseDto } from './project.mapper.js';
+import { Project } from './project_schema.js';
 import { getProjectsHandler, getProjectByIdHandler } from './handlers/get-projects.handler.js';
 import { getDashboardStatsHandler } from './handlers/get-dashboard-stats.handler.js';
 import { createProjectHandler } from './handlers/create-project.handler.js';
 import { updateProjectHandler } from './handlers/update-project.handler.js';
 import { deleteProjectHandler } from './handlers/delete-project.handler.js';
+import { projectService } from './services/project.service.js';
 import { asyncHandler } from '../../core/middleware/async-handler.js';
 import { logger } from '../../core/config/logger.js';
 
@@ -34,7 +37,6 @@ export const projectController = {
 
                 // For MCP agent requests (API Key auth) or unauthenticated, create project with system owner
                 if (!user || user.isAgent) {
-                    const { Project } = await import('./project_schema.js');
                     const projectData = {
                         ...validationResult.data,
                         owner: 'system-mcp',
@@ -53,8 +55,11 @@ export const projectController = {
                     };
                     
                     const project = await Project.create(projectData);
-                    
-                    return res.status(201).json(project);
+
+                    return res.status(201).json({
+                        success: true,
+                        data: toProjectResponseDto(project.toObject() as any),
+                    });
                 }
 
                 // For authenticated requests
@@ -70,7 +75,7 @@ export const projectController = {
 
                 return res.status(201).json({
                     success: true,
-                    data: project,
+                    data: toProjectResponseDto(project),
                 });
             } catch (error) {
                 logger.error(`Error creating project: ${error}`);
@@ -94,17 +99,16 @@ export const projectController = {
                 
                 // For MCP agent requests (API Key auth) or unauthenticated, return all active projects
                 if (!user || user.isAgent) {
-                    const { Project } = await import('./project_schema.js');
                     const projects = await Project.find({ status: 'active' }).lean();
-                    
+
                     return res.status(200).json({
                         success: true,
                         data: {
-                            projects: projects,
+                            projects: projects.map(p => toProjectResponseDto(p as any)),
                             total: projects.length,
                             limit: projects.length,
-                            offset: 0
-                        }
+                            offset: 0,
+                        },
                     });
                 }
 
@@ -157,14 +161,16 @@ export const projectController = {
 
                 // For MCP agent requests (API Key auth) or unauthenticated, return project directly
                 if (!user || user.isAgent) {
-                    const { Project } = await import('./project_schema.js');
                     const project = await Project.findById(projectId).lean();
-                    
+
                     if (!project) {
                         return res.status(404).json({ error: 'Project not found' });
                     }
-                    
-                    return res.status(200).json(project);
+
+                    return res.status(200).json({
+                        success: true,
+                        data: toProjectResponseDto(project as any),
+                    });
                 }
 
                 // For authenticated requests, use RBAC
@@ -309,6 +315,117 @@ export const projectController = {
                     return res.status(403).json({ error: 'Permission denied' });
                 }
                 return res.status(500).json({ error: 'Failed to update project' });
+            }
+        }
+    ),
+
+    /**
+     * GET /api/projects/mcp/domain-catalog/:projectId
+     * Returns the full domain model catalog for a project.
+     */
+    getDomainCatalog: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const { projectId } = (req as any).params;
+                const catalog = await projectService.getDomainCatalog(projectId);
+                return res.status(200).json({ success: true, data: catalog });
+            } catch (error) {
+                logger.error(`Error fetching domain catalog: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                return res.status(500).json({ error: 'Failed to fetch domain catalog' });
+            }
+        }
+    ),
+
+    /**
+     * PUT /api/projects/mcp/domain-catalog/:projectId
+     * Upsert a domain model into the project catalog.
+     * Body: DomainModelEntrySchema payload
+     */
+    upsertDomainModel: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const { projectId } = (req as any).params;
+                const parsed = DomainModelEntrySchema.safeParse(req.body);
+                if (!parsed.success) {
+                    return res.status(400).json({ error: 'Invalid domain model data', details: parsed.error });
+                }
+
+                const addedBy =
+                    (req as any).user?.userId ??
+                    (req as any).agent?.agentId ??
+                    'system-mcp';
+
+                await projectService.upsertDomainModel(projectId, parsed.data as any, addedBy);
+                return res.status(200).json({ success: true, message: `Domain model '${parsed.data.name}' upserted.` });
+            } catch (error) {
+                logger.error(`Error upserting domain model: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                return res.status(500).json({ error: 'Failed to upsert domain model' });
+            }
+        }
+    ),
+
+    /**
+     * GET /api/projects/:projectId/services
+     * Returns the list of services/applications defined in the project metadata
+     */
+    getProjectServices: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const user = (req as any).user;
+                const { projectId } = req.params;
+
+                if (!user || user.isAgent) {
+                    const project = await Project.findById(projectId).lean();
+                    if (!project) {
+                        return res.status(404).json({ error: 'Project not found' });
+                    }
+                    const services = (project as any).metadata?.services ?? [];
+                    return res.status(200).json({ success: true, data: { services } });
+                }
+
+                logger.info(`Fetching services for project ${projectId} for user ${user.userId}`);
+
+                const response: GetProjectByIdResponseDto = await getProjectByIdHandler.execute(
+                    projectId,
+                    user.userId,
+                    user.roles
+                );
+
+                const services = (response as any).metadata?.services ?? [];
+
+                return res.status(200).json({ success: true, data: { services } });
+            } catch (error) {
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found or access denied' });
+                }
+                logger.error(`Error fetching services for project ${req.params.projectId}: ${error}`);
+                return res.status(500).json({ error: 'Failed to fetch project services' });
+            }
+        }
+    ),
+
+    /**
+     * DELETE /api/projects/mcp/domain-catalog/:projectId/:modelName
+     * Remove a domain model by name from the project catalog.
+     */
+    removeDomainModel: asyncHandler(
+        async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            try {
+                const { projectId, modelName } = (req as any).params;
+                await projectService.removeDomainModel(projectId, modelName);
+                return res.status(200).json({ success: true, message: `Domain model '${modelName}' removed.` });
+            } catch (error) {
+                logger.error(`Error removing domain model: ${error}`);
+                if (error instanceof Error && error.message.includes('not found')) {
+                    return res.status(404).json({ error: 'Project not found' });
+                }
+                return res.status(500).json({ error: 'Failed to remove domain model' });
             }
         }
     ),

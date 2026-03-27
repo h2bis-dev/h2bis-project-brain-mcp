@@ -17,8 +17,8 @@ import { TagInput } from "@/components/ui/tag-input";
 import { PROJECT_METADATA_CONSTANTS } from "@/constants/project-metadata.constants";
 import { ROUTES } from "@/lib/constants";
 import { DomainModelTable } from "@/components/project/DomainModelTable";
-import { ConfigurationTable } from "@/components/project/ConfigurationTable";
-import type { Project, DomainEntity, ConfigurationCatalog } from "@/types/project.types";
+import { ServicesPanel } from "@/components/project/ServicesPanel";
+import type { Project, DomainEntity, ProjectService } from "@/types/project.types";
 
 interface ExternalService {
     name: string;
@@ -33,9 +33,7 @@ interface ProjectFormData {
     lifecycle: 'planning' | 'in_development' | 'in_review' | 'in_testing' | 'staging' | 'production' | 'maintenance' | 'archived';
     metadata: {
         repository?: string;
-        language?: string;
-        framework?: string;
-        techStack?: string[];
+        services?: ProjectService[];
         architecture?: {
             overview?: string;
             style?: string;
@@ -52,10 +50,6 @@ interface ProjectFormData {
         };
         externalServices?: ExternalService[];
         standards?: {
-            codingStyle?: {
-                guide?: string;
-                linter?: string[];
-            };
             namingConventions?: string[];
             errorHandling?: string[];
             loggingConvention?: string[];
@@ -71,7 +65,6 @@ interface ProjectFormData {
             documentationStandards?: string[];
         };
         domainCatalog?: DomainEntity[];
-        configurationCatalog?: ConfigurationCatalog;
     };
 }
 
@@ -92,10 +85,9 @@ export default function ProjectDetailPage() {
             architecture: {},
             authStrategy: {},
             deployment: {},
-            standards: {
-                codingStyle: {},
-            },
+            standards: {},
             qualityGates: {},
+            services: [],
         },
     });
 
@@ -136,14 +128,8 @@ export default function ProjectDetailPage() {
                             apiDocs: svc.apiDocs ?? '',
                         })
                     ),
-                    // API stores documentationStandards as a plain string;
-                    // the form type expects string[] (used by TagInput).
-                    qualityGates: data.metadata?.qualityGates ? {
-                        ...data.metadata.qualityGates,
-                        documentationStandards: data.metadata.qualityGates.documentationStandards
-                            ? [data.metadata.qualityGates.documentationStandards]
-                            : undefined,
-                    } : undefined,
+                    services: (data.metadata?.services || []) as ProjectService[],
+                    qualityGates: data.metadata?.qualityGates,
                 },
             };
             setFormData(loadedFormData);
@@ -319,7 +305,7 @@ export default function ProjectDetailPage() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10">
+                <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9">
                     <TabsTrigger value="basic">Basic Info</TabsTrigger>
                     <TabsTrigger value="tech">Tech Stack</TabsTrigger>
                     <TabsTrigger value="architecture">Architecture</TabsTrigger>
@@ -327,7 +313,6 @@ export default function ProjectDetailPage() {
                     <TabsTrigger value="standards">Standards</TabsTrigger>
                     <TabsTrigger value="endpoints">API Registry</TabsTrigger>
                     <TabsTrigger value="domain">Domain Models</TabsTrigger>
-                    <TabsTrigger value="config">Configuration</TabsTrigger>
                     <TabsTrigger value="services">External Services</TabsTrigger>
                     <TabsTrigger value="team">Team</TabsTrigger>
                 </TabsList>
@@ -405,12 +390,13 @@ export default function ProjectDetailPage() {
 
                 {/* Tech Stack Tab */}
                 <TabsContent value="tech" className="space-y-4">
+                    {/* Project-level repository */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Technology Stack</CardTitle>
-                            <CardDescription>Languages, frameworks, and tools</CardDescription>
+                            <CardTitle>Repository</CardTitle>
+                            <CardDescription>Main source-code repository for the project</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent>
                             <div className="space-y-2">
                                 <Label htmlFor="repository">Repository URL</Label>
                                 <Input
@@ -420,51 +406,27 @@ export default function ProjectDetailPage() {
                                     value={formData.metadata.repository || ''}
                                     onChange={(e) => updateField('metadata.repository', e.target.value)}
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Leave blank if the project uses per-service repositories
+                                </p>
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="language">Primary Language</Label>
-                                <Select
-                                    value={formData.metadata.language || ''}
-                                    onValueChange={(value) => updateField('metadata.language', value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select language" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PROJECT_METADATA_CONSTANTS.languages.map((lang) => (
-                                            <SelectItem key={lang} value={lang}>{lang}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="framework">Primary Framework</Label>
-                                <Select
-                                    value={formData.metadata.framework || ''}
-                                    onValueChange={(value) => updateField('metadata.framework', value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select framework" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PROJECT_METADATA_CONSTANTS.frameworks.map((fw) => (
-                                            <SelectItem key={fw} value={fw}>{fw}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Tech Stack</Label>
-                                <TagInput
-                                    value={formData.metadata.techStack || []}
-                                    onChange={(value) => updateField('metadata.techStack', value)}
-                                    suggestions={PROJECT_METADATA_CONSTANTS.techStack}
-                                    placeholder="Add technologies..."
-                                />
-                            </div>
+                    {/* Multi-service panel */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Technology Stack</CardTitle>
+                            <CardDescription>
+                                Add each application and service that makes up this project — web apps, mobile
+                                apps, APIs, data services, etc. — and specify their individual technologies.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ServicesPanel
+                                services={formData.metadata.services || []}
+                                onChange={(services) => updateField('metadata.services', services)}
+                            />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -601,25 +563,6 @@ export default function ProjectDetailPage() {
                             <CardTitle>Coding Standards</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Style Guide</Label>
-                                <Input
-                                    placeholder="e.g., Airbnb JavaScript Style Guide"
-                                    value={formData.metadata.standards?.codingStyle?.guide || ''}
-                                    onChange={(e) => updateField('metadata.standards.codingStyle.guide', e.target.value)}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Linters & Formatters</Label>
-                                <TagInput
-                                    value={formData.metadata.standards?.codingStyle?.linter || []}
-                                    onChange={(value) => updateField('metadata.standards.codingStyle.linter', value)}
-                                    suggestions={PROJECT_METADATA_CONSTANTS.linters}
-                                    placeholder="Add linters..."
-                                />
-                            </div>
-
                             <div className="space-y-2">
                                 <Label>Naming Conventions</Label>
                                 <TagInput
@@ -838,41 +781,6 @@ export default function ProjectDetailPage() {
                             <DomainModelTable models={projectData?.domainCatalog} />
                         </CardContent>
                     </Card>
-                </TabsContent>
-
-                {/* Configuration Tab */}
-                <TabsContent value="config" className="space-y-4">
-                    <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Environment Variables</CardTitle>
-                                <CardDescription>
-                                    Project-wide environment variables and their usage
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ConfigurationTable
-                                    items={projectData?.configurationCatalog?.envVars}
-                                    type="envVar"
-                                />
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Feature Flags</CardTitle>
-                                <CardDescription>
-                                    Feature flags used across the project
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ConfigurationTable
-                                    items={projectData?.configurationCatalog?.featureFlags}
-                                    type="flag"
-                                />
-                            </CardContent>
-                        </Card>
-                    </div>
                 </TabsContent>
 
                 {/* Team Tab */}

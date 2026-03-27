@@ -129,16 +129,6 @@ export const USE_CASE_DEFINITIONS: Record<string, UseCaseFieldDefinition> = {
         type: 'string[]'
     },
 
-    // Domain Model
-    'domainModel.entities': {
-        key: 'domainModel.entities',
-        label: 'Domain Entities',
-        description: 'Data entities',
-        aiInstruction: 'Key domain entities with name, description, and fields (name, type).',
-        defaultValue: [],
-        type: 'array_of_objects'
-    },
-
     // Interfaces
     'interfaces.type': {
         key: 'interfaces.type',
@@ -162,34 +152,6 @@ export const USE_CASE_DEFINITIONS: Record<string, UseCaseFieldDefinition> = {
         label: 'Events',
         description: 'Domain events',
         aiInstruction: 'Emitted/consumed domain events.',
-        defaultValue: [],
-        type: 'string[]'
-    },
-
-    // Architecture Patterns (use case-specific)
-    'architecturePatterns': {
-        key: 'architecturePatterns',
-        label: 'Architecture Patterns',
-        description: 'Design patterns',
-        aiInstruction: 'Design patterns for this specific use case (Repository, Factory, Strategy, etc.).',
-        defaultValue: [],
-        type: 'string[]'
-    },
-
-    // Config
-    'configuration.envVars': {
-        key: 'configuration.envVars',
-        label: 'Env Vars',
-        description: 'Environment variables',
-        aiInstruction: 'Required env vars.',
-        defaultValue: [],
-        type: 'string[]'
-    },
-    'configuration.featureFlags': {
-        key: 'configuration.featureFlags',
-        label: 'Feature Flags',
-        description: 'Feature toggles',
-        aiInstruction: 'Potential feature flags.',
         defaultValue: [],
         type: 'string[]'
     },

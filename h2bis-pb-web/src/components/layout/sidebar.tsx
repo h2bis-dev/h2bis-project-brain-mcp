@@ -15,6 +15,7 @@ import {
     BookText,
     FolderKanban,
     Code,
+    Users,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -37,7 +38,7 @@ const navigation = [
         name: "Project",
         href: ROUTES.PROJECTS,
         icon: FolderKanban,
-        requiresProject: false,
+        requiresProject: true,
     },
     {
         name: "Use Cases",
@@ -166,6 +167,38 @@ export function Sidebar() {
                                     </TooltipTrigger>
                                     <TooltipContent side="right">
                                         <p>Develop</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            ) : (
+                                linkContent
+                            );
+                        })()}
+
+                        {(() => {
+                            const isActive = pathname === "/develop/mcp-approvals";
+                            const linkContent = (
+                                <Link
+                                    href="/develop/mcp-approvals"
+                                    className={cn(
+                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                        isActive
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                        isCollapsed && "justify-center"
+                                    )}
+                                >
+                                    <Users className="h-5 w-5 flex-shrink-0" />
+                                    {!isCollapsed && <span className="whitespace-nowrap">MCP Approvals</span>}
+                                </Link>
+                            );
+
+                            return isCollapsed ? (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        {linkContent}
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        <p>MCP Approvals</p>
                                     </TooltipContent>
                                 </Tooltip>
                             ) : (

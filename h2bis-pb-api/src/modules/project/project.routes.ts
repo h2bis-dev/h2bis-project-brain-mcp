@@ -18,6 +18,17 @@ projectRouter.get('/mcp/find/:projectId', authenticate, projectController.getPro
 // POST /api/projects/mcp/create - Create project (for MCP)
 projectRouter.post('/mcp/create', authenticate, projectController.createProject);
 
+// ── Domain Catalog (MCP) ─────────────────────────────────────────────────────
+
+// GET /api/projects/mcp/domain-catalog/:projectId - Get all domain models for a project
+projectRouter.get('/mcp/domain-catalog/:projectId', authenticate, projectController.getDomainCatalog);
+
+// PUT /api/projects/mcp/domain-catalog/:projectId - Add or replace a domain model
+projectRouter.put('/mcp/domain-catalog/:projectId', authenticate, projectController.upsertDomainModel);
+
+// DELETE /api/projects/mcp/domain-catalog/:projectId/:modelName - Remove a domain model by name
+projectRouter.delete('/mcp/domain-catalog/:projectId/:modelName', authenticate, projectController.removeDomainModel);
+
 // ========== AUTHENTICATED ENDPOINTS ==========
 
 /**
@@ -54,6 +65,18 @@ projectRouter.get(
     authenticate,
     requirePermission('view:projects'),
     projectController.getDashboardStats
+);
+
+/**
+ * GET /api/projects/:projectId/services
+ * Returns the list of services/applications in the project's metadata
+ * Permissions: view:projects
+ */
+projectRouter.get(
+    '/:projectId/services',
+    authenticate,
+    requirePermission('view:projects'),
+    projectController.getProjectServices
 );
 
 /**

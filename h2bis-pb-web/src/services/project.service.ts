@@ -1,6 +1,6 @@
 import { apiClient } from './api-client';
 import { API_ENDPOINTS } from '@/lib/config';
-import type { Project } from '@/types/project.types';
+import type { Project, ProjectService } from '@/types/project.types';
 
 export const projectService = {
     /**
@@ -43,6 +43,14 @@ export const projectService = {
     },
 
     /**
+     * Get the list of services/applications for a project
+     */
+    async getServices(id: string): Promise<ProjectService[]> {
+        const response = await apiClient.get(API_ENDPOINTS.PROJECTS.SERVICES(id));
+        return response.data?.data?.services ?? [];
+    },
+
+    /**
      * Create a new project
      */
     async create(data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
@@ -66,20 +74,12 @@ export const projectService = {
             const metadata: any = {};
 
             if (data.metadata.repository) metadata.repository = data.metadata.repository;
-            if (data.metadata.techStack?.length) metadata.techStack = data.metadata.techStack;
-            if (data.metadata.language) metadata.language = data.metadata.language;
-            if (data.metadata.framework) metadata.framework = data.metadata.framework;
 
             // Add nested metadata only if provided
             if (data.metadata.architecture) {
                 metadata.architecture = {
-                    // Convert arrays to strings (join with commas) or keep strings
-                    overview: Array.isArray(data.metadata.architecture.overview) 
-                        ? data.metadata.architecture.overview.join(', ') 
-                        : data.metadata.architecture.overview || '',
-                    style: Array.isArray(data.metadata.architecture.style)
-                        ? data.metadata.architecture.style.join(', ')
-                        : data.metadata.architecture.style || '',
+                    overview: data.metadata.architecture.overview || '',
+                    style: data.metadata.architecture.style || '',
                     directoryStructure: data.metadata.architecture.directoryStructure || '',
                     stateManagement: data.metadata.architecture.stateManagement || [],
                 };
@@ -87,25 +87,14 @@ export const projectService = {
 
             if (data.metadata.authStrategy) {
                 metadata.authStrategy = {
-                    // Convert array to string (join with commas) or keep string
-                    approach: Array.isArray(data.metadata.authStrategy.approach)
-                        ? data.metadata.authStrategy.approach.join(', ')
-                        : data.metadata.authStrategy.approach || '',
-                    // Convert string to array or keep array
-                    implementation: Array.isArray(data.metadata.authStrategy.implementation)
-                        ? data.metadata.authStrategy.implementation
-                        : data.metadata.authStrategy.implementation 
-                            ? [data.metadata.authStrategy.implementation]
-                            : [],
+                    approach: data.metadata.authStrategy.approach || '',
+                    implementation: data.metadata.authStrategy.implementation || [],
                 };
             }
 
             if (data.metadata.deployment) {
                 metadata.deployment = {
-                    // Convert array to string (join with commas) or keep string
-                    environment: Array.isArray(data.metadata.deployment.environment)
-                        ? data.metadata.deployment.environment.join(', ')
-                        : data.metadata.deployment.environment || '',
+                    environment: data.metadata.deployment.environment || '',
                     cicd: data.metadata.deployment.cicd || [],
                 };
             }
@@ -114,18 +103,23 @@ export const projectService = {
                 metadata.externalServices = data.metadata.externalServices;
             }
 
+            if (data.metadata.services) {
+                metadata.services = data.metadata.services.map(service => ({
+                    id:          service.id          || '',
+                    name:        service.name        || '',
+                    type:        service.type        || 'other',
+                    language:    service.language    || '',
+                    framework:   service.framework   || '',
+                    techStack:   service.techStack   || [],
+                    description: service.description || '',
+                    goals:       service.goals       || '',
+                    repository:  service.repository  || '',
+                }));
+            }
+
             if (data.metadata.standards) {
                 metadata.standards = {
-                    codingStyle: {
-                        guide: data.metadata.standards.codingStyle?.guide || '',
-                        linter: data.metadata.standards.codingStyle?.linter || [],
-                    },
-                    // Convert string to array or keep array
-                    namingConventions: Array.isArray(data.metadata.standards.namingConventions)
-                        ? data.metadata.standards.namingConventions
-                        : data.metadata.standards.namingConventions
-                            ? [data.metadata.standards.namingConventions]
-                            : [],
+                    namingConventions: data.metadata.standards.namingConventions || [],
                     errorHandling: data.metadata.standards.errorHandling || [],
                     loggingConvention: data.metadata.standards.loggingConvention || [],
                 };
@@ -167,7 +161,75 @@ export const projectService = {
      * Update a project
      */
     async update(id: string, data: Partial<Project>): Promise<Project> {
-        const response = await apiClient.put(`${API_ENDPOINTS.PROJECTS.LIST}/${id}`, data);
+        // Build a clean update payload — only send fields the API accepts
+        const payload: any = {};
+
+        if (data.name)        payload.name        = data.name;
+        if (data.description !== undefined) payload.description = data.description;
+        if (data.lifecycle)   payload.lifecycle   = data.lifecycle;
+
+        if (data.metadata) {
+            const metadata: any = {};
+
+            if (data.metadata.repository !== undefined) metadata.repository = data.metadata.repository;
+
+            if (data.metadata.services !== undefined) {
+                metadata.services = data.metadata.services.map((service: any) => ({
+                    id:          service.id          || '',
+                    name:        service.name        || '',
+                    type:        service.type        || 'other',
+                    language:    service.language    || '',
+                    framework:   service.framework   || '',
+                    techStack:   service.techStack   || [],
+                    description: service.description || '',
+                    goals:       service.goals       || '',
+                    repository:  service.repository  || '',
+                }));
+            }
+
+            if (data.metadata.architecture) {
+                metadata.architecture = {
+                    overview:           data.metadata.architecture.overview           ?? '',
+                    style:              data.metadata.architecture.style              ?? '',
+                    directoryStructure: data.metadata.architecture.directoryStructure ?? '',
+                    stateManagement:    data.metadata.architecture.stateManagement    ?? [],
+                };
+            }
+
+            if (data.metadata.authStrategy) {
+                metadata.authStrategy = {
+                    approach:       data.metadata.authStrategy.approach       ?? '',
+                    implementation: data.metadata.authStrategy.implementation ?? [],
+                };
+            }
+
+            if (data.metadata.deployment) {
+                metadata.deployment = {
+                    environment: data.metadata.deployment.environment ?? '',
+                    cicd:        data.metadata.deployment.cicd        ?? [],
+                };
+            }
+
+            if (data.metadata.externalServices !== undefined) {
+                metadata.externalServices = data.metadata.externalServices;
+            }
+
+            if (data.metadata.standards) {
+                metadata.standards = {
+                    namingConventions: data.metadata.standards.namingConventions ?? [],
+                    errorHandling:     data.metadata.standards.errorHandling     ?? [],
+                    loggingConvention: data.metadata.standards.loggingConvention ?? [],
+                };
+            }
+
+            if (data.metadata.qualityGates) {
+                metadata.qualityGates = data.metadata.qualityGates;
+            }
+
+            payload.metadata = metadata;
+        }
+
+        const response = await apiClient.put(`${API_ENDPOINTS.PROJECTS.LIST}/${id}`, payload);
         const project = response.data?.data || response.data;
 
         // Map _id to id for consistency

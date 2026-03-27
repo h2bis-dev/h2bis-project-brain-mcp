@@ -47,9 +47,15 @@ export const API_ENDPOINTS = {
         LOGIN: '/api/auth/login',
         LOGOUT: '/api/auth/logout',
     },
+    USERS: {
+        LIST: '/api/users',
+        APPROVE: (userId: string) => `/api/users/${userId}/approve`,
+        DEACTIVATE: (userId: string) => `/api/users/${userId}/deactivate`,
+    },
     PROJECTS: {
         LIST: '/api/projects',
         DASHBOARD: '/api/projects/dashboard',
+        SERVICES: (id: string) => `/api/projects/${id}/services`,
     },
     USE_CASES: {
         LIST: '/api/use-cases',
