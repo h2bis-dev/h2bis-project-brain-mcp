@@ -142,7 +142,7 @@ deploy-dev:
         --set-string web.image.tag=$CI_COMMIT_SHA
         --set-string secret.apiIngressHost=$API_INGRESS_HOST_DEV
         --set-string secret.webIngressHost=$WEB_INGRESS_HOST_DEV
-        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_DEV}/h2bis-project-brain"
+        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_DEV}/"
         --set-string api.env.JWT_ACCESS_SECRET="$JWT_ACCESS_SECRET_DEV"
         --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_DEV"
         --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_DEV"
@@ -179,7 +179,7 @@ deploy-prod:
         --set-string web.image.tag=$CI_COMMIT_SHA
         --set-string secret.apiIngressHost=$API_INGRESS_HOST_PROD
         --set-string secret.webIngressHost=$WEB_INGRESS_HOST_PROD
-        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_PROD}/h2bis-project-brain"
+        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_PROD}/"
         --set-string api.env.JWT_ACCESS_SECRET="$JWT_ACCESS_SECRET_PROD"
         --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_PROD"
         --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_PROD"
