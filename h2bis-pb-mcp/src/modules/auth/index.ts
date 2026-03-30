@@ -8,7 +8,7 @@ export const authTools = [
             'deletes the locally persisted access tokens. ' +
             'After logging out, the next tool call will automatically open a browser ' +
             'for a fresh GitHub OAuth sign-in.',
-        schema: { type: 'object' as const, properties: {}, required: [] },
+        schema: {},
         handler: logout,
     },
 ];
