@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Compiled outputs
+dist/
+server/dist/
+
+# Build artifacts
+*.vsix
+vsix-extracted/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Misc
+.DS_Store
