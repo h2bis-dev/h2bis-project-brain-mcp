@@ -1,31 +1,27 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import { authService } from '@/services/auth.service';
-import type { RegisterRequest, LoginRequest } from '@/types/auth.types';
+import { userService } from '@/services/user.service';
+import type { LoginRequest, AdminCreateUserRequest, ChangePasswordRequest } from '@/types/auth.types';
 
 /**
- * Hook for user registration
- * Handles loading, error states, and navigation automatically
+ * Hook for admin creating a new user.
+ * Returns { mutate, data (tempPassword visible on success), isPending, isError, error }.
  */
-export function useRegister() {
-    const router = useRouter();
+export function useCreateUser() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: RegisterRequest) => authService.register(data),
+        mutationFn: (data: AdminCreateUserRequest) => userService.createUser(data),
         onSuccess: () => {
-            // Invalidate auth-related queries
-            queryClient.invalidateQueries({ queryKey: ['auth'] });
-            // Navigate to login page
-            router.push('/login?registered=true');
+            queryClient.invalidateQueries({ queryKey: ['users'] });
         },
     });
 }
 
 /**
- * Hook for user login with credentials
- * Handles NextAuth integration, loading, and error states
+ * Hook for user login with credentials.
  */
 export function useLogin() {
     const router = useRouter();
@@ -33,8 +29,9 @@ export function useLogin() {
 
     return useMutation({
         mutationFn: async (data: LoginRequest) => {
+            const { signIn } = await import('next-auth/react');
             const result = await signIn('credentials', {
-                username: data.email, // NextAuth expects 'username' field
+                username: data.email,
                 password: data.password,
                 redirect: false,
             });
@@ -46,26 +43,22 @@ export function useLogin() {
             return result;
         },
         onSuccess: () => {
-            // Invalidate user/auth queries to refetch fresh data
             queryClient.invalidateQueries({ queryKey: ['auth', 'user'] });
-            // Navigate to dashboard
             router.push('/dashboard');
             router.refresh();
-        }
+        },
     });
 }
 
 /**
- * Hook for Google OAuth sign-in
- * Handles loading state for Google authentication
+ * Hook for changing password on first login (or regular password change).
+ * On success, signs the user out so they log in fresh with the new password.
  */
-export function useGoogleLogin() {
+export function useChangePassword() {
     return useMutation({
-        mutationFn: async () => {
-            await signIn('google', { callbackUrl: '/dashboard' });
-        },
-        onError: (error) => {
-            console.error('Google sign-in error:', error);
+        mutationFn: (data: ChangePasswordRequest) => authService.changePassword(data),
+        onSuccess: async () => {
+            await signOut({ callbackUrl: '/login?passwordChanged=true' });
         },
     });
 }

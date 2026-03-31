@@ -34,6 +34,7 @@ export const ROUTES = {
     ANALYTICS: "/analytics",
     ANALYTICS_CHAT: "/analytics/chat",
     SUMMARIES: "/summaries",
+    USERS: "/users",
 } as const;
 
 export const COLLECTIONS = {

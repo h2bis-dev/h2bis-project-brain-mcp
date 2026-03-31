@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../core/middleware/error.middleware.js';
-import { RegisterRequestDto, LoginRequestDto } from './auth.dto.js';
+import { RegisterRequestDto, LoginRequestDto, ChangePasswordRequestDto } from './auth.dto.js';
 import { registerUserHandler } from './handlers/register-user.handler.js';
 import { authenticateUserHandler } from './handlers/authenticate-user.handler.js';
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from './services/jwt.service.js';
 import { userRepository } from './repositories/user.repository.js';
 import { refreshTokenRepository } from './repositories/refresh-token.repository.js';
+import { hashPassword, verifyPassword } from './services/password.service.js';
 import { UnauthorizedError, ValidationError } from '../../core/errors/app.error.js';
 import { config } from '../../core/config/config.js';
 import { accessRequestRepository } from './repositories/access-request.repository.js';
@@ -297,10 +298,13 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
         throw new UnauthorizedError('Invalid refresh token');
     }
 
-    // Verify user still exists and is active
+    // Verify user still exists and is active.
+    // Allow refresh for first-login users (isActive=false + mustChangePassword=true)
+    // so they can still reach the change-password endpoint before their token expires.
     const user = await userRepository.findById(decoded.userId);
+    const isForcedFirstLogin = !user?.isActive && (user?.mustChangePassword ?? false);
 
-    if (!user || !user.isActive) {
+    if (!user || (!user.isActive && !isForcedFirstLogin)) {
         await refreshTokenRepository.revokeByFamily(storedToken.familyId);
         throw new UnauthorizedError('User account is inactive');
     }
@@ -460,4 +464,36 @@ export const deleteApiKey = asyncHandler(async (req: Request, res: Response) => 
         success: true,
         message: 'API key deleted successfully',
     });
+});
+
+/**
+ * Change password (first-login and regular password change)
+ * POST /api/auth/change-password
+ * Requires authentication. On first login the user is inactive;
+ * successful change activates the account and clears mustChangePassword.
+ */
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+    const dto = ChangePasswordRequestDto.parse(req.body);
+    const reqUser = (req as any).user;
+
+    if (!reqUser?.userId) {
+        throw new UnauthorizedError('Not authenticated');
+    }
+
+    const user = await userRepository.findById(reqUser.userId);
+    if (!user) {
+        throw new UnauthorizedError('User not found');
+    }
+
+    // Verify the current password (or OTP for first-login users)
+    const isValid = await verifyPassword(dto.currentPassword, user.passwordHash || '');
+    if (!isValid) {
+        throw new UnauthorizedError('Current password is incorrect');
+    }
+
+    // Hash and persist the new password; activate account and clear first-login flag
+    const newPasswordHash = await hashPassword(dto.newPassword);
+    await userRepository.completeFirstLogin(reqUser.userId, newPasswordHash);
+
+    res.status(200).json({ success: true, message: 'Password changed successfully. Please sign in again.' });
 });

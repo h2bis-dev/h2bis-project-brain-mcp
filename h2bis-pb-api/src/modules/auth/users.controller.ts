@@ -1,8 +1,45 @@
 import { Request, Response } from 'express';
+import { randomBytes } from 'crypto';
 import { asyncHandler } from '../../core/middleware/error.middleware.js';
 import { userRepository } from './repositories/user.repository.js';
 import { accessRequestRepository } from './repositories/access-request.repository.js';
+import { hashPassword } from './services/password.service.js';
+import { AdminCreateUserRequestDto } from './auth.dto.js';
 import { NotFoundError, ValidationError } from '../../core/errors/app.error.js';
+
+/**
+ * POST /api/users
+ * Admin creates a new user with an auto-generated one-time password.
+ * The user is created as isActive=false + mustChangePassword=true.
+ * The plaintext OTP is returned once and must be shared with the user manually.
+ */
+export const createUser = asyncHandler(async (req: Request, res: Response) => {
+    const dto = AdminCreateUserRequestDto.parse(req.body);
+
+    // Generate a cryptographically secure 16-character alphanumeric OTP
+    const tempPassword = randomBytes(16).toString('base64url').slice(0, 16);
+    const passwordHash = await hashPassword(tempPassword);
+
+    const user = await userRepository.create({
+        email: dto.email,
+        name: dto.name,
+        role: dto.role,
+        passwordHash,
+        isActive: false,
+        mustChangePassword: true,
+    });
+
+    res.status(201).json({
+        success: true,
+        data: {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            tempPassword, // Shown to admin only once — must be forwarded to the user
+        },
+    });
+});
 
 /**
  * GET /api/users

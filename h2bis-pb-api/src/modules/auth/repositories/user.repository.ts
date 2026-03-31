@@ -40,6 +40,7 @@ export class UserRepository {
         name: string;
         role: string[];
         isActive?: boolean;
+        mustChangePassword?: boolean;
         githubId?: string;
     }) {
         // Check if user already exists by email or github
@@ -62,7 +63,8 @@ export class UserRepository {
             githubId: userData.githubId || undefined,
             name: userData.name,
             role: userData.role as ("user" | "admin" | "agent")[],
-            isActive: userData.isActive ?? false
+            isActive: userData.isActive ?? false,
+            mustChangePassword: userData.mustChangePassword ?? false,
         });
 
         return user;
@@ -89,6 +91,20 @@ export class UserRepository {
         const result = await User.updateOne(
             { _id: userId },
             { $set: { isActive } }
+        );
+
+        if (result.matchedCount === 0) {
+            throw new NotFoundError('User not found');
+        }
+    }
+
+    /**
+     * Complete first-login: update password hash, activate the user, clear mustChangePassword flag.
+     */
+    async completeFirstLogin(userId: string, newPasswordHash: string): Promise<void> {
+        const result = await User.updateOne(
+            { _id: userId },
+            { $set: { passwordHash: newPasswordHash, mustChangePassword: false, isActive: true } }
         );
 
         if (result.matchedCount === 0) {

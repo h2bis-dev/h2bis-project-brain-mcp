@@ -206,6 +206,41 @@ export function Sidebar() {
                             );
                         })()}
                     </PermissionGuard>
+
+                    {/* Admin-only Users management tab */}
+                    <PermissionGuard permission="view:all-users">
+                        {(() => {
+                            const isActive = pathname === "/users" || pathname?.startsWith("/users/");
+                            const linkContent = (
+                                <Link
+                                    href="/users"
+                                    className={cn(
+                                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                        isActive
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                        isCollapsed && "justify-center"
+                                    )}
+                                >
+                                    <Users className="h-5 w-5 flex-shrink-0" />
+                                    {!isCollapsed && <span className="whitespace-nowrap">Users</span>}
+                                </Link>
+                            );
+
+                            return isCollapsed ? (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        {linkContent}
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        <p>Users</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            ) : (
+                                linkContent
+                            );
+                        })()}
+                    </PermissionGuard>
                 </nav>
 
                 {/* Toggle Button */}

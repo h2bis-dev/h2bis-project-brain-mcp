@@ -26,8 +26,11 @@ export class AuthenticateUserHandler {
             throw new UnauthorizedError('Invalid credentials');
         }
 
-        // Check if account is active (pending approval logic)
-        if (!user.isActive) {
+        // Check if account is active.
+        // Special case: newly admin-created accounts have isActive=false AND mustChangePassword=true.
+        // Allow them through so they can reach the change-password page.
+        const isForcedFirstLogin = !user.isActive && (user.mustChangePassword ?? false);
+        if (!user.isActive && !isForcedFirstLogin) {
             throw new UnauthorizedError('Account pending approval');
         }
 
@@ -53,6 +56,7 @@ export class AuthenticateUserHandler {
             role: user.role || ['user'],
             permissions,
             isActive: user.isActive,
+            mustChangePassword: user.mustChangePassword ?? false,
             accessToken,
             refreshToken
         };

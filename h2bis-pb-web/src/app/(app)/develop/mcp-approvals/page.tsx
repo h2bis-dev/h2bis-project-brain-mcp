@@ -49,7 +49,7 @@ export default function McpApprovalsPage() {
   const handleReject = async (userId: string) => {
     setActionId(userId);
     try {
-      await userService.rejectUser(userId);
+      await userService.deactivateUser(userId);
       toast({ title: 'User rejected', description: 'The user account has been deactivated.', variant: 'destructive' });
       await loadPendingUsers();
     } catch (err) {

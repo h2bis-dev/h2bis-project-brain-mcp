@@ -6,9 +6,6 @@ import { PERMISSIONS } from './services/authorization.service.js';
 
 const router = Router();
 
-// POST /api/auth/register - Register new user
-router.post('/register', authController.register);
-
 // POST /api/auth/login - Login user
 router.post('/login', authController.login);
 
@@ -20,6 +17,9 @@ router.post('/refresh', authController.refreshToken);
 
 // POST /api/auth/logout - Logout user (revoke refresh token)
 router.post('/logout', authController.logout);
+
+// POST /api/auth/change-password - Change password (first-login + regular)
+router.post('/change-password', authenticate, authController.changePassword);
 
 // GitHub OAuth authorize and callback
 router.get('/github/authorize', authController.githubAuthorize);

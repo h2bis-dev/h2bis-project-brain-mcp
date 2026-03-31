@@ -37,6 +37,14 @@ router.post(
 
 // ==================== User Management Routes ====================
 
+// POST /api/users  — admin creates a new user (no password — OTP auto-generated)
+router.post(
+    '/',
+    authenticate,
+    requirePermission(PERMISSIONS.USERS.CREATE),
+    usersController.createUser
+);
+
 // GET /api/users?pending=true  — list all users (or pending-only)
 router.get(
     '/',
