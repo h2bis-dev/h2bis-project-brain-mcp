@@ -16,4 +16,5 @@ export default function RegisterPage() {
     }, [router]);
 
     return null;
-}
+}
+
