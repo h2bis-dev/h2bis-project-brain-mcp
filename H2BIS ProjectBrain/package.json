@@ -2,7 +2,7 @@
   "name": "h2bis-projectbrain",
   "displayName": "H2BIS ProjectBrain",
   "description": "Connect AI agents (GitHub Copilot, Claude, Cursor) to the H2BIS ProjectBrain API — manage projects, use cases, and capabilities via MCP.",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "publisher": "H2BISProjectBrain",
   "engines": {
     "vscode": "^1.99.0"
@@ -63,8 +63,9 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package",
-    "publish": "vsce publish"
+    "copy-server": "cd ../h2bis-pb-mcp && npm run build && xcopy /E /Y /I dist ..\\\"H2BIS ProjectBrain\"\\server\\dist",
+    "package": "npm run copy-server && vsce package",
+    "publish": "npm run copy-server && vsce publish"
   },
   "devDependencies": {
     "@types/node": "^22.19.15",

@@ -32,7 +32,7 @@ export const config = {
     serverName: 'h2bis-pb-mcp',
     serverVersion: pkg.version,
     // Cloud API URL  override via env var, VS Code mcp.json "env" block, or user config
-    apiBaseUrl: process.env.API_BASE_URL || 'https://api-project-brain-dev.h2bis.com/',
+    apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
     // Local OAuth callback server config (MCP spins this up temporarily during login)
     oauthCallbackPath: process.env.OAUTH_CALLBACK_PATH || '/oauth-callback',
     oauthCallbackPort: Number(process.env.OAUTH_CALLBACK_PORT || '51894'),

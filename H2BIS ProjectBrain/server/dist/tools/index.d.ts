@@ -1697,11 +1697,7 @@ export declare const tools: ({
 } | {
     name: string;
     description: string;
-    schema: {
-        type: "object";
-        properties: {};
-        required: never[];
-    };
+    schema: {};
     handler: typeof import("../modules/auth/tools/logout.js").logout;
 })[];
 //# sourceMappingURL=index.d.ts.map

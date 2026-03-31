@@ -1,6 +1,5 @@
 import { config } from '../config/config.js';
 import { HttpClient, HttpError } from '../infrastructure/http-client.js';
-import { logger } from '../utils/logger.js';
 import { createServer } from 'node:http';
 import { URL } from 'node:url';
 import { exec, execFile } from 'node:child_process';
@@ -79,7 +78,7 @@ class AuthService {
         this.accessTokenExpiry = 0;
         this._pendingApproval = false;
         try { writeFileSync(config.tokenStorePath, '{}'); } catch { /* ignore */ }
-        logger.info('🔓 Signed out — tokens cleared.');
+        console.error('🔓 Signed out — tokens cleared.');
     }
 
     /**

@@ -37,8 +37,6 @@ declare class AuthService {
      * and the next tool call will trigger a fresh GitHub OAuth flow.
      */
     logout(): Promise<void>;
-    /** Wipes all in-memory tokens and clears the persisted token store. */
-    private clearSession;
     /**
      * Returns current auth headers to attach to outgoing requests.
      * Ensures authentication is valid before returning — may trigger
@@ -67,14 +65,6 @@ declare class AuthService {
     private loadPersistedTokens;
     private persistTokens;
     private refresh;
-    /**
-     * Parses query parameters from an incoming OAuth callback request URL.
-     * Centralises URL routing and parameter extraction, replacing the inline
-     * logic that previously lived in the githubOAuthFlow() callback server handler.
-     */
-    private parseOAuthCallbackParams;
-    /** Builds the HTTP response tuple (status, content-type, body) for a given OAuth callback outcome. */
-    private buildOAuthCallbackResponse;
     /** Probes ports starting at preferredPort until a free one is found (up to 10 attempts). */
     private findFreePort;
     private githubOAuthFlow;
