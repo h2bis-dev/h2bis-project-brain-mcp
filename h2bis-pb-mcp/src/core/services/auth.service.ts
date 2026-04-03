@@ -78,7 +78,7 @@ class AuthService {
         this.accessTokenExpiry = 0;
         this._pendingApproval = false;
         try { writeFileSync(config.tokenStorePath, '{}'); } catch { /* ignore */ }
-        console.error('🔓 Signed out — tokens cleared.');
+        console.error(' Signed out — tokens cleared.');
     }
 
     /**
@@ -103,7 +103,7 @@ class AuthService {
 
                 if (status === 'valid') {
                     this.initialized = true;
-                    console.error('🔐 Restored session from saved tokens');
+                    console.error(' Restored session from saved tokens');
                     return;
                 }
 
@@ -113,13 +113,13 @@ class AuthService {
                     // re-verify against the live API on the first actual tool call.
                     this._needsApiVerification = true;
                     this.initialized = true;
-                    console.error('⚠️ API unreachable at startup — will re-verify tokens on first tool use.');
+                    console.error(' API unreachable at startup — will re-verify tokens on first tool use.');
                     return;
                 }
 
                 // status === 'rejected': 401/403 — token is definitively invalid
                 // (deleted user, deactivated account, wrong environment JWT secret, etc.)
-                console.error('🔐 Saved tokens rejected by API — clearing session and starting fresh OAuth...');
+                console.error(' Saved tokens rejected by API — clearing session and starting fresh OAuth...');
                 this.accessToken = '';
                 this.refreshToken = '';
                 this.accessTokenExpiry = 0;
@@ -128,7 +128,7 @@ class AuthService {
 
             // Priority 2: GitHub OAuth browser flow — default for end users
             // No secrets needed in MCP; the API holds GitHub client credentials.
-            console.error('🔐 No valid session — starting GitHub OAuth...');
+            console.error(' No valid session — starting GitHub OAuth...');
             await this.githubOAuthFlow();
             this.initialized = true;
 
@@ -136,12 +136,12 @@ class AuthService {
             const msg = error instanceof Error ? error.message : String(error);
             if (msg.includes('pending_approval')) {
                 this._pendingApproval = true;
-                console.error('⏳ Your account is pending admin approval. MCP will start but tool calls will require re-authentication once approved.');
+                console.error(' Your account is pending admin approval. MCP will start but tool calls will require re-authentication once approved.');
                 console.error('   Once an admin approves your account, reload VS Code to authenticate.');
             } else if (msg.includes('Cannot reach the API')) {
-                console.error(`⚠️ ${msg}`);
+                console.error(` ${msg}`);
             } else {
-                console.error('⚠️ Authentication failed:', msg);
+                console.error(' Authentication failed:', msg);
                 console.error('   MCP will start. Authentication will be retried when you use a tool.');
             }
             this.initialized = true;
@@ -166,7 +166,7 @@ class AuthService {
             this._needsApiVerification = false;
             const status = await this.verifyTokenWithApi();
             if (status === 'rejected') {
-                console.error('🔐 Deferred token verification failed — clearing session and starting OAuth...');
+                console.error(' Deferred token verification failed — clearing session and starting OAuth...');
                 this.accessToken = '';
                 this.refreshToken = '';
                 this.accessTokenExpiry = 0;
@@ -183,9 +183,9 @@ class AuthService {
         // Still no token — retry the OAuth flow (startup failure, API was down, etc.)
         if (!this.accessToken) {
             if (this._pendingApproval) {
-                console.error('🔐 Retrying authentication (previously pending approval)...');
+                console.error(' Retrying authentication (previously pending approval)...');
             } else {
-                console.error('🔐 No authentication token — initiating GitHub OAuth...');
+                console.error(' No authentication token — initiating GitHub OAuth...');
             }
 
             try {
@@ -406,12 +406,12 @@ class AuthService {
                     this.setTokens(accessToken, refreshToken || undefined);
                     resolved = true;
                     res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end('<h1>✅ Authentication complete</h1><p>You may close this tab and return to VS Code.</p>');
+                    res.end('<h1> Authentication complete</h1><p>You may close this tab and return to VS Code.</p>');
                 } else if (error === 'pending_approval') {
                     pendingApproval = true;
                     resolved = true;
                     res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end('<h1>⏳ Account pending approval</h1><p>Your GitHub account has been registered. An admin needs to approve it before you can use the tools. Reload VS Code once approved.</p>');
+                    res.end('<h1>Account pending approval</h1><p>Your GitHub account has been registered. An admin needs to approve it before you can use the tools. Reload VS Code once approved.</p>');
                 } else {
                     resolved = true;
                     res.writeHead(401, { 'Content-Type': 'text/html' });
@@ -429,7 +429,7 @@ class AuthService {
         await new Promise<void>((resolve, reject) => {
             server.listen(callbackPort, () => {
                 console.error('');
-                console.error('🔐 H2BIS MCP — GitHub authentication required');
+                console.error(' H2BIS MCP — GitHub authentication required');
                 console.error('   Opening browser for GitHub sign-in...');
                 console.error(`   If the browser does not open, visit: ${authorizeUrl}`);
                 console.error('');
@@ -466,17 +466,17 @@ class AuthService {
         try {
             const parsed = new URL(url);
             if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-                console.error('⚠️ Refusing to open non-HTTP URL');
+                console.error(' Refusing to open non-HTTP URL');
                 return;
             }
         } catch {
-            console.error('⚠️ Invalid URL — cannot open browser');
+            console.error(' Invalid URL — cannot open browser');
             return;
         }
 
         const onError = (err: Error | null) => {
             if (err) {
-                console.error('⚠️ Could not open browser automatically.');
+                console.error(' Could not open browser automatically.');
                 console.error(`   Please open this URL manually: ${url}`);
             }
         };
