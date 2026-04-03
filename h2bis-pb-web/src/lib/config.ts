@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
         CREATE: '/api/users',
         APPROVE: (userId: string) => `/api/users/${userId}/approve`,
         DEACTIVATE: (userId: string) => `/api/users/${userId}/deactivate`,
+        DELETE: (userId: string) => `/api/users/${userId}`,
     },
     PROJECTS: {
         LIST: '/api/projects',

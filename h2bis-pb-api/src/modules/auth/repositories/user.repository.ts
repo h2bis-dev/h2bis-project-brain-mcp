@@ -111,6 +111,16 @@ export class UserRepository {
             throw new NotFoundError('User not found');
         }
     }
+
+    /**
+     * Permanently delete a user by ID.
+     */
+    async deleteById(userId: string): Promise<void> {
+        const result = await User.deleteOne({ _id: userId });
+        if (result.deletedCount === 0) {
+            throw new NotFoundError('User not found');
+        }
+    }
 }
 
 // Export singleton instance

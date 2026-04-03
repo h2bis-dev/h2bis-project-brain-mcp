@@ -2,11 +2,23 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession, signOut } from 'next-auth/react';
 import { userService } from '@/services/user.service';
+import { useDeleteUser } from '@/hooks/useAuth';
 import { RegisterUserModal } from '@/components/users/RegisterUserModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { User } from '@/types/auth.types';
 
 function roleBadgeVariant(role: string): 'default' | 'secondary' | 'destructive' | 'outline' {
@@ -17,7 +29,9 @@ function roleBadgeVariant(role: string): 'default' | 'secondary' | 'destructive'
 
 export default function UsersPage() {
     const [registerModalOpen, setRegisterModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
 
     const { data: users = [], isLoading, isError } = useQuery<User[]>({
         queryKey: ['users'],
@@ -33,6 +47,8 @@ export default function UsersPage() {
         mutationFn: (userId: string) => userService.approveUser(userId),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
     });
+
+    const deleteMutation = useDeleteUser();
 
     return (
         <div className="p-6 space-y-6">
@@ -83,7 +99,8 @@ export default function UsersPage() {
                                         <th className="text-left px-4 py-3 font-medium">Email</th>
                                         <th className="text-left px-4 py-3 font-medium">Role</th>
                                         <th className="text-left px-4 py-3 font-medium">Status</th>
-                                        <th className="text-right px-4 py-3 font-medium">Actions</th>
+                                        <th className="text-right px-4 py-3 font-medium">MCP Access</th>
+                                        <th className="text-right px-4 py-3 font-medium">Delete</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -131,27 +148,52 @@ export default function UsersPage() {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
-                                                    {user.isActive ? (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            disabled={isPending}
-                                                            onClick={() => deactivateMutation.mutate(uid!)}
-                                                        >
-                                                            Deactivate
-                                                        </Button>
-                                                    ) : (
-                                                        !user.mustChangePassword && (
+                                                    <div className="flex items-center justify-end gap-1 flex-wrap">
+                                                        {user.isActive ? (
                                                             <Button
                                                                 size="sm"
                                                                 variant="outline"
-                                                                disabled={isPending}
-                                                                onClick={() => activateMutation.mutate(uid!)}
+                                                                disabled={isPending || deleteMutation.isPending}
+                                                                onClick={() => deactivateMutation.mutate(uid!)}
                                                             >
-                                                                Activate
+                                                                Deactivate
                                                             </Button>
-                                                        )
-                                                    )}
+                                                        ) : (
+                                                            !user.mustChangePassword && (
+                                                                <>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="text-green-700 border-green-300 hover:bg-green-50"
+                                                                        disabled={isPending || deleteMutation.isPending}
+                                                                        onClick={() => activateMutation.mutate(uid!)}
+                                                                    >
+                                                                        Approve
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                                                                        disabled={isPending || deleteMutation.isPending}
+                                                                        onClick={() => setDeleteTarget({ id: uid!, label: 'Reject' })}
+                                                                    >
+                                                                        Reject
+                                                                    </Button>
+                                                                </>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                        disabled={deleteMutation.isPending}
+                                                        onClick={() => setDeleteTarget({ id: uid!, label: 'Delete' })}
+                                                    >
+                                                        Delete
+                                                    </Button>
                                                 </td>
                                             </tr>
                                         );
@@ -167,6 +209,39 @@ export default function UsersPage() {
                 open={registerModalOpen}
                 onOpenChange={setRegisterModalOpen}
             />
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {deleteTarget?.label === 'Reject' ? 'Reject user?' : 'Delete user?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {deleteTarget?.label === 'Reject'
+                                ? 'This will permanently remove the user account. This action cannot be undone.'
+                                : 'This will permanently delete the user account. This action cannot be undone.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={async () => {
+                                if (!deleteTarget) return;
+                                const targetId = deleteTarget.id;
+                                const isSelf = session?.user?.id === targetId;
+                                setDeleteTarget(null);
+                                await deleteMutation.mutateAsync(targetId);
+                                if (isSelf) {
+                                    await signOut({ callbackUrl: '/login' });
+                                }
+                            }}
+                        >
+                            {deleteTarget?.label === 'Reject' ? 'Reject' : 'Delete'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

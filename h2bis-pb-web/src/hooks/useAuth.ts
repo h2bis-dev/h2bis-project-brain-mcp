@@ -21,6 +21,21 @@ export function useCreateUser() {
 }
 
 /**
+ * Hook for permanently deleting a user.
+ * The caller is responsible for signing out if the deleted user is the current session user.
+ */
+export function useDeleteUser() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (userId: string) => userService.deleteUser(userId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+        },
+    });
+}
+
+/**
  * Hook for user login with credentials.
  */
 export function useLogin() {
