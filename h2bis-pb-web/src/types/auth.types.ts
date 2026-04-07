@@ -6,9 +6,30 @@ export interface RegisterRequest {
     role: string[]; // Array of roles (e.g., ['user'] or ['admin'])
 }
 
+/** Admin-only: create a user without providing a password. */
+export interface AdminCreateUserRequest {
+    email: string;
+    name: string;
+    role: string[];
+}
+
+/** Response after admin creates a user — tempPassword is shown exactly once. */
+export interface AdminCreateUserResponse {
+    id: string;
+    email: string;
+    name: string;
+    role: string[];
+    tempPassword: string;
+}
+
 export interface LoginRequest {
     email: string;
     password: string;
+}
+
+export interface ChangePasswordRequest {
+    currentPassword: string;
+    newPassword: string;
 }
 
 // Auth Response DTOs
@@ -17,6 +38,7 @@ export interface AuthResponse {
     email: string;
     role?: string[];
     isActive?: boolean;
+    mustChangePassword?: boolean;
 }
 
 export interface RegisterResponse {
@@ -27,8 +49,11 @@ export interface RegisterResponse {
 // User type
 export interface User {
     id: string;
+    _id?: string;
     email: string;
     name?: string;
     role?: string[];
     isActive?: boolean;
+    mustChangePassword?: boolean;
+    createdAt?: string;
 }

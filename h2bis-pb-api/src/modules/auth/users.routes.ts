@@ -8,34 +8,15 @@ const router = Router();
 
 // All user-management routes require authentication + admin permission
 
-// ==================== Access Request Routes ====================
-// These MUST come before /:id routes to avoid Express matching "access-requests" as an :id param
-
-// GET /api/users/access-requests?status=pending
-router.get(
-    '/access-requests',
-    authenticate,
-    requirePermission(PERMISSIONS.USERS.APPROVE),
-    usersController.listAccessRequests
-);
-
-// POST /api/users/access-requests/:id/approve
-router.post(
-    '/access-requests/:id/approve',
-    authenticate,
-    requirePermission(PERMISSIONS.USERS.APPROVE),
-    usersController.approveAccessRequest
-);
-
-// POST /api/users/access-requests/:id/reject
-router.post(
-    '/access-requests/:id/reject',
-    authenticate,
-    requirePermission(PERMISSIONS.USERS.APPROVE),
-    usersController.rejectAccessRequest
-);
-
 // ==================== User Management Routes ====================
+
+// POST /api/users  — admin creates a new user (no password — OTP auto-generated)
+router.post(
+    '/',
+    authenticate,
+    requirePermission(PERMISSIONS.USERS.CREATE),
+    usersController.createUser
+);
 
 // GET /api/users?pending=true  — list all users (or pending-only)
 router.get(
@@ -75,6 +56,14 @@ router.patch(
     authenticate,
     requirePermission(PERMISSIONS.USERS.UPDATE_ANY),
     usersController.updateUserRole
+);
+
+// DELETE /api/users/:id  — permanently delete a user
+router.delete(
+    '/:id',
+    authenticate,
+    requirePermission(PERMISSIONS.USERS.DELETE_ANY),
+    usersController.deleteUser
 );
 
 export default router;

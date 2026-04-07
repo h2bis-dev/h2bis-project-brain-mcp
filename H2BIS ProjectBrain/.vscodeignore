@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Exclude from VSIX package
 src/**
 scripts/**
@@ -8,3 +9,24 @@ tsconfig.json
 **/*.map
 server/dist/**/*.d.ts
 server/dist/**/*.d.ts.map
+=======
+.vscode/**
+src/**
+tsconfig.json
+node_modules/**
+vsix-extracted/**
+*.vsix
+**/*.map
+**/*.ts
+!dist/**
+!server/**
+!server/dist/**
+!server/node_modules/**
+server/node_modules/**/.github/**
+server/node_modules/**/test/**
+server/node_modules/**/tests/**
+server/node_modules/**/docs/**
+server/node_modules/**/*.md
+server/node_modules/**/*.txt
+server/node_modules/**/*.map
+>>>>>>> develop

@@ -13,6 +13,7 @@ declare module 'next-auth' {
         permissions: string[]; // Authorization Contract: backend-computed permissions
         accessToken: string;
         refreshToken: string;
+        mustChangePassword: boolean;
     }
 
     interface Session {
@@ -22,6 +23,7 @@ declare module 'next-auth' {
             name?: string | null;
             role: string[];
             permissions: string[]; // Authorization Contract: use these for access control
+            mustChangePassword: boolean;
         };
         accessToken: string;
         refreshToken: string;
@@ -39,5 +41,6 @@ declare module 'next-auth/jwt' {
         refreshToken: string;
         accessTokenExpires: number; // Timestamp (ms) when access token expires
         error?: string; // 'RefreshTokenError' when token refresh fails
+        mustChangePassword: boolean;
     }
 }

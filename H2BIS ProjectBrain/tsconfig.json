@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+<<<<<<< HEAD
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020"],
@@ -11,5 +12,19 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"],
+=======
+    "module": "commonjs",
+    "target": "ES2022",
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ES2022"],
+    "types": ["node", "vscode"],
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+>>>>>>> develop
   "exclude": ["node_modules", "dist", "server"]
 }

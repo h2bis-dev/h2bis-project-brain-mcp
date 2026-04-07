@@ -174,11 +174,15 @@ export function Sidebar() {
                             );
                         })()}
 
+                    </PermissionGuard>
+
+                    {/* Admin-only Users management tab */}
+                    <PermissionGuard permission="view:all-users">
                         {(() => {
-                            const isActive = pathname === "/develop/mcp-approvals";
+                            const isActive = pathname === "/users" || pathname?.startsWith("/users/");
                             const linkContent = (
                                 <Link
-                                    href="/develop/mcp-approvals"
+                                    href="/users"
                                     className={cn(
                                         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                                         isActive
@@ -188,7 +192,7 @@ export function Sidebar() {
                                     )}
                                 >
                                     <Users className="h-5 w-5 flex-shrink-0" />
-                                    {!isCollapsed && <span className="whitespace-nowrap">MCP Approvals</span>}
+                                    {!isCollapsed && <span className="whitespace-nowrap">Users</span>}
                                 </Link>
                             );
 
@@ -198,7 +202,7 @@ export function Sidebar() {
                                         {linkContent}
                                     </TooltipTrigger>
                                     <TooltipContent side="right">
-                                        <p>MCP Approvals</p>
+                                        <p>Users</p>
                                     </TooltipContent>
                                 </Tooltip>
                             ) : (

@@ -1,35 +1,37 @@
-import { apiClient } from './api/client';
+import { apiClient } from './api-client';
 import { API_ENDPOINTS } from '@/lib/config';
 import type {
-    RegisterRequest,
     LoginRequest,
     AuthResponse,
-    RegisterResponse
+    ChangePasswordRequest,
 } from '@/types/auth.types';
 
 /**
  * Auth Service
- * Handles all authentication-related API calls
+ * Handles all authentication-related API calls.
+ * Note: User registration is admin-only via userService.createUser().
  */
 export const authService = {
-    /**
-     * Register a new user
-     */
-    register: async (data: RegisterRequest): Promise<RegisterResponse> => {
-        return apiClient.post<RegisterResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
-    },
-
     /**
      * Login user
      */
     login: async (data: LoginRequest): Promise<AuthResponse> => {
-        return apiClient.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
+        const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, data);
+        return (response as any)?.data as AuthResponse;
+    },
+
+    /**
+     * Change password (first-login or regular change).
+     * Requires an active session.
+     */
+    changePassword: async (data: ChangePasswordRequest): Promise<void> => {
+        await apiClient.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data);
     },
 
     /**
      * Logout user
      */
     logout: async (): Promise<void> => {
-        return apiClient.post<void>(API_ENDPOINTS.AUTH.LOGOUT);
+        await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
     },
 };

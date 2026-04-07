@@ -19,7 +19,7 @@ This document outlines industry-standard approaches for securing MCP agent acces
 │                        HUMAN USERS                               │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
 │  │  h2bis-web  │───▶│  h2bis-api  │───▶│     MongoDB         │ │
-│  │  (NextAuth) │    │  (Express)  │    │   (use_case_db)     │ │
+│  │  (NextAuth) │    │  (Express)  │    │   (h2bis-project-brain)     │ │
 │  └─────────────┘    └─────────────┘    └─────────────────────┘ │
 │        │                  │                                      │
 │   Email/Password    JWT + RBAC                                  │

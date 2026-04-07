@@ -85,6 +85,7 @@ export const authOptions: NextAuthOptions = {
                             permissions: user.permissions, // Permissions from API (Authorization Contract)
                             accessToken: user.accessToken, // JWT from API
                             refreshToken: user.refreshToken, // Refresh token from API
+                            mustChangePassword: user.mustChangePassword ?? false,
                         };
                     } catch (error: any) {
                         const isConnectionError = error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT';
@@ -130,6 +131,7 @@ export const authOptions: NextAuthOptions = {
                     refreshToken: user.refreshToken,
                     accessTokenExpires: Date.now() + ACCESS_TOKEN_BUFFER_MS,
                     error: undefined,
+                    mustChangePassword: user.mustChangePassword ?? false,
                 };
             }
 
@@ -153,6 +155,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.email = token.email as string;
                 session.user.role = token.role as string[];
                 session.user.permissions = token.permissions as string[];
+                session.user.mustChangePassword = token.mustChangePassword as boolean;
             }
             session.accessToken = token.accessToken as string;
             session.refreshToken = token.refreshToken as string;

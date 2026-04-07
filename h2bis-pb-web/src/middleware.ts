@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server';
 
 export default withAuth(
     function middleware(req) {
+        const { pathname } = req.nextUrl;
+        const token = req.nextauth.token;
+
+        // If user must change password on first login, force redirect to /change-password
+        if (token?.mustChangePassword && !pathname.startsWith('/change-password')) {
+            return NextResponse.redirect(new URL('/change-password', req.url));
+        }
+
         return NextResponse.next();
     },
     {
@@ -10,9 +18,8 @@ export default withAuth(
             authorized: ({ token, req }) => {
                 const { pathname } = req.nextUrl;
 
-                // Public routes
+                // Public routes (no auth required)
                 if (pathname.startsWith('/login') ||
-                    pathname.startsWith('/register') ||
                     pathname.startsWith('/forgot-password') ||
                     pathname === '/') {
                     return true;
@@ -38,8 +45,10 @@ export const config = {
         '/capabilities/:path*',
         '/summaries/:path*',
         '/analytics/:path*',
+        '/projects/:path*',
+        '/users/:path*',
+        '/change-password',
         '/login',
-        '/register',
         '/forgot-password',
     ],
 };

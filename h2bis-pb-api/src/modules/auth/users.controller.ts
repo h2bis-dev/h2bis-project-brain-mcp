@@ -1,8 +1,44 @@
 import { Request, Response } from 'express';
+import { randomBytes } from 'crypto';
 import { asyncHandler } from '../../core/middleware/error.middleware.js';
 import { userRepository } from './repositories/user.repository.js';
-import { accessRequestRepository } from './repositories/access-request.repository.js';
-import { NotFoundError, ValidationError } from '../../core/errors/app.error.js';
+import { hashPassword } from './services/password.service.js';
+import { AdminCreateUserRequestDto } from './auth.dto.js';
+import { NotFoundError } from '../../core/errors/app.error.js';
+
+/**
+ * POST /api/users
+ * Admin creates a new user with an auto-generated one-time password.
+ * The user is created as isActive=false + mustChangePassword=true.
+ * The plaintext OTP is returned once and must be shared with the user manually.
+ */
+export const createUser = asyncHandler(async (req: Request, res: Response) => {
+    const dto = AdminCreateUserRequestDto.parse(req.body);
+
+    // Generate a cryptographically secure 16-character alphanumeric OTP
+    const tempPassword = randomBytes(16).toString('base64url').slice(0, 16);
+    const passwordHash = await hashPassword(tempPassword);
+
+    const user = await userRepository.create({
+        email: dto.email,
+        name: dto.name,
+        role: dto.role,
+        passwordHash,
+        isActive: false,
+        mustChangePassword: true,
+    });
+
+    res.status(201).json({
+        success: true,
+        data: {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            tempPassword, // Shown to admin only once — must be forwarded to the user
+        },
+    });
+});
 
 /**
  * GET /api/users
@@ -83,84 +119,17 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
     res.status(200).json({ success: true, message: 'User role updated', data: { role: user.role } });
 });
 
-// ==================== Access Request Management ====================
-
 /**
- * GET /api/users/access-requests
- * List access requests (admin only).
- * Supports ?status=pending|approved|rejected
+ * DELETE /api/users/:id
+ * Permanently delete a user account (admin only).
  */
-export const listAccessRequests = asyncHandler(async (req: Request, res: Response) => {
-    const status = req.query.status as string | undefined;
-    const requests = await accessRequestRepository.findAll(status ? { status } : {});
-    res.status(200).json({ success: true, data: { accessRequests: requests } });
+export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+    const user = await userRepository.findById(req.params.id);
+    if (!user) throw new NotFoundError('User not found');
+
+    await userRepository.deleteById(req.params.id);
+
+    res.status(200).json({ success: true, message: 'User deleted successfully' });
 });
 
-/**
- * POST /api/users/access-requests/:id/approve
- * Approve an access request (admin only).
- * Creates the user account and marks the request as approved.
- */
-export const approveAccessRequest = asyncHandler(async (req: Request, res: Response) => {
-    const request = await accessRequestRepository.findById(req.params.id);
-    if (!request) throw new NotFoundError('Access request not found');
 
-    if (request.status !== 'pending') {
-        throw new ValidationError(`Request has already been ${request.status}`);
-    }
-
-    // Check if user already exists (edge case: registered manually while request pending)
-    let user = await userRepository.findByEmail(request.email)
-        || await userRepository.findByGithubId(request.githubId);
-
-    if (!user) {
-        // Create the user account
-        user = await userRepository.create({
-            email: request.email,
-            name: request.name,
-            role: ['user'],
-            isActive: true,
-            githubId: request.githubId,
-        });
-    } else if (!user.isActive) {
-        // User exists but inactive — activate them
-        await userRepository.updateActiveStatus(user._id.toString(), true);
-    }
-
-    const adminUser = (req as any).user;
-    await accessRequestRepository.updateStatus(
-        req.params.id,
-        'approved',
-        adminUser.userId,
-        req.body.note
-    );
-
-    res.status(200).json({
-        success: true,
-        message: 'Access request approved and user account created',
-        data: { userId: user._id.toString() },
-    });
-});
-
-/**
- * POST /api/users/access-requests/:id/reject
- * Reject an access request (admin only).
- */
-export const rejectAccessRequest = asyncHandler(async (req: Request, res: Response) => {
-    const request = await accessRequestRepository.findById(req.params.id);
-    if (!request) throw new NotFoundError('Access request not found');
-
-    if (request.status !== 'pending') {
-        throw new ValidationError(`Request has already been ${request.status}`);
-    }
-
-    const adminUser = (req as any).user;
-    await accessRequestRepository.updateStatus(
-        req.params.id,
-        'rejected',
-        adminUser.userId,
-        req.body.note
-    );
-
-    res.status(200).json({ success: true, message: 'Access request rejected' });
-});

@@ -1,0 +1,196 @@
+# ==========================================
+# H2BIS ProjectBrain - GitLab CI/CD
+# ==========================================
+#
+# Uses Kaniko for Docker builds (no Docker socket required)
+#
+# Variables required in GitLab CI/CD Settings > Variables:
+#   VULTR_REGISTRY_USERNAME, VULTR_REGISTRY_PASSWORD  - Vultr Container Registry credentials
+#   KUBE_CONFIG_DEV                                    - Base64-encoded kubeconfig for dev
+#   KUBE_CONFIG_PROD                                   - Base64-encoded kubeconfig for prod
+#   MONGO_DB_URL_DEV                                   - MongoDB connection URL for dev (without database name)
+#   MONGO_DB_URL_PROD                                  - MongoDB connection URL for prod (without database name)
+#   NEXT_PUBLIC_API_URL_DEV, NEXT_PUBLIC_API_URL_PROD  - Public API URL for Next.js web app
+#   API_INGRESS_HOST_DEV, API_INGRESS_HOST_PROD        - API ingress hostnames
+#   WEB_INGRESS_HOST_DEV, WEB_INGRESS_HOST_PROD        - Web ingress hostnames
+#   JWT_ACCESS_SECRET_DEV, JWT_ACCESS_SECRET_PROD      - JWT access token secrets
+#   JWT_REFRESH_SECRET_DEV, JWT_REFRESH_SECRET_PROD    - JWT refresh token secrets
+#   NEXTAUTH_SECRET_DEV, NEXTAUTH_SECRET_PROD          - NextAuth session signing secret
+#   OPENAI_API_KEY                                     - OpenAI API key (shared)
+#   CORS_ALLOWED_ORIGINS_DEV, CORS_ALLOWED_ORIGINS_PROD - Allowed CORS origins
+#   GITHUB_CLIENT_ID                                   - GitHub OAuth client ID (shared)
+#   GITHUB_CLIENT_SECRET                               - GitHub OAuth client secret (shared)
+#   GITHUB_CALLBACK_URL_DEV, GITHUB_CALLBACK_URL_PROD  - GitHub OAuth callback URL
+
+stages:
+  - validate
+  - build
+  - deploy
+
+variables:
+  REGISTRY: sgp.vultrcr.com/h2biscr
+
+# ==========================================
+# Templates
+# ==========================================
+.build_template: &build_template
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.0-debug
+    entrypoint: [""]
+  tags:
+    - docker
+  before_script:
+    - mkdir -p /kaniko/.docker
+    - AUTH=$(echo -n "${VULTR_REGISTRY_USERNAME}:${VULTR_REGISTRY_PASSWORD}" | base64 | tr -d '\n')
+    - printf '{"auths":{"https://sgp.vultrcr.com/h2biscr":{"auth":"%s"}}}' "$AUTH" > /kaniko/.docker/config.json
+  stage: build
+
+.deploy_template: &deploy_template
+  image: alpine/k8s:1.28.3
+  tags:
+    - docker
+  stage: deploy
+  before_script:
+    - echo "=== Decoding KUBE_CONFIG (base64) ==="
+    - echo "Variable length ${#KUBE_CONFIG}"
+    - echo "$KUBE_CONFIG" | base64 -d > kubeconfig
+    - export KUBECONFIG=$PWD/kubeconfig
+    - echo "=== Kubeconfig file check ==="
+    - echo "File size $(wc -c < kubeconfig) bytes"
+    - head -5 kubeconfig
+    - if ! kubectl config current-context 2>/dev/null; then echo "No current-context set"; CONTEXT=$(kubectl config get-contexts -o name | head -n 1); if [ -z "$CONTEXT" ]; then echo "ERROR No contexts found"; exit 1; fi; kubectl config use-context "$CONTEXT"; fi
+    - kubectl cluster-info
+
+# ==========================================
+# Validate Jobs
+# ==========================================
+validate:
+  image: node:20-alpine
+  tags:
+    - docker
+  stage: validate
+  allow_failure: true
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-node
+    paths:
+      - node_modules/
+      - .npm/
+  before_script:
+    - npm ci --prefer-offline --cache .npm
+  script:
+    - npm run lint || echo "Lint completed with warnings (non-blocking)"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+
+# ==========================================
+# Build Jobs (run in parallel)
+# ==========================================
+build-h2bis-pb-web:
+  <<: *build_template
+  script:
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR/h2bis-pb-web
+      --dockerfile $CI_PROJECT_DIR/h2bis-pb-web/Dockerfile
+      --destination $REGISTRY/h2bis-pb-web:$CI_COMMIT_SHA
+      --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+      --cache=true
+      --cache-repo=$REGISTRY/cache
+      --cache-run-layers
+      --snapshot-mode=redo
+      --use-new-run
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      variables:
+        NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL_DEV
+    - if: $CI_COMMIT_BRANCH == "main"
+      variables:
+        NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL_PROD
+
+build-h2bis-pb-api:
+  <<: *build_template
+  script:
+    # context must be the monorepo root — the Dockerfile copies h2bis-pb-ai
+    # as a local file dependency during the build
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/h2bis-pb-api/Dockerfile
+      --destination $REGISTRY/h2bis-pb-api:$CI_COMMIT_SHA
+      --cache=true
+      --cache-repo=$REGISTRY/cache
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
+
+# ==========================================
+# Deploy Jobs
+# ==========================================
+deploy-dev:
+  <<: *deploy_template
+  variables:
+    KUBE_CONFIG: $KUBE_CONFIG_DEV
+  environment:
+    name: development
+  needs:
+    - build-h2bis-pb-api
+    - build-h2bis-pb-web
+  script:
+    - >-
+        helm upgrade --install h2bis-pb-dev ./helm-chart
+        --atomic --timeout 300s --kubeconfig=kubeconfig
+        --set-string api.image.repository=$REGISTRY/h2bis-pb-api
+        --set-string api.image.tag=$CI_COMMIT_SHA
+        --set-string web.image.repository=$REGISTRY/h2bis-pb-web
+        --set-string web.image.tag=$CI_COMMIT_SHA
+        --set-string secret.apiIngressHost=$API_INGRESS_HOST_DEV
+        --set-string secret.webIngressHost=$WEB_INGRESS_HOST_DEV
+        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_DEV}/"
+        --set-string api.env.JWT_ACCESS_SECRET="$JWT_ACCESS_SECRET_DEV"
+        --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_DEV"
+        --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_DEV"
+        --set-string api.env.GITHUB_CLIENT_ID="$GITHUB_CLIENT_ID"
+        --set-string api.env.GITHUB_CLIENT_SECRET="$GITHUB_CLIENT_SECRET"
+        --set-string api.env.GITHUB_CALLBACK_URL="$GITHUB_CALLBACK_URL_DEV"
+        --set-string api.env.OPENAI_API_KEY="$OPENAI_API_KEY"
+        --set-string web.env.NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL_DEV"
+        --set-string web.env.NEXTAUTH_SECRET="$NEXTAUTH_SECRET_DEV"
+    - export KUBECONFIG=$PWD/kubeconfig
+    - kubectl rollout status deployment/h2bis-pb-dev-api --timeout=120s
+    - kubectl rollout status deployment/h2bis-pb-dev-web --timeout=120s
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+deploy-prod:
+  <<: *deploy_template
+  variables:
+    KUBE_CONFIG: $KUBE_CONFIG_PROD
+  environment:
+    name: production
+  when: manual
+  allow_failure: false
+  needs:
+    - build-h2bis-pb-api
+    - build-h2bis-pb-web
+  script:
+    - >-
+        helm upgrade --install h2bis-pb-prod ./helm-chart
+        --atomic --timeout 300s --kubeconfig=kubeconfig
+        --set-string api.image.repository=$REGISTRY/h2bis-pb-api
+        --set-string api.image.tag=$CI_COMMIT_SHA
+        --set-string web.image.repository=$REGISTRY/h2bis-pb-web
+        --set-string web.image.tag=$CI_COMMIT_SHA
+        --set-string secret.apiIngressHost=$API_INGRESS_HOST_PROD
+        --set-string secret.webIngressHost=$WEB_INGRESS_HOST_PROD
+        --set-string api.env.MONGODB_URI="${MONGO_DB_URL_PROD}/"
+        --set-string api.env.JWT_ACCESS_SECRET="$JWT_ACCESS_SECRET_PROD"
+        --set-string api.env.JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET_PROD"
+        --set-string api.env.CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS_PROD"
+        --set-string api.env.GITHUB_CLIENT_ID="$GITHUB_CLIENT_ID"
+        --set-string api.env.GITHUB_CLIENT_SECRET="$GITHUB_CLIENT_SECRET"
+        --set-string api.env.GITHUB_CALLBACK_URL="$GITHUB_CALLBACK_URL_PROD"
+        --set-string api.env.OPENAI_API_KEY="$OPENAI_API_KEY"
+        --set-string web.env.NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL_PROD"
+        --set-string web.env.NEXTAUTH_SECRET="$NEXTAUTH_SECRET_PROD"
+    - export KUBECONFIG=$PWD/kubeconfig
+    - kubectl rollout status deployment/h2bis-pb-prod-api --timeout=120s
+    - kubectl rollout status deployment/h2bis-pb-prod-web --timeout=120s
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

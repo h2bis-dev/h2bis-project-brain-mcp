@@ -46,11 +46,14 @@ export const API_ENDPOINTS = {
         REGISTER: '/api/auth/register',
         LOGIN: '/api/auth/login',
         LOGOUT: '/api/auth/logout',
+        CHANGE_PASSWORD: '/api/auth/change-password',
     },
     USERS: {
         LIST: '/api/users',
+        CREATE: '/api/users',
         APPROVE: (userId: string) => `/api/users/${userId}/approve`,
         DEACTIVATE: (userId: string) => `/api/users/${userId}/deactivate`,
+        DELETE: (userId: string) => `/api/users/${userId}`,
     },
     PROJECTS: {
         LIST: '/api/projects',
