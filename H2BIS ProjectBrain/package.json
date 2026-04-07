@@ -2,56 +2,24 @@
   "name": "h2bis-projectbrain",
   "displayName": "H2BIS ProjectBrain",
   "description": "Connect AI agents (GitHub Copilot, Claude, Cursor) to the H2BIS ProjectBrain API — manage projects, use cases, and capabilities via MCP.",
-<<<<<<< HEAD
-  "version": "1.0.0",
-=======
   "version": "1.1.2",
->>>>>>> develop
   "publisher": "H2BISProjectBrain",
   "engines": {
     "vscode": "^1.99.0"
   },
   "categories": [
-<<<<<<< HEAD
-    "AI",
-    "Other"
-  ],
-  "keywords": [
-    "mcp",
-=======
     "Chat",
     "AI"
   ],
   "keywords": [
     "mcp",
     "mcp-server",
->>>>>>> develop
+    "model-context-protocol",
     "ai",
     "project-management",
     "copilot",
     "use-cases",
-<<<<<<< HEAD
     "sdlc"
-  ],
-  "activationEvents": [],
-  "main": "./dist/extension.js",
-  "icon": "icon.ico",
-  "contributes": {
-    "mcpServers": {
-      "h2bis-pb-mcp": {
-        "type": "stdio",
-        "command": "node",
-        "args": [
-          "${extensionPath}/server/dist/index.js"
-        ],
-        "env": {
-          "API_BASE_URL": "${config:h2bis.apiBaseUrl}"
-        }
-      }
-    },
-=======
-    "sdlc",
-    "model-context-protocol"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -75,7 +43,6 @@
         "title": "H2BIS ProjectBrain: Stop MCP Server"
       }
     ],
->>>>>>> develop
     "configuration": {
       "title": "H2BIS ProjectBrain",
       "properties": {
@@ -83,33 +50,16 @@
           "type": "string",
           "default": "https://api-project-brain-dev.h2bis.com",
           "description": "H2BIS ProjectBrain API base URL. Change this if you use a self-hosted instance."
-<<<<<<< HEAD
-=======
         },
         "h2bis.autoStart": {
           "type": "boolean",
           "default": true,
           "description": "Automatically start the MCP server when VS Code opens."
->>>>>>> develop
         }
       }
     }
   },
   "scripts": {
-<<<<<<< HEAD
-    "build:server": "node scripts/build.mjs",
-    "build:ext": "tsc -p tsconfig.json",
-    "build": "npm run build:server && npm run build:ext",
-    "package": "npm run build && vsce package",
-    "publish": "npm run build && vsce publish"
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.99.0",
-    "@vscode/vsce": "^3.0.0",
-    "typescript": "^5.0.0"
-  }
-}
-=======
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
@@ -124,4 +74,3 @@
     "typescript": "^5.7.0"
   }
 }
->>>>>>> develop

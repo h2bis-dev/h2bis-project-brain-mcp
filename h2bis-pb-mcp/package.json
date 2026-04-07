@@ -1,6 +1,6 @@
 {
   "name": "h2bis-mcp",
-  "version": "1.1.17",
+  "version": "1.1.18",
   "mcpName": "io.github.h2bis-dev/h2bis-projectbrain-mcp",
   "type": "module",
   "description": "MCP server for H2BIS ProjectBrain - connect AI agents (GitHub Copilot, Claude, Cursor) to the H2BIS ProjectBrain API",
@@ -15,7 +15,9 @@
   },
   "files": [
     "dist/**/*",
-    "README.md"
+    "README.md",
+    "server.json",
+    "icon.png"
   ],
   "scripts": {
     "build": "tsc",
@@ -27,8 +29,6 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
     "dotenv": "^16.0.0",
-    "mongodb": "^7.0.0",
-    "mongoose": "^8.0.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
@@ -39,9 +39,13 @@
   },
   "keywords": [
     "mcp",
+    "mcp-server",
+    "model-context-protocol",
     "ai",
-    "knowledge-base",
-    "mongodb"
+    "project-management",
+    "copilot",
+    "use-cases",
+    "sdlc"
   ],
   "author": "H2BIS",
   "license": "MIT"

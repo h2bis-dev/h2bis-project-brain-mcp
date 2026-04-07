@@ -4,3 +4,4 @@ node_modules
 .env.production
 .env.production.local
 .env.local
+.mcpregistry_github_token
